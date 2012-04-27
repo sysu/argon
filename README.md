@@ -9,11 +9,11 @@ argon
 Todo
 ----
 
-    完善数据库及model建设
-    web框架建设
-    telnet建设
-    更多人的参与
-    ...
+  * 完善数据库及model建设
+  * web框架建设
+  * telnet建设
+  * 更多人的参与
+  * ...
 
 
 Welcome to join us.
