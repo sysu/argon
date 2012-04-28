@@ -20,7 +20,7 @@ class Board(Model):
             return self.dict[name]
         except KeyError:
             return None
-    
+
     def __setitem__(self, name, value):
         self.dict[name] = value
 
