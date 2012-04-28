@@ -1,9 +1,8 @@
 # -*- coding: utf-8 -*-
 from chaofeng import Server,Frame, EndInterrupt,Timeout
-from chaofeng.g import marks,mark,static
+from chaofeng.g import mark,static
 from chaofeng.ui import TextInput,Password
 from chaofeng.ascii import *
-import config
 
 '''
 欢迎页面。并实现了验证登陆。

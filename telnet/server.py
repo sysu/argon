@@ -1,9 +1,10 @@
 # -*- coding: utf-8 -*-
-from chaofeng import Server
-import frame
-from chaofeng.g import marks,mark,static
+
+from chaofeng import Server,g
+from chaofeng.g import mark,static
 import config
+import frame
 
 if __name__ == '__main__' :
-    s = Server(marks[config.root])
+    s = Server(mark[config.root])
     s.run()
