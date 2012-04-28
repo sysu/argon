@@ -33,6 +33,5 @@ class Model(object):
         return self.cursor.fetchone()
 
     def closedb(self):
-
         self.conn.close()
 

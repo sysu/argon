@@ -4,17 +4,16 @@ from Post import Post
 class Board(Model):
 
     def __init__(self, boardname = "Test"):
+        super(Boar,self).__init__()
         # According to database/template/argo_fileheader.sql
         self.boardname = self.escape_string(boardname)
         self.table = "argo_fileheader_" + self.boardname
-
         # try:
-        #     self.connect()
+        self.connect()
         # except:
         #     pass
         # else:
-        #     # init_board_info()
-        #     pass
+        init_board_info()
 
     def __getitem__(self, name):
         try:
