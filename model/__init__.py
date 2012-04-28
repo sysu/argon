@@ -1,5 +1,6 @@
 import MySQLdb
 import cPickle
+import conig
 
-from  config import Config
+
 

@@ -1,24 +1,21 @@
+from config import *
 
 class Model(object):
 
-    def __init__(self, host = config.HOST, port = config.PORT, user=config.USER, passwd=config.PASSWD, db = config.DB ):
-        self.host = host;
-        self.port = port;
-        self.db = db;
+    def __init__(self, cfg = dbConfig()):
+        self.host = cfg.host
+        self.port = cfg.port
+        self.user = cfg.user
+        self.passwd = cfg.passwd
+        self.dbname = cfg.dbname
 
     def connect(self):
-        try:
-            self.conn = MySQLdb.connect(self.host, self.port, self.user, self.passwd, self.db)
-            self.cursor = self.conn.cursor()
-        except :
-            ## will write to log later
-            print "ERR: connect %s:%d %s:%s %s" % self.host, self.port, self.user, self.passwd, self.db
+        self.conn = MySQLdb.connect(host=self.host, port=self.port, user=self.user, passwd=self.passwd,db=self.dbname)
+        self.cursor = self.conn.cursor()
+        print "Connect %s@%s:%d pwd=%s db=%s" % (self.user,self.host,self.port,self.passwd, self.dbname)
 
     def query(self, sql):
-        try:
-            self.curosr.execute(sql)
-        except :
-            pass
+        self.cursor.execute(sql)
 
     def escape_string(self, rawsql):
         safe_sql = MySQLdb.escape_string(rawsql)
@@ -31,6 +28,6 @@ class Model(object):
         return self.cursor.fetchone()
 
     def closedb(self):
-
-        self.conn.close()
+        if hasattr(self, "conn"):
+            self.conn.close()
 

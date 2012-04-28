@@ -1,11 +1,15 @@
+import MySQLdb
 
-
-class Config(object):
+class dbConfig(object):
 
     def __init__(self):
-        self.host = "localhost"
-        self.port = 3306
-        self.user = "bbs"
-        self.passwd = "forargo"
-        self.db = "argo"
+        """ Read config from argo.conf, section database
+            Temporary hard code
+        """
+        self.host= "localhost"
+        self.port= 3306
+        self.user= "bbs"
+        self.passwd= "forargo"
+        self.dbname = "argo"
+
 
