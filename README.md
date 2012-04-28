@@ -1,7 +1,7 @@
 argon
 =====
 
-argon是全新的[argo](bbs.sysu.edu.cn)实现。使用python实现。
+argon是全新的[argo](http://bbs.sysu.edu.cn)实现。使用python实现。
 
   * database: sql表，数据库层
   * model: 数据表达层,也即系ORM,所有数据操作都过这层，逻辑实现不涉及直接sql

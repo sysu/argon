@@ -4,24 +4,24 @@ from Post import Post
 class Board(Model):
 
     def __init__(self, boardname = "Test"):
+        super(Boar,self).__init__()
         # According to database/template/argo_fileheader.sql
         self.boardname = self.escape_string(boardname)
         self.table = "argo_fileheader_" + self.boardname
+        # try:
+        self.connect()
+        # except:
+        #     pass
+        # else:
+        init_board_info()
 
-        try:
-            self.connect()
-        except:
-            pass
-        else:
-            init_board_info()
-
-    def __getattr__(self, name):
+    def __getitem__(self, name):
         try:
             return self.dict[name]
         except KeyError:
             return None
-
-    def __setattr__(self, name, value):
+    
+    def __setitem__(self, name, value):
         self.dict[name] = value
 
     def init_board_info(self):
@@ -31,7 +31,7 @@ class Board(Model):
         #todo:
         #will hold all attributes into self.dict
 
-    def get_post(self, start, end=-1)
+    def get_post(self, start, end=-1):
         if end == -1: end = self.get_total()
         if start > end: start = end
         self.query("SELECT * FROM %s limit %d,%d order by pid", self.table, start, end)

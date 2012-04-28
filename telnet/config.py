@@ -1,7 +1,7 @@
 # -*- coding: utf-8 -*-
 from chaofeng import ascii
 
-root = 'category'
+root = 'welcome'
 
 menu = {
     "main":zip( zip(range(12,23),(5,)*11),range(1,12),'edfrmtiscpg'),

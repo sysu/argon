@@ -8,12 +8,12 @@ class Post(Model):
         # Will write it later
         self.dict = {}
 
-    def __getattr__(self, name):
+    def __getitem__(self, name):
         try:
             return self.dict[name]
         except KeyError:
             pass
 
-    def __setattr__(self, name, value):
+    def __setitem__(self, name, value):
         self.dict[name] = value
 
