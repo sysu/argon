@@ -1,9 +1,4 @@
-<<<<<<< HEAD
 from config import *
-=======
-import MySQLdb
-import config
->>>>>>> eca48b9444efad48ab40d2ead20cb0f4f37a5dbe
 
 class Model(object):
 
@@ -15,18 +10,9 @@ class Model(object):
         self.dbname = cfg.dbname
 
     def connect(self):
-<<<<<<< HEAD
         self.conn = MySQLdb.connect(host=self.host, port=self.port, user=self.user, passwd=self.passwd,db=self.dbname)
         self.cursor = self.conn.cursor()
         print "Connect %s@%s:%d pwd=%s db=%s" % (self.user,self.host,self.port,self.passwd, self.dbname)
-=======
-        try:
-            self.conn = MySQLdb.connect(self.host, self.port, self.user, self.passwd, self.db)
-            self.cursor = self.conn.cursor()
-        except:
-            ## will write to log later
-            print "ERR: connect %s:%d %s:%s %s" % self.host, self.port, self.user, self.passwd, self.db
->>>>>>> eca48b9444efad48ab40d2ead20cb0f4f37a5dbe
 
     def query(self, sql):
         self.cursor.execute(sql)
@@ -42,10 +28,6 @@ class Model(object):
         return self.cursor.fetchone()
 
     def closedb(self):
-<<<<<<< HEAD
         if hasattr(self, "conn"):
             self.conn.close()
-=======
-        self.conn.close()
->>>>>>> eca48b9444efad48ab40d2ead20cb0f4f37a5dbe
 
