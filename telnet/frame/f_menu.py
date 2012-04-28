@@ -43,7 +43,7 @@ class MainMenu(BaseMenu):
 
     def initialize(self):
         super(MainMenu,self).initialize()
-        self.goto(marks[ColMenu(self,self.menu).read()])
+        self.goto(mark[ColMenu(self,self.menu).read()])
 
 @mark('category')
 class CatMenu(BaseMenu):
@@ -54,4 +54,4 @@ class CatMenu(BaseMenu):
     def initialize(self):
         super(CatMenu,self).initialize()
         cid = ColMenu(self,self.menu,height=10).read()
-        self.goto(marks['boardlist'],cid=cid)
+        self.goto(mark['boardlist'],cid=cid)

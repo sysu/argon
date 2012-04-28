@@ -56,10 +56,10 @@ class Welcome(Frame):
                 self.write(hint_u)
                 username = input_u.read()
                 if username == 'new' :
-                    self.goto(marks['register'])
+                    self.goto(mark['register'])
                 elif username == 'guest' :
                     login_as_guest(self)
-                    self.goto(marks['main'])
+                    self.goto(mark['main'])
                 elif not check_username(username) :
                     self.write(hint_u_e)
                     continue
@@ -67,7 +67,7 @@ class Welcome(Frame):
                 password = input_p.read()
                 if check_user(username,password) :
                     login(self,username,password)
-                    self.goto(marks['main'])
+                    self.goto(mark['main'])
                 self.write(hint_p_e)
 
 @mark('main')
