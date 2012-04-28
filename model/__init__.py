@@ -1,5 +1,7 @@
 import MySQLdb
 import cPickle
 
-from  config import Config
+import config
 
+from Board import Board
+from Post import Post
