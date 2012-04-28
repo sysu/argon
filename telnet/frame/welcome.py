@@ -28,10 +28,10 @@ def login(frame,username,password):
 class Welcome(Frame):
 
     background = static['welcome']
-    hint_u   = u'\r\n[0;1;33m请输入帐号[0m:[m '.encode('gbk')
-    hint_p   = u'\r\n[0;1m请输入密码:[m '.encode('gbk')
-    hint_u_e = u'\r\n[0;1;31m经查证，无此 ID (User ID Error)...[m '.encode('gbk')
-    hint_p_e = u'\r\n[0;1;31m密码输入错误 (Password Error)...[m '.encode('gbk')
+    hint_u   = u'\r\n[0;1;33m请输入帐号[0m:[m '
+    hint_p   = u'\r\n[0;1m请输入密码:[m '
+    hint_u_e = u'\r\n[0;1;31m经查证，无此 ID (User ID Error)...[m '
+    hint_p_e = u'\r\n[0;1;31m密码输入错误 (Password Error)...[m '
     
     def initialize(self):
 
@@ -83,6 +83,12 @@ class Main(Frame):
 
     def clear(self):
         self.write('\r\nThanks for you login.\r\n')
+
+@mark('test')
+class TestHandler(Frame):
+
+    def initialize(self):
+        self.write(static['normal'])
         
 if __name__ == '__main__' :
     s = Server(Welcome)

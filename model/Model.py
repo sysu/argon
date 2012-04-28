@@ -24,8 +24,6 @@ class Model(object):
 
     def escape_string(self, rawsql):
         safe_sql = MySQLdb.escape_string(rawsql)
-        print rawsql
-        print safe_sql
         return safe_sql
 
     def fetchall(self):
