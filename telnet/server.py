@@ -11,6 +11,6 @@ import config
 
 if __name__ == '__main__' :
     # s = Server(mark[config.root])
-    s = Server(mark['boardlist'])
+    s = Server(mark['board'])
     s.run()
     pass

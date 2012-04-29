@@ -56,10 +56,9 @@ class BoardListFrame(Frame):
     # Show All Mode : 0
     # Show New Mode : 1
     
-    def initialize(self,sid=0,new=None,limit=20):
+    def initialize(self,sid=0,new=None):
         self.session['username'] = 'Tester'
         self.sid = sid
-        self.limit = limit
         self.data = get_boardlist_q(sid)
         self.table = None
         self.write(str_top(self,u'[讨论区列表]'))
@@ -78,12 +77,12 @@ class BoardListFrame(Frame):
             self.table.refresh()
         else :
             self.write(ac.move2(3,0)+self.thead[mode]+'\r\n')
-            self.table = Table(self,self.format,data=self.mdata,line=4,limit=self.limit)
+            self.table = Table(self,self.format,data=self.mdata,line=4)
         
     def get(self,data):
-        for c in data :
-            print ord(c),
-        print
+        # for c in data :
+        #     print ord(c),
+        # print
         self.table.send(data)
         if data == 'c' :
             self.set_mode(1 - self.mode)
@@ -143,11 +142,16 @@ class BoardListFrame(Frame):
 @mark('board')
 class BoardFrame(Frame):
 
-    # help_info = static['board_info']
+    help_info = static['board'][0]
+    li_format = static['board'][1]
 
     def initialize(self,boardname=u"Test"):
+        self.data = [1,2,3,4]
         self.session['username'] = 'Tester'
-        self.write(str_top(self,boardname))
-        self.write(help_info)
-        # self.table = 
-        self.write(str_bottom(self))
+        self.write(str_top(self,'bm',boardname))
+        self.write(self.help_info)
+        self.write(ac.move2(24,0)+str_bottom(self))
+        self.table = Table(self,self.li_format,data=self.data,line=4)
+
+    def get(self,data):
+        self.table.send(data)
