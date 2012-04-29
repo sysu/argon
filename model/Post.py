@@ -1,5 +1,3 @@
-from Model import Model
-
 """
     `pid` int(11) unsigned NOT NULL auto_increment,
     `bid` int(11) unsigned NOT NULL,
@@ -23,31 +21,31 @@ from Model import Model
     `disagree` int(11) unsigned NOT NULL default 0,
 
 """
+"""
+    Because __setattr__ will cause inf recursion, use an alternative method.
+    Remembe to change the post_att_list if argo_filehead has been changed.
+"""
+
+post_attr_list = ['pid','bid','owner','realowner','title','flag','tid','replyid','posttime','attachidx','fromaddr','fromhost','content','quote','signature','agree','disagree']
 
 class Post(object):
 
-    def __init__(self, row = None):
-        # Attrs from argo_posthead.sql
-        self.attr_list =['pid','bid','owner','realowner','title','flag','tid','replyid','posttime','attachidx','fromaddr','fromhost','content','quote','signature','agree','disagree']
-
-        if row != None:
-            for i in range(0, len(row)):
-                if row[i] != None: setattr(self, self.attr_list[i], row[i])
-        self.dict = {}
+    def __init__(self, dict = {}):
+        self.attr_list = post_attr_list
+        for k,v in dict.items():
+            if v != None:
+                setattr(self, k, v)
 
     def __getitem__(self, name):
-        try:
-            return self.dict[name]
-        except KeyError:
-            pass
+        if hasattr(self,name):
+            return getattr(self, name)
+        else:
+            return None
 
     def __setitem__(self, name, value):
-        self.dict[name] = value
-
+        setattr(self, name, value)
 
     def dump_attr(self):
-        attrs = [att for att in self.attr_list if hasattr(self, att)]
-        vals = ["'"+str(getattr(self, att))+"'" for att in attrs]
-        return  attrs,vals
+        return [(k, getattr(self,k)) for k in self.attr_list if hasattr(self,k)]
 
 

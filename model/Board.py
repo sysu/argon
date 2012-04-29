@@ -1,6 +1,5 @@
 from Model import Model
 from Post import Post
-
 """
     `bid` int(11) unsigned NOT NULL auto_increment,
     `sid` int(11) unsigned NOT NULL,
@@ -13,18 +12,18 @@ from Post import Post
 
 """
 
+board_attr_list = ['bid','sid','boardname','description','flag','level','lastupdate']
+
 class Board(Model):
 
     def __init__(self, boardname = 'Test'):
         """
             Init Board instance.
         """
-        self.attr_list=['bid', 'sid', 'boardname', 'description', 'bm', 'flag', 'level', 'lastupdate'];
-
-        super(Board,self).__init__()
+        super(Board, self).__init__()
         self.boardname = self.escape_string(boardname)
         self.table = 'argo_filehead_' + self.boardname
-        self.connect()
+
         if self.init_board_info() < 0:
             print 'ERR: init board %s error' % boardname;
 
@@ -33,15 +32,15 @@ class Board(Model):
             Init Board info.
             According to database/argo_boardhead.sql
         """
-        affect_rows = self.query("SELECT %s FROM argo_boardhead where boardname='%s'" % (','.join(self.attr_list), self.boardname))
+        self.attr_list = board_attr_list
+        res = self.query("SELECT %s FROM argo_boardhead where boardname='%s'" % (','.join(self.attr_list), self.boardname))
 
-        if affect_rows > 0:
-            row = self.fetchone()
-            for i in range(0, len(self.attr_list)):
-                setattr(self, self.attr_list[i], row[i])
+        if len(res) == 1:
+            row = res[0]
+            for att in self.attr_list:
+                setattr(self, att, row[att])
             return 0
         else: return -1
-
 
     def get_post(self, start, end=-1):
         """
@@ -53,8 +52,7 @@ class Board(Model):
         if start > end: start = end
 
         pattr_list = Post().attr_list;
-        self.query("SELECT %s FROM %s order by pid limit %d,%d " % (','.join(pattr_list), self.table, start, end-start))
-        rows = self.fetchall()
+        rows = self.query("SELECT %s FROM %s order by pid limit %d,%d " % (','.join(pattr_list), self.table, start, end-start))
         res = [Post(row) for row in rows]
         return res
 
@@ -62,9 +60,9 @@ class Board(Model):
         """
             Get total post numbers
         """
-        self.query("SELECT count(*) FROM %s" % self.table)
-        row = self.fetchone()
-        return row[0]
+        res = self.query("SELECT count(*) as total FROM %s" % self.table)
+        row = res[0]
+        return row['total']
 
     def get_last(self, limit = 20):
         """
@@ -82,9 +80,12 @@ class Board(Model):
             Add post.
             TODO: escape string
         """
-        exist_attr, exist_val = post.dump_attr()
+        kv_pairs = post.dump_attr()
+        exist_attr = [k for k,v in kv_pairs]
+        exist_val = [self.toStr(v) for k,v in kv_pairs]
         sql = "INSERT INTO %s(%s) values(%s)" % (self.table, ','.join(exist_attr), ','.join(exist_val))
-        self.query(sql)
+        print sql
+        self.execute(sql)
 
     def del_post(self, start, end = -1):
         """
@@ -94,7 +95,7 @@ class Board(Model):
         if start > end: start = end;
         start_pid = start = self.get_post(start, start+1)[0].pid
         end_pid = self.get_post(end-1, end)[0].pid
-        self.query("DELETE FROM %s WHERE pid >= %d and pid <= %d" % (self.table, start_pid, end_pid))
+        self.execute("DELETE FROM %s WHERE pid >= %d and pid <= %d" % (self.table, start_pid, end_pid))
 
     def del_last(self, limit = 20):
         """
@@ -111,12 +112,14 @@ class Board(Model):
         """
         if not hasattr(post, 'pid'):
             return -1
-        exist_key, exist_val = post.dump_attr()
-        key_eq_value = self.gen_update(zip(exist_key, exist_val), ['pid']);
-        sql = "UPDATE %s SET %s where pid = %d" % (self.table, ','.join(key_eq_value), post.pid )
-        self.query(sql)
+        kv_pairs = post.dump_attr()
+        k_e_v = [str(k)+"="+self.toStr(v) for k,v in kv_pairs]
+        sql = "UPDATE %s SET %s where pid = %d" % (self.table, ','.join(k_e_v), post.pid )
+        self.execute(sql)
 
     def close(self):
         self.closedb()
 
+    def dump_attr(self):
+        return [(k, getattr(self,k)) for k in self.attr_list if hasattr(self,k)]
 
