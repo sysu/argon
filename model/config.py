@@ -1,7 +1,5 @@
 # -*- coding: utf-8 -*-
 
-import MySQLdb
-
 
 """
     将dbConfig写成类，可以读入配置文件,以后设置argo.conf配置文件, 对所有运行参数进行设置,格式如下：

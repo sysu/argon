@@ -1,34 +1,25 @@
-from config import *
+import dbapi
+from globaldb import global_conn
 
 class Model(object):
 
-    def __init__(self, cfg = dbConfig()):
-        self.host = cfg.host
-        self.port = cfg.port
-        self.user = cfg.user
-        self.passwd = cfg.passwd
-        self.dbname = cfg.dbname
-
-    def connect(self):
-        self.conn = MySQLdb.connect(host=self.host, port=self.port, user=self.user, passwd=self.passwd,db=self.dbname)
-        self.cursor = self.conn.cursor()
-        print 'DEBUG: Connect %s@%s:%d pwd=%s db=%s' % (self.user,self.host,self.port,self.passwd, self.dbname)
+    def __init__(self):
+        self.db = global_conn;
 
     def query(self, sql):
-        res = self.cursor.execute(sql)
-        self.conn.commit()
-        print 'DEBUG: sql %s %d' % (sql,res)
+        res = self.db.query(sql)
+        print 'DEBUG: sql %s %d' % (sql,len(res))
         return res
 
     def escape_string(self, rawsql):
-        safe_sql = MySQLdb.escape_string(rawsql)
+        safe_sql = self.db.escape_string(rawsql)
         return safe_sql
 
-    def fetchall(self):
-        return self.cursor.fetchall()
+    def execute(self, sql):
+        self.db.execute(sql)
 
-    def fetchone(self):
-        return self.cursor.fetchone()
+    def toStr(sql, s):
+        return "'"+str(s)+"'";
 
     def gen_update(self, kv, ignore_keys):
         """
@@ -39,7 +30,7 @@ class Model(object):
         key_value = [ str(key)+'='+str(val) for key,val in kv  if key not in ignore_keys]
         return key_value
 
-    def closedb(self):
-        if hasattr(self, 'conn'):
-            self.conn.close()
+    def close():
+        self.db.close()
+
 
