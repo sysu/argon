@@ -40,6 +40,7 @@ class WelcomeFrame(Frame):
     
     def initialize(self):
 
+        # todo : $online
         self.write(self.background % { "online" : 0 })
 
         p_username   =  self.hint[0]
@@ -55,8 +56,10 @@ class WelcomeFrame(Frame):
                 self.write(p_username)
                 username = input_name.read()
                 if username == 'new' :
+                    #todo : register
                     self.goto(mark['register'])
                 elif username == 'guest' :
+                    #todo : login as guest
                     session['username'] = 'guest'
                     self.goto(mark['menu'])
                 elif not check_user_exist(username) :
@@ -66,6 +69,7 @@ class WelcomeFrame(Frame):
                 password = input_passwd.read()
                 if check_user_password(username,password):
                     self.session['username'] = username
+                    #todo : login hook
                     self.goto(mark['menu'])
                 self.write(p_password_w)
 
@@ -112,6 +116,7 @@ class MenuFrame(Frame):
         self.anim = Animation(self,static['active'],start=3)
         self.anim.run_bg()
 
+        #todo : get pos info
         pos = self.session.get('pos')
         if not pos :
             pos = ''
@@ -127,7 +132,7 @@ class MenuFrame(Frame):
                 "content":static['menu_'+name],
                 "time":datetime.now().ctime(),
                 "online":0,
-                "online_friend":0,
+                "online_friend":0, #todo : online_friend
                 "username":self.session['username']})
 
         next_f,kwargs = ColMenu(self,config.menu[name]).read()
