@@ -139,14 +139,38 @@ class BoardListFrame(Frame):
             #todo : 修改版面属性（站务）
             pass
 
+        
+class PostMap:
+
+    def __init__(self,data):
+        self._data = data
+
+    def __getitem__(self,key):
+        data = self._data[key]
+        return (key,'N',data["author"],data["date"],data["title"])
+
+    def __len__(self):
+        return len(self._data)
+
 @mark('board')
 class BoardFrame(Frame):
 
-    help_info = static['board'][0]
-    li_format = static['board'][1]
+    help_info = static['board'][0] + '\r\n' + static['board'][1]
+    li_format = static['board'][2]
 
     def initialize(self,boardname=u"Test"):
-        self.data = [1,2,3,4]
+        self.data = PostMap([
+            {
+                "author":"Hello!",
+                "date":"Jul  1",
+                "title":"Test 1",
+                },
+            {
+                "author":"World!",
+                "date":"Jul  2",
+                "title":"Test 2",
+                },
+            ])
         self.session['username'] = 'Tester'
         self.write(str_top(self,'bm',boardname))
         self.write(self.help_info)
