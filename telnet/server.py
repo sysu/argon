@@ -13,3 +13,4 @@ if __name__ == '__main__' :
     # s = Server(mark[config.root])
     s = Server(mark['boardlist'])
     s.run()
+    pass

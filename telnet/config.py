@@ -1,7 +1,7 @@
 # -*- coding: utf-8 -*-
 from chaofeng import ascii
 
-root = 'welcome'
+root = 'board'
 
 menu = {
     "main":(
