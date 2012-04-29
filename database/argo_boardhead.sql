@@ -19,11 +19,9 @@ CREATE TABLE IF NOT EXISTS `argo_boardhead` (
     `sid` int(11) unsigned NOT NULL,
     `boardname` varchar(20) NOT NULL,
     `description` varchar(50) NOT NULL,
-    `BM` varchar(80),
+    `bm` varchar(80),
     `flag` int(11) unsigned default 0,
     `level` int(11) unsigned default 0,
-    `post_today` int(11) unsigned default 0,
-    `topic_today` int(11) unsigned default 0,
     `lastupdate` timestamp NOT NULL default CURRENT_TIMESTAMP on update CURRENT_TIMESTAMP,
 
     PRIMARY KEY (`bid`),
