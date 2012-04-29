@@ -1,4 +1,4 @@
-def check_username_exist(username):
+def check_user_exist(username):
     '''
     Check if user is exist.
     '''
