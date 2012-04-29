@@ -22,7 +22,6 @@ import MySQLdb
 
     目前暂时hard code
 
-    扔到lib吧
 """
 
 
