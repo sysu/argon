@@ -4,5 +4,5 @@ CREATE TABLE IF NOT EXISTS `argo_userattr` (
     `attr` blob,
 
      PRIMARY KEY (`userid`)
-) ENGINE=MyISAM  DEFAULT CHARSET=GB2312;
+) ENGINE=MyISAM  DEFAULT CHARSET=UTF8;
 

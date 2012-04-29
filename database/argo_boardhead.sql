@@ -28,5 +28,5 @@ CREATE TABLE IF NOT EXISTS `argo_boardhead` (
 
     PRIMARY KEY (`bid`),
     KEY `boardname` (`boardname`)
-) ENGINE=MyISAM  DEFAULT CHARSET=GB2312 ;
+) ENGINE=MyISAM  DEFAULT CHARSET=UTF8;
 

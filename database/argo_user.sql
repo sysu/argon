@@ -31,5 +31,5 @@ CREATE TABLE IF NOT EXISTS `argo_user` (
     PRIMARY KEY (`uid`),
     KEY `userid` (`userid`)
 
-) ENGINE=InnoDB  DEFAULT CHARSET=GB2312;
+) ENGINE=InnoDB  DEFAULT CHARSET=UTF8;
 

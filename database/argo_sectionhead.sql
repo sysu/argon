@@ -7,5 +7,5 @@ CREATE TABLE IF NOT EXISTS `argo_sectionhead` (
 
     PRIMARY KEY (`sid`),
     KEY `sectionname` (`sectionname`)
-) ENGINE=MyISAM  DEFAULT CHARSET=GB2312 ;
+) ENGINE=MyISAM  DEFAULT CHARSET=UTF8;
 

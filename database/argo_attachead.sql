@@ -13,5 +13,5 @@ CREATE TABLE IF NOT EXISTS `argo_attachead` (
 
     PRIMARY KEY (`aid`),
     KEY `attachidx` (`attachidx`)
-) ENGINE=MyISAM  DEFAULT CHARSET=GB2312 ;
+) ENGINE=MyISAM  DEFAULT CHARSET=UTF8;
 
