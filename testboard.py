@@ -13,31 +13,33 @@ b = Board('Test')
 # batch insert several posts into baord
 b.get_total()
 
+""" Test add post """
+
 p = Post()
 p.bid = b.bid
-for i in range(10):
+for i in range(6):
     p.owner = 'ggggggg' + str(i)
     p.content = 'ccccccc...';
     b.add_post(p)
 
-posts = b.get_last(20)
-for post in posts:
-    print post.__dict__
+"""  get last """
+posts = b.get_last(5)
+print "get_last: %d" % len(posts)
 
+""" update_post """
+for p in posts:
+    p.owner += ' new ccc'
+    p.content += ' defgh'
+    b.update_post(p)
+
+""" get total """
 print b.get_total()
 
-#p = Post()
-#p.bid = b.bid;
-#p.owner = 'gcc'
-#
-#for i in range(0, 10):
-#    p.content = str(i)
-#    b.add_post(p)
-#
-# select them out
 
-
-# check if insert is ok
+""" del post """
+print "Before Delete: %d" % b.get_total()
+b.del_last(5)
+print "After delete: %d" % b.get_total()
 
 
 # close it

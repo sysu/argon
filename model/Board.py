@@ -53,7 +53,7 @@ class Board(Model):
         if start > end: start = end
 
         pattr_list = Post().attr_list;
-        self.query("SELECT %s FROM %s order by pid limit %d,%d " % (','.join(pattr_list), self.table, start, end))
+        self.query("SELECT %s FROM %s order by pid limit %d,%d " % (','.join(pattr_list), self.table, start, end-start))
         rows = self.fetchall()
         res = [Post(row) for row in rows]
         return res
@@ -92,8 +92,8 @@ class Board(Model):
         """
         if end == -1: end = self.get_total()
         if start > end: start = end;
-        start_pid = self.get_post(start).pid
-        end_pid = self.get_post(end).pid
+        start_pid = start = self.get_post(start, start+1)[0].pid
+        end_pid = self.get_post(end-1, end)[0].pid
         self.query("DELETE FROM %s WHERE pid >= %d and pid <= %d" % (self.table, start_pid, end_pid))
 
     def del_last(self, limit = 20):
@@ -111,9 +111,9 @@ class Board(Model):
         """
         if not hasattr(post, 'pid'):
             return -1
-        exist_attr, exist_val = post.dump_attr()
-        key_eq_value = gen_update(exist_attrs, exist_val, ['pid']);
-        sql = "UPDATE %s SET %s where pid = %s" % (self.table, ','.join(key_eq_value), post.pid )
+        exist_key, exist_val = post.dump_attr()
+        key_eq_value = self.gen_update(zip(exist_key, exist_val), ['pid']);
+        sql = "UPDATE %s SET %s where pid = %d" % (self.table, ','.join(key_eq_value), post.pid )
         self.query(sql)
 
     def close(self):

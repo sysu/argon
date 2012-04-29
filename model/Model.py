@@ -17,7 +17,7 @@ class Model(object):
     def query(self, sql):
         res = self.cursor.execute(sql)
         self.conn.commit()
-        print "DEBUG: sql %s: %d" % (sql,res)
+        print 'DEBUG: sql %s %d' % (sql,res)
         return res
 
     def escape_string(self, rawsql):
@@ -30,14 +30,14 @@ class Model(object):
     def fetchone(self):
         return self.cursor.fetchone()
 
-    def gen_update(self, keys, values, ignore_keys):
+    def gen_update(self, kv, ignore_keys):
         """
             Generate update setting experssion for sql :
                 attr1=value1, attr2=value2, attr3=value3 ...
             TODO: escape string
         """
-        key_value = [ str(key)+'='+str(val) for key,val in post.dict.items() if key not in ignore_keys]
-        return ','.join(key_value)
+        key_value = [ str(key)+'='+str(val) for key,val in kv  if key not in ignore_keys]
+        return key_value
 
     def closedb(self):
         if hasattr(self, 'conn'):

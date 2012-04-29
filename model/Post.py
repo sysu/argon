@@ -32,7 +32,7 @@ class Post(object):
 
         if row != None:
             for i in range(0, len(row)):
-                setattr(self, self.attr_list[i], row[i])
+                if row[i] != None: setattr(self, self.attr_list[i], row[i])
         self.dict = {}
 
     def __getitem__(self, name):
