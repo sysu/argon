@@ -25,11 +25,11 @@ CREATE TABLE IF NOT EXISTS `argo_filehead_${boardname}` (
     `quote` text,
     `signature` text,
     
-    `agree` int(11) ungsigned NOT NULL default 0,
+    `agree` int(11) unsigned NOT NULL default 0,
     `disagree` int(11) unsigned NOT NULL default 0,
 
     PRIMARY KEY (`pid`),
     KEY (`filename`)
-) ENGINE=InnoDB  DEFAULT CHARSET=GB2312;
+) ENGINE=InnoDB  DEFAULT CHARSET=UTF8;
 
 

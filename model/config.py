@@ -22,7 +22,6 @@ import MySQLdb
 
     目前暂时hard code
 
-    扔到lib吧
 """
 
 
@@ -39,7 +38,7 @@ class dbConfig(baseConfig):
         """ Read config from argo.conf, section database
             Temporary hard code
         """
-        self.host= "localhost"
+        self.host= "172.18.42.164"
         self.port= 3306
         self.user= "bbs"
         self.passwd= "forargo"
