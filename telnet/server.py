@@ -10,7 +10,5 @@ import board
 import config
 
 if __name__ == '__main__' :
-    # s = Server(mark[config.root])
-    s = Server(mark['board'])
+    s = Server(mark[config.root])
     s.run()
-    pass

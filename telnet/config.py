@@ -1,20 +1,20 @@
 # -*- coding: utf-8 -*-
 from chaofeng import ascii
 
-root = 'board'
+root = 'welcome'
 
 menu = {
     "main":(
-        ( ("menu",{"name":"section"}),'e',(12,5)),
-        ( ("unf",{}),'d' ),
-        ( ("unf",{}),'f' ),
-        ( ("unf",{}),'r' ),
-        ( ("unf",{}),'m' ),
-        ( ("unf",{}),'t' ),
-        ( ("unf",{}),'i' ),
-        ( ("unf",{}),'s' ),
-        ( ("unf",{}),'c' ),
-        ( ("unf",{}),'p' ),
+        ( ("board",{}),'e',(12,5)),
+        ( ("undone",{}),'d' ),
+        ( ("undone",{}),'f' ),
+        ( ("undone",{}),'r' ),
+        ( ("undone",{}),'m' ),
+        ( ("undone",{}),'t' ),
+        ( ("undone",{}),'i' ),
+        ( ("undone",{}),'s' ),
+        ( ("undone",{}),'c' ),
+        ( ("undone",{}),'p' ),
         ( ("bye",{}),'g' )),
     "section":(
         ( ( ("boardlist",{"sid":0}),'0',(11,6)),

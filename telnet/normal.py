@@ -48,13 +48,13 @@ class WelcomeFrame(Frame):
         p_password   =  '\r\n'+self.hint[2]
         p_password_w =  '\r\n'+self.hint[3]+'\r\n'
 
-        input_name = TextInput(self)
-        input_passwd = Password(self)
+        input_name = self.sub(TextInput)
+        input_passwd = self.sub(Password)
 
         while Timeout(self.timeout, EndInterrupt):
             while True:
                 self.write(p_username)
-                username = input_name.read()
+                username = input_name.read_until()
                 if username == 'new' :
                     #todo : register
                     self.goto(mark['register'])
@@ -66,7 +66,7 @@ class WelcomeFrame(Frame):
                     self.write(p_username_w)
                     continue
                 self.write(p_password)
-                password = input_passwd.read()
+                password = input_passwd.read_until()
                 if check_user_password(username,password):
                     self.session['username'] = username
                     #todo : login hook
@@ -113,8 +113,7 @@ class MenuFrame(Frame):
         username="%(username)10s")
 
     def initialize(self,name="main"):
-        self.anim = Animation(self,static['active'],start=3)
-        self.anim.run_bg()
+        self.anim = self.sub(Animation,static['active'],start=3,run=True)
 
         #todo : get pos info
         pos = self.session.get('pos')
@@ -135,17 +134,18 @@ class MenuFrame(Frame):
                 "online_friend":0, #todo : online_friend
                 "username":self.session['username']})
 
-        next_f,kwargs = ColMenu(self,config.menu[name]).read()
+        next_f,kwargs = self.sub(ColMenu,config.menu[name]).read_until()
         self.goto(mark[next_f],**kwargs)
 
-@mark('unf')
+@mark('undone')
 class UnfinishFrame(Frame):
     '''
     未实现的frame。
     '''
     def initialize(self,*kwargs):
-        self.write("This part isn't finish.")
-        self.close()
+        self.write(ac.clear+"This part isn't finish.")
+        self.read()
+        self.goto(mark['menu'],name="main")
 
 @mark('bye')
 class ByeFrame(Frame):
