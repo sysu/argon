@@ -1,3 +1,5 @@
+# -*- coding: utf-8 -*-
+
 import dbapi
 from globaldb import global_conn
 
@@ -30,13 +32,13 @@ class Model(object):
 """
 Board:
     `bid` int(11) unsigned NOT NULL auto_increment,
-    `sid` int(11) unsigned NOT NULL,
+    `sid` int(11) unsigned NOT NULL, || section id
     `boardname` varchar(20) NOT NULL,
-    `description` varchar(50) NOT NULL,
-    `bm` varchar(80),
-    `flag` int(11) unsigned default 0,
-    `level` int(11) unsigned default 0,
-    `lastupdate` timestamp NOT NULL default CURRENT_TIMESTAMP on update CURRENT_TIMESTAMP,
+    `description` varchar(50) NOT NULL, || 版面描述
+    `bm` varchar(80), || 版主
+    `flag` int(11) unsigned default 0, || 版面属性, 见 const.h: BRD_* 常量
+    `level` int(11) unsigned default 0, || read/post 权限 见 permissions.h: PERM_*
+    `lastupdate` timestamp NOT NULL default CURRENT_TIMESTAMP on update CURRENT_TIMESTAMP, || 最后发贴时间
 
 """
 class Board(Model):
@@ -159,24 +161,24 @@ class Board(Model):
 Post:
     `pid` int(11) unsigned NOT NULL auto_increment,
     `bid` int(11) unsigned NOT NULL,
-    `owner` varchar(14),
-    `realowner` varchar(14),
+    `owner` varchar(14),  || author
+    `realowner` varchar(14), || In anonymous board, owner is hidden. Use realowner to identify the author.
     `title` varchar(60),
-    `flag` int(11)  unsigned default 0,
-    `tid` int(11) unsigned default 0,
-    `replyid` int(11) unsigned,
+    `flag` int(11)  unsigned default 0, || See consts.h:  FILE_*
+    `tid` int(11) unsigned default 0, || tid = the first post's pid of this topic, to identify the same topic
+    `replyid` int(11) unsigned, || The pid of the post this post replys
     `posttime` int(11) unsigned,
-    `attachidx` varchar(20),
+    `attachidx` varchar(20), || If has attach, this will be the index of the attach file.
 
-    `fromaddr` varchar(64),
-    `fromhost` varchar(40) NOT NULL,
+    `fromaddr` varchar(64), || ip
+    `fromhost` varchar(40) NOT NULL, || Host: Yat-sen Channel , Seems useless
 
     `content` text,
-    `quote` text,
-    `signature` text,
+    `quote` text, || The quote of the reply post
+    `signature` text, || Yes, signature.
 
-    `agree` int(11) unsigned NOT NULL default 0,
-    `disagree` int(11) unsigned NOT NULL default 0,
+    `agree` int(11) unsigned NOT NULL default 0, || How many users agree it.
+    `disagree` int(11) unsigned NOT NULL default 0, || How many users disagree it.
 
 """
 class Post(object):
