@@ -7,5 +7,3 @@ dbcfg = dbConfig()
 
 global_conn = dbapi.Connection(host=dbcfg.host+':'+str(dbcfg.port), user=dbcfg.user, password=dbcfg.passwd, database=dbcfg.dbname)
 
-print 'init global_conn'
-

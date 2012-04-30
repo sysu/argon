@@ -1,6 +1,7 @@
 import dbapi
 from globaldb import global_conn
 
+
 class Model(object):
 
     def __init__(self):
@@ -8,7 +9,7 @@ class Model(object):
 
     def query(self, sql):
         res = self.db.query(sql)
-        print 'DEBUG: sql %s %d' % (sql,len(res))
+        # print 'DEBUG: sql %s %d' % (sql,len(res))
         return res
 
     def escape_string(self, rawsql):
@@ -21,16 +22,179 @@ class Model(object):
     def toStr(sql, s):
         return "'"+str(s)+"'";
 
-    def gen_update(self, kv, ignore_keys):
-        """
-            Generate update setting experssion for sql :
-                attr1=value1, attr2=value2, attr3=value3 ...
-            TODO: escape string
-        """
-        key_value = [ str(key)+'='+str(val) for key,val in kv  if key not in ignore_keys]
-        return key_value
-
     def close():
         self.db.close()
+
+
+
+"""
+Board:
+    `bid` int(11) unsigned NOT NULL auto_increment,
+    `sid` int(11) unsigned NOT NULL,
+    `boardname` varchar(20) NOT NULL,
+    `description` varchar(50) NOT NULL,
+    `bm` varchar(80),
+    `flag` int(11) unsigned default 0,
+    `level` int(11) unsigned default 0,
+    `lastupdate` timestamp NOT NULL default CURRENT_TIMESTAMP on update CURRENT_TIMESTAMP,
+
+"""
+class Board(Model):
+
+    def __init__(self, boardname = 'Test'):
+        """
+            Init Board instance.
+        """
+        super(Board, self).__init__()
+        self.boardname = self.escape_string(boardname)
+        self.table = 'argo_filehead_' + self.boardname
+
+        if self.init_board_info() < 0:
+            print 'ERR: init board %s error' % boardname;
+
+    def __getitem__(self, name):
+        try:
+            return self.dict[name]
+        except KeyError:
+            return None
+
+    def __setitem__(self, name, value):
+        self.dict[name] = value
+
+    def init_board_info(self):
+        """
+            Init Board info.
+            According to database/argo_boardhead.sql
+        """
+        res = self.query("SELECT * FROM argo_boardhead where boardname='%s'" % (self.boardname))
+
+        if len(res) == 1:
+            self.dict = res[0]
+            return 0
+        else:
+            self.dict = {}
+            return -1
+
+    def get_post(self, start, end=-1):
+        """
+            Get post from start to end, according to { post time | pid }
+            end = -1 means the last one
+            Return  [Post1, Post2, ...]
+        """
+        if end == -1: end = self.get_total()
+        if start > end: start = end
+
+        rows = self.query("SELECT * FROM %s order by pid limit %d,%d " % (self.table, start, end-start))
+        res = [Post(row) for row in rows]
+        return res
+
+    def get_total(self):
+        """
+            Get total post numbers
+        """
+        res = self.query("SELECT count(*) as total FROM %s" % self.table)
+        row = res[0]
+        return row['total']
+
+    def get_last(self, limit = 20):
+        """
+            Get the last limit posts
+            Return [Post1, Post2, ...]
+        """
+        end = self.get_total()
+        start = end - limit
+        if start <= 0: start = 0
+        return self.get_post(start, end)
+
+
+    def add_post(self, post):
+        """
+            Add post.
+            TODO: escape string
+        """
+        kv_pairs = post.dump_attr()
+        exist_attr = [k for k,v in kv_pairs]
+        exist_val = [self.toStr(v) for k,v in kv_pairs]
+        sql = "INSERT INTO %s(%s) values(%s)" % (self.table, ','.join(exist_attr), ','.join(exist_val))
+        self.execute(sql)
+
+    def del_post(self, start, end = -1):
+        """
+            Del post from start to end, according to post time order increatment
+        """
+        if end == -1: end = self.get_total()
+        if start > end: start = end;
+        start_pid = start = self.get_post(start, start+1)[0]['pid']
+        end_pid = self.get_post(end-1, end)[0]['pid']
+        self.execute("DELETE FROM %s WHERE pid >= %d and pid <= %d" % (self.table, start_pid, end_pid))
+
+    def del_last(self, limit = 20):
+        """
+            Del the last limit posts
+        """
+        end = self.get_total()
+        start = end - limit
+        if start <= 0: start = 0
+        self.del_post(start, end)
+
+    def update_post(self, post):
+        """
+            Update post information.
+        """
+        if not hasattr(post, 'pid'):
+            return -1
+        kv_pairs = post.dump_attr()
+        k_e_v = [str(k)+"="+self.toStr(v) for k,v in kv_pairs]
+        sql = "UPDATE %s SET %s where pid = %d" % (self.table, ','.join(k_e_v), post.pid )
+        self.execute(sql)
+
+    def close(self):
+        self.closedb()
+
+    def dump_attr(self):
+        return self.dict.items()
+
+
+"""
+Post:
+    `pid` int(11) unsigned NOT NULL auto_increment,
+    `bid` int(11) unsigned NOT NULL,
+    `owner` varchar(14),
+    `realowner` varchar(14),
+    `title` varchar(60),
+    `flag` int(11)  unsigned default 0,
+    `tid` int(11) unsigned default 0,
+    `replyid` int(11) unsigned,
+    `posttime` int(11) unsigned,
+    `attachidx` varchar(20),
+
+    `fromaddr` varchar(64),
+    `fromhost` varchar(40) NOT NULL,
+
+    `content` text,
+    `quote` text,
+    `signature` text,
+
+    `agree` int(11) unsigned NOT NULL default 0,
+    `disagree` int(11) unsigned NOT NULL default 0,
+
+"""
+class Post(object):
+
+    def __init__(self, dict = {}):
+       self.dict = dict;
+
+    def __getitem__(self, name):
+        try:
+            return self.dict[name]
+        except KeyError:
+            return None
+
+    def __setitem__(self, name, value):
+        self.dict[name] = value
+
+    def dump_attr(self):
+        return self.dict.items()
+
 
 

@@ -1,7 +1,6 @@
 #!/usr/bin/env python
+from model.Model import Model,Board,Post
 
-from model import Board
-from model import Post
 import sys
 
 """
@@ -20,11 +19,12 @@ class TestSuit(object):
     """ Test add post """
     def add_post(self):
         p = Post()
-        p.bid = b.bid
+        p['bid'] = b['bid']
         for i in range(5):
-            p.owner = 'ggggggg' + str(i)
-            p.content = 'ccccccc...';
+            p['owner'] = 'ggggggg' + str(i)
+            p['content'] = 'ccccccc...';
             b.add_post(p)
+            print "adding %d" % i
 
     """ del last """
     def del_last(self):
@@ -34,9 +34,10 @@ class TestSuit(object):
     def update_post(self):
         posts = b.get_last(10)
         for p in posts:
-            p.owner = ' new ccc'
-            p.content += ' more more' + str(p.pid)
+            p['owner'] = ' new ccc'
+            p['content'] += ' more more' + str(p['pid'])
             b.update_post(p)
+            print "updating ", p
 
     """ del post """
     def del_last(self):
