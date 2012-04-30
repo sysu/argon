@@ -21,24 +21,59 @@ class Model(object):
     def execute(self, sql):
         self.db.execute(sql)
 
-    def toStr(sql, s):
+    def escape_attr(self, dict):
+        res = {}
+        for k,v in dict.items():
+            if v != None:
+                res[k] = v
+        return res
+
+    def toStr(self, s):
         return "'"+str(s)+"'";
 
     def close():
         self.db.close()
 
+"""
+    `sid` int(11) unsigned NOT NULL auto_increment,
+    `sectionname` varchar(20) NOT NULL, || ie. 校园社团
+    `description` varchar(50) NOT NULL, || ie. [休闲][娱乐]
 
+    NOTE:
+        由于section可以当作常量，系统init时load到全局中
+"""
+
+class Section(Model):
+
+    def __init__(self, dict = {}):
+        self.db = global_conn;
+        self.dict = dict
+
+    def __getitem__(self, name):
+        try:
+            return self.dict[name]
+        except KeyError:
+            return None
+
+    def __setitem__(self, name, value):
+        self.dict[name] = value
+
+    def get_allboards(self):
+        if not self.dict.has_key('sid'): return []
+
+        sql = "SELECT boardname FROM argo_boardhead WHERE sid = %d" % self.dict['sid'];
+        res = self.db.query(sql)
+        return [Board(b['boardname']) for b in res]
 
 """
 Board:
     `bid` int(11) unsigned NOT NULL auto_increment,
-    `sid` int(11) unsigned NOT NULL, || section id
+    `sid` int(11) unsigned NOT NULL, || 所属区id
     `boardname` varchar(20) NOT NULL,
     `description` varchar(50) NOT NULL, || 版面描述
     `bm` varchar(80), || 版主
     `flag` int(11) unsigned default 0, || 版面属性, 见 const.h: BRD_* 常量
     `level` int(11) unsigned default 0, || read/post 权限 见 permissions.h: PERM_*
-    `lastupdate` timestamp NOT NULL default CURRENT_TIMESTAMP on update CURRENT_TIMESTAMP, || 最后发贴时间
 
 """
 class Board(Model):
@@ -71,7 +106,7 @@ class Board(Model):
         res = self.query("SELECT * FROM argo_boardhead where boardname='%s'" % (self.boardname))
 
         if len(res) == 1:
-            self.dict = res[0]
+            self.dict = self.escape_attr(res[0])
             return 0
         else:
             self.dict = {}
@@ -90,6 +125,26 @@ class Board(Model):
         res = [Post(row) for row in rows]
         return res
 
+    def get_onepost(self, pos):
+        """
+            Get single Post
+        """
+        res = self.get_post(pos, pos+1)
+        return res[0]
+
+    def get_topic(self, start, end = -1):
+        """
+            Get topic(tid=0) from start to end-1 , [start, end)
+            Order by pid
+        """
+        if start < 0: start = 0;
+        if end <= start: end = start+1;
+        sql = "SELECT * FROM %s WHERE tid = 0 ORDER BY pid LIMIT %d,%d" % (self.table, start, end-start)
+        rows = self.query(sql)
+        res = [Post(row) for row in rows]
+        return res
+
+
     def get_total(self):
         """
             Get total post numbers
@@ -97,6 +152,14 @@ class Board(Model):
         res = self.query("SELECT count(*) as total FROM %s" % self.table)
         row = res[0]
         return row['total']
+
+    def get_topic_total(self):
+        """
+            Return how many Post.tid = 0
+        """
+        sql = "SELECT count(*) as total FROM %s WHERE tid = 0" % (self.table)
+        res = self.query(sql)[0]
+        return res['total']
 
     def get_last(self, limit = 20):
         """
@@ -108,6 +171,14 @@ class Board(Model):
         if start <= 0: start = 0
         return self.get_post(start, end)
 
+    def get_topic_last(self, limit = 20):
+        """
+            Get last limit topics' first posts
+        """
+        end = self.get_topic_total()
+        start = end - limit;
+        if start <= 0: start = 0
+        return self.get_topic(start, end)
 
     def add_post(self, post):
         """
@@ -126,8 +197,8 @@ class Board(Model):
         """
         if end == -1: end = self.get_total()
         if start > end: start = end;
-        start_pid = start = self.get_post(start, start+1)[0]['pid']
-        end_pid = self.get_post(end-1, end)[0]['pid']
+        start_pid = start = self.get_onepost(start)['pid']
+        end_pid = self.get_onepost(end-1)['pid']
         self.execute("DELETE FROM %s WHERE pid >= %d and pid <= %d" % (self.table, start_pid, end_pid))
 
     def del_last(self, limit = 20):
@@ -143,11 +214,22 @@ class Board(Model):
         """
             Update post information.
         """
-        if not hasattr(post, 'pid'):
+        if post['pid'] == None:
             return -1
         kv_pairs = post.dump_attr()
         k_e_v = [str(k)+"="+self.toStr(v) for k,v in kv_pairs]
-        sql = "UPDATE %s SET %s where pid = %d" % (self.table, ','.join(k_e_v), post.pid )
+        sql = "UPDATE %s SET %s where pid = %s" % (self.table, ','.join(k_e_v), post['pid'] )
+        self.execute(sql)
+
+    def update_board(self):
+        """
+            Update board
+        """
+        if self['bid'] == None:
+            return -1
+        kv_pairs = self.dump_attr()
+        k_e_v = [str(k)+"="+self.toStr(v) for k,v in kv_pairs]
+        sql = "UPDATE argo_boardhead SET %s where bid = %s" % (','.join(k_e_v), self['bid'] )
         self.execute(sql)
 
     def close(self):
@@ -161,30 +243,31 @@ class Board(Model):
 Post:
     `pid` int(11) unsigned NOT NULL auto_increment,
     `bid` int(11) unsigned NOT NULL,
-    `owner` varchar(14),  || author
-    `realowner` varchar(14), || In anonymous board, owner is hidden. Use realowner to identify the author.
+    `owner` varchar(14),  || 发贴人
+    `realowner` varchar(14), || 在匿名版，owner会被hidden起来，用realowner标示真正作者
     `title` varchar(60),
     `flag` int(11)  unsigned default 0, || See consts.h:  FILE_*
-    `tid` int(11) unsigned default 0, || tid = the first post's pid of this topic, to identify the same topic
-    `replyid` int(11) unsigned, || The pid of the post this post replys
-    `posttime` int(11) unsigned,
-    `attachidx` varchar(20), || If has attach, this will be the index of the attach file.
+    `tid` int(11) unsigned default 0, || 主题id，tid=本主题第一贴的pid，0表示为主题第一贴
+    `replyid` int(11) unsigned, || 本贴回复的帖子id
+    `posttime` int(11) unsigned, || 发贴时间, 用unix时间戳
+    `attachidx` varchar(20), || 附件的index，附件不存数据库,直接存文件系统
 
     `fromaddr` varchar(64), || ip
-    `fromhost` varchar(40) NOT NULL, || Host: Yat-sen Channel , Seems useless
+    `fromhost` varchar(40) NOT NULL, || Host: Yat-sen Channel , 其实可以考虑去掉
 
     `content` text,
-    `quote` text, || The quote of the reply post
-    `signature` text, || Yes, signature.
+    `quote` text, || 回复帖子引用 [在 xxx 的大作中提到：
+    `signature` text, || 签名档
 
-    `agree` int(11) unsigned NOT NULL default 0, || How many users agree it.
-    `disagree` int(11) unsigned NOT NULL default 0, || How many users disagree it.
+    `agree` int(11) unsigned NOT NULL default 0, || 赞
+    `disagree` int(11) unsigned NOT NULL default 0, || 踩 用于帖子分数统计
+    `credit` int(11) NOT NULL deafult 0 || 分数,根据agree 和 disagree 计算,好贴自动浮起
 
 """
-class Post(object):
+class Post(Model):
 
     def __init__(self, dict = {}):
-       self.dict = dict;
+       self.dict = self.escape_attr(dict)
 
     def __getitem__(self, name):
         try:

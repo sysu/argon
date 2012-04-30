@@ -20,6 +20,7 @@ class TestSuit(object):
     def add_post(self):
         p = Post()
         p['bid'] = b['bid']
+        p['tid'] = 272
         for i in range(5):
             p['owner'] = 'ggggggg' + str(i)
             p['content'] = 'ccccccc...';
@@ -51,9 +52,36 @@ class TestSuit(object):
         for i in range(10):
             barr.append(Board('Test'))
 
+    def get_topic_total(self):
+        print "Total topics: %d"  %  b.get_topic_total()
+
+    def update_board(self):
+        b['bm'] = 'gggcc'
+        b.update_board()
+        c  = Board(b['boardname'])
+        print c['bm']
+
+    def get_topic(self):
+        topics = b.get_topic(180, 183)
+        for t in topics:
+            print t['pid']
+
+    def get_topic_last(self):
+        topics = b.get_last(5)
+        for t in topics:
+            print t['pid']
+
     def usage(self):
         print """
-        usage > python testboard.py { get_total | add_post | del_last | update_post | board_db}
+        usage > python testboard.py
+            get_total
+            add_post
+            del_last
+            update_post
+            board_db
+            get_topic_total
+            update_board
+            gettopic
         """
 
 
