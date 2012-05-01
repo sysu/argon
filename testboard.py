@@ -57,7 +57,7 @@ class TestSuit(object):
 
     def update_board(self):
         b['bm'] = 'gggcc'
-        b.update_board()
+        b.update_board(['bm'])
         c  = Board(b['boardname'])
         print c['bm']
 

@@ -221,13 +221,17 @@ class Board(Model):
         sql = "UPDATE %s SET %s where pid = %s" % (self.table, ','.join(k_e_v), post['pid'] )
         self.execute(sql)
 
-    def update_board(self):
+    def update_board(self, upattr = []):
         """
             Update board
+            If upattr is not empty, WILL only update atttributes in upattr.
         """
         if self['bid'] == None:
             return -1
-        kv_pairs = self.dump_attr()
+        if len( upattr ):
+            kv_pairs = filter(lambda(k,v): k in upattr, self.dump_attr())
+        else:
+            kv_pairs = self.dump_attr()
         k_e_v = [str(k)+"="+self.toStr(v) for k,v in kv_pairs]
         sql = "UPDATE argo_boardhead SET %s where bid = %s" % (','.join(k_e_v), self['bid'] )
         self.execute(sql)
@@ -281,5 +285,151 @@ class Post(Model):
     def dump_attr(self):
         return self.dict.items()
 
+"""
+    `uid` int(11) unsigned NOT NULL auto_increment,
+    `userid` varchar(20) NOT NULL,
+    `passwd` varchar(64), || md5密码 或者 用scrypt?
+    `nickname` varchar(20),
+    `email` varchar(80), || 注册时的email地址
+    `userlevel` int(11) unsigned NOT NULL default 0,  || 用户权限，PERM_*
+    `netid`  varchar(20), || 注册时的netid，新用户用netid验证
+    `iconidx` varchar(20), || 头像的index，图片，文件等等都用index识别，不存数据库
+
+    `firstlogin` datetime NOT NULL default '0000-00-00 00:00:00', || 注册时间
+    `firsthost` varchar(20),  || 注册地点 ,ip
+    `lastlogin` datetime NOT NULL default '0000-00-00 00:00:00', || 最后登录时间
+    `lasthost` varchar(20), || 最后登录地点
+    `lastlogout` datetime NOT NULL default '0000-00-00 00:00:00', || 最后登出时间
+    `numlogins` int(11) unsigned default 1, || 登录次数
+    `numposts` int(11) unsigned default 0, || 发贴数
+    `credit` int(11) unsigned default 0, || 分数，用于标示该用户信誉（提倡发精华贴）
+    `lastpost` datetime NOT NULL default '0000-00-00 00:00:00', || 最后发贴时间
+    `stay` int(11) unsigned default 0, || 在线时间
+    `life`  int(11) default 666, || 生命力， 每天-1, 0后自动清除
+    `lastupdate` timestamp NOT NULL default CURRENT_TIMESTAMP on update CURRENT_TIMESTAMP, || 这里的属性的最后更新时间
+
+    `birthday` date NOT NULL default '1990-01-01', || 生日
+    `address` varchar(50), || 通信地址
+    `usertitle` varchar(20) NOT NULL default 'user', || 称号，ie。版主:bm, 管理员..
+    `gender`  int(11) unsigned default 1, || 性别 0: M   1: F
+    `realname` varchar(20), || 真实姓名
+
+"""
+
+class User(Model):
+
+    def __init__(self, userid):
+        if userid == "": return None
+
+        super(User, self).__init__()
+        self.userid = self.escape_string(userid)
+        self.table = 'argo_user';
+        if self.init_user_info() < 0:
+            return -1
+
+    def init_user_info(self):
+
+        sql = "SELECT * FROM %s WHERE userid = %s" % (self.table, self.userid)
+        res = self.query(sql)
+        """ select static attrs """
+        if len(res) == 1:
+            self.dict = self.escape_attr(res[0]) # escape None value
+            return 0
+        else:
+            self.dict = {}
+            return -1
+        """ select dynamic attrs """
+        sql = "SELECT attr FROM %s WHERE userid = %s" (self.table, self.userid)
+        res = self.query(sql)
+        if len(res):
+            self.attr = cPickle.load(res['attr'])  # unpack from binary stream
+        else:
+            self.attr = {}
+
+    def __getitem__(self, name):
+        try:
+            return self.dict[name]
+        except KeyError:
+            return None
+
+    def __setitem__(self, name, value):
+        self.dict[name] = value
+
+    def dump_attr(self):
+        return self.dict.items()
+
+    def has_perm(self, perm):
+        try:
+            if (self['userlevel'] & perm) > 0: return True
+            else: return False
+        except KeyError:
+            return False
+
+    def update_user(self, upattr = []):
+        """
+            The same as update_board
+            如果upattr不是空，则只更新upattr中的属性
+        """
+        pass
+
+    def update_attr(self):
+        """
+            Update dynamic attr in argo_userattr
+        """
+        pass
+
+    #  版面相关
+
+    def has_bm_perm(self, board):
+        """
+            Check if self.userid in board.bm  'gcc:cypress:LTS'
+        """
+        pass
+
+    def has_post_perm(self, board):
+        """
+            Todo: phpbbs/common/class-user.php : has_post_perm
+        """
+        pass
+
+    def has_read_perm(self, board):
+        """
+            Todo: phpbbs/common/class-user.php : has_post_perm
+        """
+        pass
+
+    # 用户操作相关
+
+    def login(self):
+        pass
+
+    def logout(self):
+        pass
+
+    def send_post(self, board, post):
+        """
+            if self.has_post_perm(board):
+                board.add_post(post)
+                self.numposts++;
+                self.update_user(['numposts'])
+        """
+        pass
+
+    def del_post(self, board, post):
+        """
+            先判权，如果是bm或者帖子作者则可以删
+        """
+        pass
+
+    def send_mail(self, destuser, mailobj):
+        """
+            destuser.recv_mail(self.userid, mailobj)
+        """
+        pass
+
+    def recv_mail(self, fromuserid, mailobj):
+        """
+        """
+        pass
 
 
