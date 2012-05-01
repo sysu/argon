@@ -87,7 +87,7 @@ class Board(Model):
         self.table = 'argo_filehead_' + self.boardname
 
         if self.init_board_info() < 0:
-            print 'ERR: init board %s error' % boardname;
+            return None
 
     def __getitem__(self, name):
         try:
@@ -325,11 +325,11 @@ class User(Model):
         self.userid = self.escape_string(userid)
         self.table = 'argo_user';
         if self.init_user_info() < 0:
-            return -1
+            return None
 
     def init_user_info(self):
 
-        sql = "SELECT * FROM %s WHERE userid = %s" % (self.table, self.userid)
+        sql = "SELECT * FROM %s WHERE userid = '%s'" % (self.table, self.userid)
         res = self.query(sql)
         """ select static attrs """
         if len(res) == 1:
@@ -338,8 +338,9 @@ class User(Model):
         else:
             self.dict = {}
             return -1
+
         """ select dynamic attrs """
-        sql = "SELECT attr FROM %s WHERE userid = %s" (self.table, self.userid)
+        sql = "SELECT attr FROM %s WHERE userid = '%s'" (self.table, self.userid)
         res = self.query(sql)
         if len(res):
             self.attr = cPickle.load(res['attr'])  # unpack from binary stream
@@ -400,7 +401,7 @@ class User(Model):
 
     # 用户操作相关
 
-    def login(self):
+    def login(self, passwd):
         pass
 
     def logout(self):
@@ -421,15 +422,66 @@ class User(Model):
         """
         pass
 
-    def send_mail(self, destuser, mailobj):
+    def get_mail_table(self):
+        """
+            暂时放一个表，以后再根据以下规则切表
+            argo_mailhead_${self.uid % 100}
+        """
+        return 'argo_mailhead'
+
+    def check_mail(self):
+        """
+            查是否有未读邮件
+        """
+        table = self.get_mail_table()
+        sql = "SELECT count(*) as total FROM %s WHERE touserid = '%s' and readmark = 0" % (table, self.userid)
+        res = self.query(sql)[0]
+        return res['total']
+
+
+    def send_mail(self, touserid, mailobj):
         """
             destuser.recv_mail(self.userid, mailobj)
         """
+        table = self.get_mail_table()
+        # more to code
         pass
 
-    def recv_mail(self, fromuserid, mailobj):
-        """
-        """
-        pass
+"""
+
+    `mid` int(11) unsigned NOT NULL auto_increment, || mailid ,uinque
+    `fromuserid` varchar(14) NOT NULL, || 发信人
+    `touserid` varchar(14) NOT NULL, || 收信人
+    `attachidx` varchar(20), || 站内信可以带附件！！
+
+    `sendtime` int(11) unsigned NOT NULL default 0, || 发信时间
+    `fromaddr` varchar(64), || 发信的ip（如果没设置隐藏ip则显示之）
+
+    `readmark` int(11) unsigned NOT NULL default 0, ||  0未读，1已读, 2已回复
+    `content` text,
+    `quote` text,
+    `signature` text,
+
+     mail和帖子一样，需要切表，暂时实现放一个表中
+"""
+
+class Mail(Model):
+    """
+        Mail, the same as Post
+    """
+    def __init__(self, dict = {}):
+       self.dict = self.escape_attr(dict)
+
+    def __getitem__(self, name):
+        try:
+            return self.dict[name]
+        except KeyError:
+            return None
+
+    def __setitem__(self, name, value):
+        self.dict[name] = value
+
+    def dump_attr(self):
+        return self.dict.items()
 
 
