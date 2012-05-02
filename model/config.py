@@ -38,10 +38,9 @@ class dbConfig(baseConfig):
         """ Read config from argo.conf, section database
             Temporary hard code
         """
-        self.host= "172.18.42.164"
+        # self.host= "172.18.42.164"
+        self.host = "localhost"
         self.port= 3306
         self.user= "bbs"
         self.passwd= "forargo"
         self.dbname = "argo"
-
-

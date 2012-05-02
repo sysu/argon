@@ -3,7 +3,6 @@
 import dbapi
 from globaldb import global_conn
 
-
 class Model(object):
 
     def __init__(self):
@@ -28,11 +27,20 @@ class Model(object):
                 res[k] = v
         return res
 
+    def insert_dict(self,table,kv_pairs):
+        exist_attr = kv_pairs.keys()
+        exist_val = kv_pairs.values()
+        sql = "INSERT INTO %s(%s) values(%s)" % (table, ','.join(exist_attr), ','.join(exist_val))
+        self.execute(sql)
+
     def toStr(self, s):
         return "'"+str(s)+"'";
 
     def close():
         self.db.close()
+    
+    def dump_attr(self):
+        pass
 
 """
     `sid` int(11) unsigned NOT NULL auto_increment,
@@ -74,6 +82,12 @@ Board:
     `bm` varchar(80), || 版主
     `flag` int(11) unsigned default 0, || 版面属性, 见 const.h: BRD_* 常量
     `level` int(11) unsigned default 0, || read/post 权限 见 permissions.h: PERM_*
+
+with lib :
+     set_up_new_board
+
+#    It seems that count(*) in InnoDB is slow.
+#    http://www.cloudspace.com/blog/2009/08/06/fast-mysql-innodb-count-really-fast/
 
 """
 class Board(Model):
@@ -144,7 +158,6 @@ class Board(Model):
         res = [Post(row) for row in rows]
         return res
 
-
     def get_total(self):
         """
             Get total post numbers
@@ -186,8 +199,8 @@ class Board(Model):
             TODO: escape string
         """
         kv_pairs = post.dump_attr()
-        exist_attr = [k for k,v in kv_pairs]
-        exist_val = [self.toStr(v) for k,v in kv_pairs]
+        exist_attr = kv_pairs.keys()
+        exist_val = kv_pairs.values()
         sql = "INSERT INTO %s(%s) values(%s)" % (self.table, ','.join(exist_attr), ','.join(exist_val))
         self.execute(sql)
 
@@ -241,7 +254,6 @@ class Board(Model):
 
     def dump_attr(self):
         return self.dict.items()
-
 
 """
 Post:
@@ -318,12 +330,13 @@ class Post(Model):
 
 class User(Model):
 
+    table = 'argo_user'
+
     def __init__(self, userid):
         if userid == "": return None
 
         super(User, self).__init__()
         self.userid = self.escape_string(userid)
-        self.table = 'argo_user';
         if self.init_user_info() < 0:
             return None
 
@@ -401,9 +414,12 @@ class User(Model):
 
     # 用户操作相关
 
-    def login(self, passwd):
-        pass
-
+    @staticmethod
+    def login(userid, passwd):
+        res = "SELECT * FROM %s WHERE userid = '%s' and passwd = '%s' " % (self.table, userid, passwd)
+        if len(res) == 1 : return User(userid)
+        else : return None
+        
     def logout(self):
         pass
 

@@ -9,6 +9,7 @@ from lib import check_user_exist,check_user_password
 from datetime import datetime
 import config
 import chaofeng.ascii as ac
+from libtelnet import str_top,str_bottom,login_telnet
 
 '''
 实现欢迎界面，验证登陆和菜单。
@@ -68,7 +69,7 @@ class WelcomeFrame(Frame):
                 self.write(p_password)
                 password = input_passwd.read_until()
                 if check_user_password(username,password):
-                    self.session['username'] = username
+                    login_telnet(self,username)
                     #todo : login hook
                     self.goto(mark['menu'])
                 self.write(p_password_w)
@@ -100,40 +101,12 @@ class MenuFrame(Frame):
     @para name : 表示这个菜单的名字，将会加载与名字相关的内容。应该为
                  英文
     '''
-    info_format = "%s区 [%s]"
-    
-    background = static['menu'].safe_substitute(
-        pos="%(pos)8s",
-        pos_info="%(pos_info)10s",
-        board="%(board)s",
-        content="%(content)s",
-        time="%(time)24s",
-        online="%(online)4d",
-        online_friend="%(online_friend)4d",
-        username="%(username)10s")
 
     def initialize(self,name="main"):
         self.anim = self.sub(Animation,static['active'],start=3,run=True)
-
-        #todo : get pos info
-        pos = self.session.get('pos')
-        if not pos :
-            pos = ''
-            pos_info = ''
-        else:
-            pos_info = self.info_format % (self.session['pos_num'],
-                                           self.session['boardname'])
-            
-        self.write(self.background % {
-                "pos": pos,
-                "pos_info": pos_info,
-                "board":self.anim.fetch()[0],
-                "content":static['menu_'+name],
-                "time":datetime.now().ctime(),
-                "online":0,
-                "online_friend":0, #todo : online_friend
-                "username":self.session['username']})
-
+        self.write(ac.clear+str_top(self)+ac.move2(11,0))
+        self.write(static['menu_'+name])
+        self.write(ac.move2(24,0)+str_bottom(self))
         next_f,kwargs = self.sub(ColMenu,config.menu[name]).read_until()
         self.goto(mark[next_f],**kwargs)
 

@@ -2,7 +2,7 @@ DROP TABLE IF EXISTS `argo_user`;
 CREATE TABLE IF NOT EXISTS `argo_user` (
     `uid` int(11) unsigned NOT NULL auto_increment,
     `userid` varchar(20) NOT NULL,
-    `passwd` varchar(20),
+    `passwd` varchar(32),
     `nickname` varchar(20),
     `email` varchar(80),
     `userlevel` int(11) unsigned NOT NULL default 0,

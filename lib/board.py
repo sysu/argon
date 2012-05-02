@@ -1,5 +1,41 @@
 # -*- coding: utf-8 -*-
 
+import sys
+sys.path.append('../model/')
+
+from globaldb import global_conn as db
+from hashlib import md5
+
+def insert_dict(table,kv_pairs):
+    exist_attr = kv_pairs.keys()
+    exist_val = map(lambda x : "'%s'" % x,kv_pairs.values())
+    sql = "INSERT INTO %s(%s) values(%s)" % (table, ','.join(exist_attr), ','.join(exist_val))
+    db.execute(sql)
+
+with open('../database/template/argo_filehead.sql') as f :
+    new_board_text = f.read()
+
+def set_up_new_board(boardname,keys):
+    keys['boardname'] = boardname
+    db.execute(new_board_text % { "boardname":boardname})
+    insert_dict('argo_boardhead',keys)
+
+def register(username,passwd,keys):
+    keys['userid'] = username
+    m = md5()
+    m.update(passwd)
+    keys['passwd'] = m.hexdigest()
+    insert_dict('argo_user',keys)
+
+def check_login(username,passwd):
+    m = md5()
+    m.update(passwd)
+    passwd = m.hexdigest()
+    sql = "SELECT * FROM argo_user WHERE userid = '%s' and passwd = '%s' " % ( username, passwd)
+    print sql
+    res = db.query(sql)
+    print repr(res)
+
 def get_boardlist_q(sid):
     return [
         {
