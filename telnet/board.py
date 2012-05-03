@@ -25,6 +25,22 @@ class PostMap:
     def __len__(self):
         return len(self.tb)
 
+@mark('boardlist')
+class SectionFrame(Frame):
+    '''
+    实现讨论区列表。
+
+    @para sid : 分类编号为sid的讨论区
+    @para new : 有新文章发布的讨论区
+    '''
+    help_info = static['boardlist'][0] + '\r\n'
+    thead    = (static['boardlist'][1], static['boardlist'][2])
+    p_format = (static['boardlist'][3], static['boardlist'][4])
+    m_map    = (AllDataMap,NewDataMap)
+
+    def initialize(self,sid=0):
+        self.body = Section(sid)
+
 @mark('board')
 class BoardFrame(Frame):
 

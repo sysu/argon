@@ -14,7 +14,6 @@ str_top = lambda f,l=u'',m=u'逸仙时空 Yat-Sen Channel' : _u(_top_str % ( _s(
 
 str_bottom = lambda f : _u(_bot_str % (datetime.now().ctime(),0,5,_s(f.session['username'])))
 
-
 class TBoard:
     '''
     对Board的简单包装，使其更适于telnet使用。
@@ -48,3 +47,4 @@ def login_telnet(frame,username):
     frame.session['_user'] = user
     frame.session['username'] = username
     return user
+

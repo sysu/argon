@@ -8,6 +8,15 @@ class Model(object):
     def __init__(self):
         self.db = global_conn;
 
+    def __getitem__(self, name):
+        try:
+            return self.dict[name]
+        except KeyError:
+            return None
+
+    def __setitem__(self, name, value):
+        self.dict[name] = value
+
     def query(self, sql):
         res = self.db.query(sql)
         # print 'DEBUG: sql %s %d' % (sql,len(res))
@@ -29,11 +38,11 @@ class Model(object):
 
     def insert_dict(self,table,kv_pairs):
         exist_attr = kv_pairs.keys()
-        exist_val = kv_pairs.values()
+        exist_val = map(lambda x : self.to_str(x),kv_pairs.values())
         sql = "INSERT INTO %s(%s) values(%s)" % (table, ','.join(exist_attr), ','.join(exist_val))
         self.execute(sql)
 
-    def toStr(self, s):
+    def to_str(self, s):
         return "'"+str(s)+"'";
 
     def close():
@@ -53,10 +62,12 @@ class Model(object):
 
 class Section(Model):
 
-    def __init__(self, dict = {}):
+    def __init__(self, sectionname,dict = {}):
         self.db = global_conn;
+        self.sectionname = sectionname
         self.dict = dict
-
+        self.init_section_info()
+        
     def __getitem__(self, name):
         try:
             return self.dict[name]
@@ -66,12 +77,25 @@ class Section(Model):
     def __setitem__(self, name, value):
         self.dict[name] = value
 
+    def init_section_info(self):
+        res = self.query("SELECT * FROM argo_sectionhead where sectionname='%s'" % self.sectionname)
+
+        if len(res) == 1:
+            self.dict = self.escape_attr(res[0])
+            return 0
+        else:
+            self.dict = {}
+            return -1
+
     def get_allboards(self):
         if not self.dict.has_key('sid'): return []
 
         sql = "SELECT boardname FROM argo_boardhead WHERE sid = %d" % self.dict['sid'];
         res = self.db.query(sql)
         return [Board(b['boardname']) for b in res]
+
+    def dump_attr(self):
+        return self.dict.items()
 
 """
 Board:
@@ -230,7 +254,7 @@ class Board(Model):
         if post['pid'] == None:
             return -1
         kv_pairs = post.dump_attr()
-        k_e_v = [str(k)+"="+self.toStr(v) for k,v in kv_pairs]
+        k_e_v = [str(k)+"="+self.to_str(v) for k,v in kv_pairs]
         sql = "UPDATE %s SET %s where pid = %s" % (self.table, ','.join(k_e_v), post['pid'] )
         self.execute(sql)
 
@@ -245,7 +269,7 @@ class Board(Model):
             kv_pairs = filter(lambda(k,v): k in upattr, self.dump_attr())
         else:
             kv_pairs = self.dump_attr()
-        k_e_v = [str(k)+"="+self.toStr(v) for k,v in kv_pairs]
+        k_e_v = [str(k)+"="+self.to_str(v) for k,v in kv_pairs]
         sql = "UPDATE argo_boardhead SET %s where bid = %s" % (','.join(k_e_v), self['bid'] )
         self.execute(sql)
 
@@ -500,4 +524,44 @@ class Mail(Model):
     def dump_attr(self):
         return self.dict.items()
 
+class DataBase(Model):
 
+    with open('database/template/argo_filehead.sql') as f :
+        board_template = f.read()
+
+    def __init__(self):
+        super(DataBase,self).__init__()
+        self.set_up_section()
+        # self.set_up_board()
+
+    def set_up_section(self):
+        res = self.query("SELECT sectionname FROM argo_sectionhead")
+        self.section = dict(map(lambda x : (x["sectionname"],Section(x["sectionname"])),res))
+
+    def get_section(self,sectionname):
+        return self.section[sectionname]
+
+    def get_board(self,boardname):
+        return Board(boardname)
+
+    def get_user(self,userid):
+        return User(userid)
+
+    def add_board(self,boardname,keys):
+        keys['boardname'] = boardname
+        self.execute(self.board_template % { "boardname" : boardname})
+        self.insert_dict('argo_boardhead',keys)
+
+    def add_section(self,sectionname,keys):
+        keys['sectionname'] = sectionname
+        self.insert_dict('argo_sectionhead',keys)
+
+    def add_user(self,username,passwd,keys):
+        keys['userid'] = username
+        from hashlib import md5
+        m = md5()
+        m.update(passwd)
+        keys['passwd'] = m.hexdigest()
+        self.insert_dict('argo_user',keys)
+
+db_orm = DataBase()
