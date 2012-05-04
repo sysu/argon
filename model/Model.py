@@ -44,7 +44,7 @@ class Model(object):
         self.execute(sql)
 
     def to_str(self, s):
-        return "'"+str(s)+"'";
+        return "'"+unicode(s)+"'";
 
     def close():
         self.db.close()
@@ -223,10 +223,12 @@ class Board(Model):
             Add post.
             TODO: escape string
         """
+        post['bid'] = self['bid']
         kv_pairs = post.dump_attr()
         exist_attr = kv_pairs.keys()
-        exist_val = kv_pairs.values()
+        exist_val = map(lambda x : self.to_str(x) ,kv_pairs.values())
         sql = "INSERT INTO %s(%s) values(%s)" % (self.table, ','.join(exist_attr), ','.join(exist_val))
+        print sql
         self.execute(sql)
 
     def del_post(self, start, end = -1):
@@ -278,7 +280,7 @@ class Board(Model):
         self.closedb()
 
     def dump_attr(self):
-        return self.dict.items()
+        return self.dict.copy()
 
 """
 Post:
@@ -320,7 +322,7 @@ class Post(Model):
         self.dict[name] = value
 
     def dump_attr(self):
-        return self.dict.items()
+        return self.dict.copy()
 
 """
     `uid` int(11) unsigned NOT NULL auto_increment,
@@ -558,8 +560,9 @@ class DataBase(Model):
 
     def add_board(self,boardname,section,keys):
         keys['boardname'] = boardname
+        print self.section
         keys['sid'] = self.section[section]['sid']
-        sql = self.board_template % { "boardname" : boardname}
+        sql = self.board_template % { "boardname" : boardname.encode('utf8')}
         self.execute(sql)
         self.insert_dict('argo_boardhead',keys)
 
@@ -573,6 +576,11 @@ class DataBase(Model):
         m = md5()
         m.update(passwd)
         return m.hexdigest()
+
+    def check_user_exist(self,userid):
+        sql = "SELECT userid FROM argo_user WHERE userid = '%s'" % userid
+        res = self.query(sql)
+        return len(res)
     
     def add_user(self,username,passwd,keys):
         keys['userid'] = username

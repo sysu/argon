@@ -33,7 +33,7 @@ class WelcomeFrame(Frame):
     background = static['welcome'].safe_substitute(online="%(online)4s")
 
     hint = static['auth_prompt']
-    timeout = 60
+    timeout = 10
     
     def initialize(self):
 
@@ -47,11 +47,10 @@ class WelcomeFrame(Frame):
         input_name = self.sub(TextInput)
         input_passwd = self.sub(Password)
 
-        while Timeout(self.timeout, EndInterrupt):
+        with Timeout(self.timeout, EndInterrupt):
             while True:
                 self.write(p_username)
                 username = input_name.read_until()
-                print repr(username)
                 if username == 'new' :
                     #todo : register
                     self.goto(mark['register'])
@@ -71,12 +70,8 @@ class WelcomeFrame(Frame):
                     self.session.update(user.dict)
                     self.session['_user'] = user
                     self.session['userid'] = username
-                    if user :
-                        self.goto(mark['main_menu'])
-                    else :
-                        input_name.clear()
-                        input_passwd.clear()
-                        self.write(p_wrong)
+                    self.goto(mark['main_menu'])
+                    self.write(p_wrong)
 
 class MenuFrame(Frame):
     
@@ -125,7 +120,7 @@ class SectionMenuFrame(MenuFrame):
         sections = db_orm.get_all_section()
         d = map(lambda x : ( _w('%d) %8s -- %s',x[0],x[1]['sectionname']
                                 ,x[1]['description']),
-                             ('boardlist',{'sectionname':x[1]['sectionname']}),
+                             ('boardlist',{'section_name':x[1]['sectionname']}),
                              str(x[0])),enumerate(sections))
         d[0] = d[0] + ((11,6),)
         super(SectionMenuFrame,self).initialize(static['menu_section'],tuple(d)+config.menu["section"])

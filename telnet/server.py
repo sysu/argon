@@ -7,6 +7,7 @@ from chaofeng import Server,g
 from chaofeng.g import mark,static
 import normal
 import board_new
+import user
 import config
 
 if __name__ == '__main__' :

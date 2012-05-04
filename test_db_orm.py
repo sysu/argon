@@ -1,7 +1,8 @@
 # -*- coding: utf-8 -*-
 #!/usr/bin/env python
 
-from model.Model import db_orm
+from model.Model import db_orm,Post
+from datetime import datetime
 
 import sys,inspect
 
@@ -53,15 +54,33 @@ class TestSuit(object):
         print s.dump_attr()
         print s.get_allboards()
 
-    def add_board(self):
-        db_orm.add_board('TestTwo','Test',{"description":"Board for test two."})
+    def add_board(self,boardname,section,description):
+        u'''
+        增加一个讨论区。
+        '''
+        db_orm.add_board(
+            boardname.decode('utf8'),section.decode('utf8'),
+            {"description":description.decode('utf8')})
+        print 'Add board %s to %s DONE. ' % (boardname,section)
 
-    def get_board(self):
-        b = db_orm.get_board('Test')
-        print b.dump_attr()
+    def get_section_board(self,section_name):
+        b = db_orm.get_section(section_name.decode('utf8'))
+        for board in b.get_allboards() :
+            print board.dump_attr()
 
-    def add_user(self):
-        u = db_orm.add_user('Jia','2022',{"email":"no@e.com"})
+    def add_post(self,boardname,title,owner,content,fromhost):
+        b = db_orm.get_board(boardname)
+        b.add_post(Post({
+                    "title":title.decode('utf8'),
+                    "owner":owner.decode('utf8'),
+                    "content":content.decode('utf8'),
+                    "fromhost":fromhost.decode('utf8'),
+                    }))
+        print "Add post %s to %s DONE." % (title,boardname)
+        
+    def add_user(self,userid,passwd):
+        db_orm.add_user(userid,passwd,{'firstlogin':datetime.now()})
+        print 'Add user %s DONE.' % userid
 
     def get_user(self):
         u = db_orm.get_user('Jia')

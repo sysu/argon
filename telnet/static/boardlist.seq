@@ -2,4 +2,4 @@
 [1;44m 全部  未 讨论区名称       V  类别  转 中  文  叙  述       在线 S 版  主       [0m
 [1;44m 编号   讨论区名称       V  类别  转 中  文  叙  述       在线 S 版  主         [0m
 %(total)4s  %(have_news)2s %(boardname)-18s [%(type)4s] %(reproduced)2s %(description)-18s  %(online)4s %(unknow)2s %(bm)-10s
-%(nubmer)4s  %(boardname)-18s [%(type)4s] %(reproduced)2s %(description)-18s  %(online)4s %(unknow)2s %(bm)-10s
+%(number)4s   %(boardname)-18s [%(type)4s] %(reproduced)2s %(description)-18s  %(online)4s %(unknow)2s %(bm)-10s

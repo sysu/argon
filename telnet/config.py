@@ -23,3 +23,13 @@ menu = {
           ( u'E) 回到主选单 -- [EXIT]',("menu",     {"name":"main"}),'e'),
           )
 }
+
+default_shortcuts = {
+    ascii.k_up:"move_up",
+    ascii.k_down:"move_down",
+    ascii.k_end:"goto_last",
+    ascii.k_home:"goto_first",
+    ascii.k_page_up:"page_up",
+    ascii.k_page_down:"page_down",
+    ascii.k_ctrl_l:"refresh",
+    }
