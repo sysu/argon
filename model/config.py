@@ -4,6 +4,8 @@ import sys
 sys.path.append('../')
 
 """
+    - - 直接保存成一个config.py就好了。然后直接import什么的。
+
     将dbConfig写成类，可以读入配置文件,以后设置argo.conf配置文件, 对所有运行参数进行设置,格式如下：
     [section1]
     name1 = val1
@@ -44,3 +46,8 @@ class dbConfig(baseConfig):
         self.user= "bbs"
         self.passwd= "forargo"
         self.dbname = "argo"
+
+SQL_TPL_DIR = '/home/mo/argon/database/'
+BASE_TABLE = [ 'attachead','boardhead','mailhead',
+               'sectionhead','user','userattr']
+
