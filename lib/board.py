@@ -3,6 +3,9 @@
 import sys
 sys.path.append('../model/')
 
+'''
+    建议sql语句都放在model下，lib最多通过db_orm实现数据操作
+'''
 from globaldb import global_conn as db
 from hashlib import md5
 

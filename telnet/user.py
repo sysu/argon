@@ -11,7 +11,7 @@ from model import *
 from datetime import datetime
 
 class UsernameInput(TextInput):
-    
+
     def acceptable(self,c):
         try:
             return c.isalnum() or is_chchar(c.decode('gbk')) or c == '+'
