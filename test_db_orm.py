@@ -1,8 +1,10 @@
+# -*- coding: utf-8 -*-
 #!/usr/bin/env python
 
-from model.Model import db_orm
+from model.Model import db_orm,Post
+from datetime import datetime
 
-import sys
+import sys,inspect
 
 """
     Uint test for db_orm
@@ -10,8 +12,41 @@ import sys
 
 class TestSuit(object):
 
-    def add_section(self):
-        db_orm.add_section('Test',{"description":"Section for test."})
+    def init_database(self):
+        u'''
+        初始化数据库。
+        '''
+        print
+        print 'Init Database will kill all data. Are you sure?'
+        print
+        print 'Type INIT_YES to continue.',
+        if raw_input() == 'INIT_YES' :
+            print 'Init Database start ...'
+            db_orm.init_database()
+            print 'Init Database DONE.'
+        print 'All DONE.'
+
+    def get_all_section(self):
+        u'''
+        输出全部的讨论区。
+        '''
+        print '\r\n'.join(map(str,db_orm.get_all_section()))
+
+    def add_section(self,sectionname,description):
+        u'''
+        增加一个讨论区。
+        '''
+        print 'Add Section : [%s] %s' % (sectionname,description)
+        db_orm.add_section(sectionname,{"description":description})
+        print 'All DONE.'
+
+    def del_section(self,sectionname):
+        u'''
+        删除一个讨论区。
+        '''
+        print 'Del Section : [%s] ' % sectionname
+        db_orm.del_section(sectionname)
+        print 'All DONE.'
 
     def get_section(self):
         s = db_orm.get_section('Test')
@@ -19,23 +54,53 @@ class TestSuit(object):
         print s.dump_attr()
         print s.get_allboards()
 
-    def add_board(self):
-        db_orm.add_board('Test',{"description":"Board for test.","sid":1})
+    def add_board(self,boardname,section,description):
+        u'''
+        增加一个讨论区。
+        '''
+        db_orm.add_board(
+            boardname.decode('utf8'),section.decode('utf8'),
+            {"description":description.decode('utf8')})
+        print 'Add board %s to %s DONE. ' % (boardname,section)
 
-    def get_board(self):
-        b = db_orm.get_board('Test')
-        print b.dump_attr()
+    def get_section_board(self,section_name):
+        b = db_orm.get_section(section_name.decode('utf8'))
+        for board in b.get_allboards() :
+            print board.dump_attr()
 
-    def add_user(self):
-        u = db_orm.add_user('Jia','2022',{"email":"no@e.com"})
+    def add_post(self,boardname,title,owner,content,fromhost):
+        b = db_orm.get_board(boardname)
+        b.add_post(Post({
+                    "title":title.decode('utf8'),
+                    "owner":owner.decode('utf8'),
+                    "content":content.decode('utf8'),
+                    "fromhost":fromhost.decode('utf8'),
+                    }))
+        print "Add post %s to %s DONE." % (title,boardname)
+        
+    def add_user(self,userid,passwd):
+        db_orm.add_user(userid,passwd,{'firstlogin':datetime.now()})
+        print 'Add user %s DONE.' % userid
 
     def get_user(self):
         u = db_orm.get_user('Jia')
         print u.dump_attr()
 
+    def help(self,command):
+        foo = getattr(self,command)
+        print
+        print command + ' [' + ' '.join(inspect.getargspec(foo)[0][1:]) +']\n'
+        print getattr(self,command).__doc__
+
     def usage(self):
         print '\r\n'.join(filter(lambda x : not x.endswith('__'),dir(self)))
 
+    def run(self):
+        while True:
+            input()
+
 t = TestSuit()
 if len(sys.argv) < 2: t.usage()
-else: getattr(t, sys.argv[1])()
+else:
+    getattr(t, sys.argv[1])(*sys.argv[2:])
+

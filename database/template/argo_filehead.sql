@@ -1,11 +1,11 @@
 /*
    对版面帖子进行切表
    一个版一个表
-   新建版的时候从此模板render掉 ${boardname} 即可
+   print this %%%% { "boardname" : boardname } # 注意%%%%转义两次
    后期将加入回收站功能
 */
-DROP TABLE IF EXISTS `argo_filehead_${boardname}`;
-CREATE TABLE IF NOT EXISTS `argo_filehead_${boardname}` (
+DROP TABLE IF EXISTS `argo_filehead_%(boardname)s`;
+CREATE TABLE IF NOT EXISTS `argo_filehead_%(boardname)s` (
     `pid` int(11) unsigned NOT NULL auto_increment,
     `bid` int(11) unsigned NOT NULL, 
     `owner` varchar(14),

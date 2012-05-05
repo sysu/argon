@@ -2,6 +2,7 @@
 
 import dbapi
 from globaldb import global_conn
+import config
 
 class Model(object):
 
@@ -43,7 +44,7 @@ class Model(object):
         self.execute(sql)
 
     def to_str(self, s):
-        return "'%s'" % s;
+        return "'"+unicode(s)+"'";
 
     def close():
         self.db.close()
@@ -222,10 +223,12 @@ class Board(Model):
             Add post.
             TODO: escape string
         """
+        post['bid'] = self['bid']
         kv_pairs = post.dump_attr()
         exist_attr = kv_pairs.keys()
-        exist_val = kv_pairs.values()
+        exist_val = map(lambda x : self.to_str(x) ,kv_pairs.values())
         sql = "INSERT INTO %s(%s) values(%s)" % (self.table, ','.join(exist_attr), ','.join(exist_val))
+        print sql
         self.execute(sql)
 
     def del_post(self, start, end = -1):
@@ -277,7 +280,7 @@ class Board(Model):
         self.closedb()
 
     def dump_attr(self):
-        return self.dict.items()
+        return self.dict.copy()
 
 """
 Post:
@@ -319,7 +322,7 @@ class Post(Model):
         self.dict[name] = value
 
     def dump_attr(self):
-        return self.dict.items()
+        return self.dict.copy()
 
 """
     `uid` int(11) unsigned NOT NULL auto_increment,
@@ -438,12 +441,6 @@ class User(Model):
 
     # 用户操作相关
 
-    @staticmethod
-    def login(userid, passwd):
-        res = "SELECT * FROM %s WHERE userid = '%s' and passwd = '%s' " % (self.table, userid, passwd)
-        if len(res) == 1 : return User(userid)
-        else : return None
-
     def logout(self):
         pass
 
@@ -526,13 +523,19 @@ class Mail(Model):
 
 class DataBase(Model):
 
-    with open('database/template/argo_filehead.sql') as f :
+    with open(config.SQL_TPL_DIR+'template/argo_filehead.sql') as f :
         board_template = f.read()
 
     def __init__(self):
         super(DataBase,self).__init__()
         self.set_up_section()
         # self.set_up_board()
+
+    def init_database(self):
+        for table_name in config.BASE_TABLE :
+            with open(config.SQL_TPL_DIR+'argo_'+table_name+'.sql') as f:
+                sql = f.read()
+                self.execute(sql)
 
     def set_up_section(self):
         res = self.query("SELECT sectionname FROM argo_sectionhead")
@@ -541,27 +544,52 @@ class DataBase(Model):
     def get_section(self,sectionname):
         return self.section[sectionname]
 
+    def get_all_section(self):
+        sql = 'SELECT * FROM argo_sectionhead'
+        return self.query(sql)
+
+    def del_section(self,sectionname):
+        sql = "DELETE FROM argo_sectionhead WHERE sectionname = '%s'" % sectionname
+        self.execute(sql)
+
     def get_board(self,boardname):
         return Board(boardname)
 
     def get_user(self,userid):
         return User(userid)
 
-    def add_board(self,boardname,keys):
+    def add_board(self,boardname,section,keys):
         keys['boardname'] = boardname
-        self.execute(self.board_template % { "boardname" : boardname})
+        print self.section
+        keys['sid'] = self.section[section]['sid']
+        sql = self.board_template % { "boardname" : boardname.encode('utf8')}
+        self.execute(sql)
         self.insert_dict('argo_boardhead',keys)
 
     def add_section(self,sectionname,keys):
         keys['sectionname'] = sectionname
         self.insert_dict('argo_sectionhead',keys)
 
-    def add_user(self,username,passwd,keys):
-        keys['userid'] = username
+    @staticmethod
+    def _encrypt(passwd):
         from hashlib import md5
         m = md5()
         m.update(passwd)
-        keys['passwd'] = m.hexdigest()
+        return m.hexdigest()
+
+    def check_user_exist(self,userid):
+        sql = "SELECT userid FROM argo_user WHERE userid = '%s'" % userid
+        res = self.query(sql)
+        return len(res)
+
+    def add_user(self,username,passwd,keys):
+        keys['userid'] = username
+        keys['passwd'] = self._encrypt(passwd)
         self.insert_dict('argo_user',keys)
+
+    def login(self,userid, passwd):
+        res = self.query("SELECT userid FROM argo_user WHERE userid = '%s' and passwd = '%s' " % ( userid, self._encrypt(passwd)))
+        if len(res) == 1 : return User(userid)
+        else : return None
 
 db_orm = DataBase()

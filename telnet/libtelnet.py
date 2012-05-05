@@ -12,7 +12,7 @@ from model import User
 
 str_top = lambda f,l=u'',m=u'逸仙时空 Yat-Sen Channel' : _u(_top_str % ( _s(l),_s(m).center(40),_s(u'%s区 [%s]' % (u'pos_num',u'pos'))))
 
-str_bottom = lambda f : _u(_bot_str % (datetime.now().ctime(),0,5,_s(f.session['username'])))
+str_bottom = lambda f : _u(_bot_str % (datetime.now().ctime(),0,5,_s(f.session['userid'])))
 
 class TBoard:
     '''
@@ -38,7 +38,6 @@ class TBoard:
 
     def __len__(self):
         return self.len
-
 
 def login_telnet(frame,username):
     user = User(username)

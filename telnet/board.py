@@ -25,6 +25,34 @@ class PostMap:
     def __len__(self):
         return len(self.tb)
 
+class AllDataMap:
+
+    def __init__(self,data):
+        self._data = data
+
+    def __getitem__(self,key):
+        data = self._data[key]
+        return (data["total"],u"◆",data["descript"],data["type"],u"○",u"没有中文叙述",2012,'',u"SYSOP")
+
+    def __len__(self):
+        return len(self._data)
+
+COUNTER = 0
+    
+class NewDataMap:
+
+    def __init__(self,data):
+        self._data = data
+
+    def __getitem__(self,key):
+        data = self._data[key]
+        global COUNTER
+        COUNTER += 1
+        return (COUNTER,data["descript"],data["type"],u"○",u"没有中文叙述",2012,'',u"SYSOP")
+
+    def __len__(self):
+        return len(self._data)
+
 @mark('boardlist')
 class SectionFrame(Frame):
     '''
@@ -38,9 +66,16 @@ class SectionFrame(Frame):
     p_format = (static['boardlist'][3], static['boardlist'][4])
     m_map    = (AllDataMap,NewDataMap)
 
-    def initialize(self,sid=0):
-        self.body = Section(sid)
-
+    def initialize(self,sectionname,mode=0):
+        self.body = db_orm.get_section(sectionname)
+        self.write(str_top(self,u'[讨论区列表]'))
+        self.write(self.help_info)
+        self.mode = mode
+        self.write(self.thead[mode])
+        # self.data = 
+        raw_input()
+        self.table = self.sub(Table,self.p_format[self.mode],line=4)
+        
 @mark('board')
 class BoardFrame(Frame):
 
