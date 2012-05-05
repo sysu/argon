@@ -43,11 +43,11 @@ class Model(object):
         self.execute(sql)
 
     def to_str(self, s):
-        return "'"+str(s)+"'";
+        return "'%s'" % s;
 
     def close():
         self.db.close()
-    
+
     def dump_attr(self):
         pass
 
@@ -67,7 +67,7 @@ class Section(Model):
         self.sectionname = sectionname
         self.dict = dict
         self.init_section_info()
-        
+
     def __getitem__(self, name):
         try:
             return self.dict[name]
@@ -443,7 +443,7 @@ class User(Model):
         res = "SELECT * FROM %s WHERE userid = '%s' and passwd = '%s' " % (self.table, userid, passwd)
         if len(res) == 1 : return User(userid)
         else : return None
-        
+
     def logout(self):
         pass
 

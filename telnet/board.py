@@ -11,10 +11,10 @@ from model import *
 from datetime import datetime
 
 class PostMap:
-    
+
     def __init__(self,t_boardobj):
         self.tb = t_boardobj
-        
+
     @staticmethod
     def wrap_up(data):
         return ( data['pid'],data['flag'],data['owner'],data['posttime'],data['title'] )
@@ -55,16 +55,16 @@ class BoardFrame(Frame):
     li_format = static['board'][2]
 
     def initialize(self,boardname=u"Test"):
-        
+
         self.session['lastboard'] = boardname
 
         self.body = TBoard(Board(boardname))
         self.data = PostMap(self.body)
-        
+
         self.write(ac.clear+str_top(self,'bm',boardname))
         self.write(self.help_info)
         self.write(ac.move2(24,0)+str_bottom(self))
-        
+
         self.table = self.sub(Table,self.li_format,data=self.data,line=4)
         res = self.table.read_until()
         self.goto(mark['post'],num=res,t_board=self.body)
