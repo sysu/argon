@@ -87,8 +87,13 @@ class TestSuit(object):
         print u.dump_attr()
 
     def login(self, name, passwd):
-        db_orm.login(name, passwd)
+        u = db_orm.login(name, passwd)
+        if u == None:
+            print 'login error'
+            return
+
         print 'online: ' , db_orm.get_online_users()
+        print u.dump_attr()
 
     def online_users(self):
         users = db_orm.get_online_users()

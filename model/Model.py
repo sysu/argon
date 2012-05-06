@@ -1,6 +1,7 @@
 # -*- coding: utf-8 -*-
 
 from string import Template
+import bcrypt
 import dbapi
 from globaldb import global_conn, global_cache
 
@@ -76,6 +77,10 @@ class Model(object):
     def set_members(self, key):
         key = self.gen_key(key)
         return self.cache.smembers(key)
+
+    def set_rem(self, key):
+        key = self.gen_key(key)
+        return self.cache.srem(key)
 
 """
     `sid` int(11) unsigned NOT NULL auto_increment,
@@ -378,11 +383,13 @@ class User(Model):
 
     table = 'argo_user'
 
-    def __init__(self, userid):
-        if userid == "": return None
+    def __init__(self, userid = 'guest'):
 
         super(User, self).__init__()
         self.userid = self.escape_string(userid)
+        if userid == 'guest':
+            return
+
         if self.init_user_info() < 0:
             return None
 
@@ -460,14 +467,14 @@ class User(Model):
 
     # 用户操作相关
 
-    @staticmethod
-    def login(userid, passwd):
-        res = "SELECT * FROM %s WHERE userid = '%s' and passwd = '%s' " % (self.table, userid, passwd)
-        if len(res) == 1 : return User(userid)
-        else : return None
+    #@staticmethod
+    #def login(userid, passwd):
+    #    res = "SELECT * FROM %s WHERE userid = '%s' and passwd = '%s' " % (self.table, userid, passwd)
+    #    if len(res) == 1 : return User(userid)
+    #    else : return None
 
     def logout(self):
-        pass
+        self.set_rem(self.dict['userid'])
 
     def send_post(self, board, post):
         """
@@ -580,21 +587,38 @@ class DataBase(Model):
         keys['sectionname'] = sectionname
         self.insert_dict('argo_sectionhead',keys)
 
+    '''  User relate functions '''
+
     def add_user(self,username,passwd,keys):
         keys['userid'] = username
-        from hashlib import md5
-        m = md5()
-        m.update(passwd)
-        keys['passwd'] = m.hexdigest()
+        #from hashlib import md5
+        #m = md5()
+        #m.update(passwd)
+        # Use bcrypt now
+        keys['passwd'] = bcrypt.hashpw(passwd, bcrypt.gensalt())
+
         self.insert_dict('argo_user',keys)
 
-    def login(self, username, passwd):
-        '''
-        '''
-        # TODO: check password and kick multi login
-        self.set_add('online_userid', username)
+    def check_passwd(self, userid, passwd):
+        res = self.query("SELECT passwd from argo_user where userid = '%s'" % userid)
+        if len(res) == 0: return False
 
-        # TODO: then cache User dict to redis hash
+        code = res[0]['passwd']
+        if bcrypt.hashpw(passwd, code) == code:
+            return True
+        else:
+            return False
+
+    def login(self, userid, passwd):
+        userid = self.escape_string(userid)
+        if not self.check_passwd(userid, passwd):
+            return None
+
+        self.set_add('online_userid', userid)
+
+        u = User(userid)
+
+        return u
 
     def total_online(self):
         '''
@@ -604,7 +628,7 @@ class DataBase(Model):
 
     def get_online_users(self):
         '''
-            返回所有在线用户id
+            返回所有在线用户userid
         '''
         return self.set_members('online_userid')
 
