@@ -48,8 +48,8 @@ class TestSuit(object):
         db_orm.del_section(sectionname)
         print 'All DONE.'
 
-    def get_section(self):
-        s = db_orm.get_section('Test')
+    def get_section(self, sname = 'Test'):
+        s = db_orm.get_section(sname)
         print s
         print s.dump_attr()
         print s.get_allboards()
@@ -77,7 +77,7 @@ class TestSuit(object):
                     "fromhost":fromhost.decode('utf8'),
                     }))
         print "Add post %s to %s DONE." % (title,boardname)
-        
+
     def add_user(self,userid,passwd):
         db_orm.add_user(userid,passwd,{'firstlogin':datetime.now()})
         print 'Add user %s DONE.' % userid
@@ -85,6 +85,19 @@ class TestSuit(object):
     def get_user(self):
         u = db_orm.get_user('Jia')
         print u.dump_attr()
+
+    def login(self, name, passwd):
+        u = db_orm.login(name, passwd)
+        if u == None:
+            print 'login error'
+            return
+
+        print 'online: ' , db_orm.get_online_users()
+        print u.dump_attr()
+
+    def online_users(self):
+        users = db_orm.get_online_users()
+        print users
 
     def help(self,command):
         foo = getattr(self,command)
@@ -103,4 +116,5 @@ t = TestSuit()
 if len(sys.argv) < 2: t.usage()
 else:
     getattr(t, sys.argv[1])(*sys.argv[2:])
+
 

@@ -1,16 +1,19 @@
 # -*- coding: utf-8 -*-
 
+from string import Template
+import bcrypt
 import dbapi
-from globaldb import global_conn
-from datetime import datetime
-import config
+from globaldb import global_conn, global_cache
 
 class AuthError(Exception):pass
 
 class Model(object):
 
+    cache_prefix = 'argo_'
+
     def __init__(self):
-        self.db = global_conn;
+        self.db = global_conn
+        self.cache = global_cache
 
     def __getitem__(self, name):
         try:
@@ -27,6 +30,8 @@ class Model(object):
         return res
 
     def escape_string(self, rawsql):
+        if type(rawsql) != type(''):
+            return rawsql
         safe_sql = self.db.escape_string(rawsql)
         return safe_sql
 
@@ -42,25 +47,42 @@ class Model(object):
 
     def insert_dict(self,table,kv_pairs):
         exist_attr = kv_pairs.keys()
-        exist_val = map(lambda x : self.to_str(x),kv_pairs.values())
+        exist_val = map(lambda x : self.to_str(self.escape_string(x)),kv_pairs.values())
         sql = "INSERT INTO %s(%s) values(%s)" % (table, ','.join(exist_attr), ','.join(exist_val))
         self.execute(sql)
 
     def to_str(self, s):
-        return "'"+unicode(s)+"'";
+        return "'%s'" % s;
 
     def close():
         self.db.close()
-    
+
     def dump_attr(self):
         pass
 
-    @staticmethod
-    def _encrypt(passwd):
-        from hashlib import md5
-        m = md5()
-        m.update(passwd)
-        return m.hexdigest()
+    # cache relate functions
+
+    def gen_key(self, key):
+        '''
+            Just add argo_ as key prefix
+        '''
+        return self.cache_prefix + key
+
+    def set_add(self, key, value):
+        key = self.gen_key(key)
+        return self.cache.sadd(key, value)
+
+    def set_card(self, key):
+        key = self.gen_key(key)
+        return self.cache.scard(key)
+
+    def set_members(self, key):
+        key = self.gen_key(key)
+        return self.cache.smembers(key)
+
+    def set_rem(self, key):
+        key = self.gen_key(key)
+        return self.cache.srem(key)
 
 """
     `sid` int(11) unsigned NOT NULL auto_increment,
@@ -78,7 +100,7 @@ class Section(Model):
         self.sectionname = sectionname
         self.dict = dict
         self.init_section_info()
-        
+
     def __getitem__(self, name):
         try:
             return self.dict[name]
@@ -233,13 +255,7 @@ class Board(Model):
             Add post.
             TODO: escape string
         """
-        post['bid'] = self['bid']
-        kv_pairs = post.dump_attr()
-        exist_attr = kv_pairs.keys()
-        exist_val = map(lambda x : self.to_str(x) ,kv_pairs.values())
-        sql = "INSERT INTO %s(%s) values(%s)" % (self.table, ','.join(exist_attr), ','.join(exist_val))
-        print sql
-        self.execute(sql)
+        self.insert_dict(self.table , post.dict)
 
     def del_post(self, start, end = -1):
         """
@@ -290,7 +306,7 @@ class Board(Model):
         self.closedb()
 
     def dump_attr(self):
-        return self.dict.copy()
+        return self.dict.items()
 
 """
 Post:
@@ -332,7 +348,7 @@ class Post(Model):
         self.dict[name] = value
 
     def dump_attr(self):
-        return self.dict.copy()
+        return self.dict.items()
 
 """
     `uid` int(11) unsigned NOT NULL auto_increment,
@@ -369,11 +385,13 @@ class User(Model):
 
     table = 'argo_user'
 
-    def __init__(self, userid):
-        if userid == "": return None
+    def __init__(self, userid = 'guest'):
 
         super(User, self).__init__()
         self.userid = self.escape_string(userid)
+        if userid == 'guest':
+            return
+
         if self.init_user_info() < 0:
             return None
 
@@ -462,24 +480,14 @@ class User(Model):
 
     # 用户操作相关
 
-    def check_passwd(self,passwd):
-        res = self.query("SELECT userid FROM argo_user WHERE uid = '%s' and passwd = '%s' " % ( self['uid'], self._encrypt(passwd)))
-        return len(res) == 1
-
-    def login(self,passwd,host):
-        if not self.check_passwd(passwd):
-            raise AuthError
-        self['numlogins'] += 1
-        self['lastlogin'] = datetime.now()
-        self._login_time = datetime.now()
-        self['lasthost'] = host
-        self.update_user(["numlogins","lastlogin","lasthost"])
+    #@staticmethod
+    #def login(userid, passwd):
+    #    res = "SELECT * FROM %s WHERE userid = '%s' and passwd = '%s' " % (self.table, userid, passwd)
+    #    if len(res) == 1 : return User(userid)
+    #    else : return None
 
     def logout(self):
-        delta = datetime.now() - self._login_time
-        time_min = round(delta.seconds / 60)
-        self['stay'] += time_min
-        self.update_user(["stay"])
+        self.set_rem(self.dict['userid'])
 
     def send_post(self, board, post):
         """
@@ -559,20 +567,11 @@ class Mail(Model):
 
 class DataBase(Model):
 
-    with open(config.SQL_TPL_DIR+'template/argo_filehead.sql') as f :
-        board_template = f.read()
-
     def __init__(self):
         super(DataBase,self).__init__()
         self.set_up_section()
         # self.set_up_board()
 
-    def init_database(self):
-        for table_name in config.BASE_TABLE :
-            with open(config.SQL_TPL_DIR+'argo_'+table_name+'.sql') as f:
-                sql = f.read()
-                self.execute(sql)
-    
     def set_up_section(self):
         res = self.query("SELECT sectionname FROM argo_sectionhead")
         self.section = dict(map(lambda x : (x["sectionname"],Section(x["sectionname"])),res))
@@ -580,47 +579,69 @@ class DataBase(Model):
     def get_section(self,sectionname):
         return self.section[sectionname]
 
-    def get_all_section(self):
-        sql = 'SELECT * FROM argo_sectionhead'
-        return self.query(sql)
-
-    def del_section(self,sectionname):
-        sql = "DELETE FROM argo_sectionhead WHERE sectionname = '%s'" % sectionname
-        self.execute(sql)
-
     def get_board(self,boardname):
         return Board(boardname)
 
     def get_user(self,userid):
         return User(userid)
 
-    def add_board(self,boardname,section,keys):
+    def add_board(self, boardname, sid, keys):
+
+        with open('database/template/argo_filehead.sql') as f :
+            board_template = Template(f.read())
+
+        keys['sid'] = sid
         keys['boardname'] = boardname
-        keys['sid'] = self.section[section]['sid']
-        sql = self.board_template % { "boardname" : boardname.encode('utf8')}
-        self.execute(sql)
+        self.execute(board_template.safe_substitute({'boardname' : boardname}))
         self.insert_dict('argo_boardhead',keys)
 
     def add_section(self,sectionname,keys):
         keys['sectionname'] = sectionname
         self.insert_dict('argo_sectionhead',keys)
 
-    def check_user_exist(self,userid):
-        sql = "SELECT userid FROM argo_user WHERE userid = '%s'" % userid
-        res = self.query(sql)
-        return len(res)
-    
+    '''  User relate functions '''
+
     def add_user(self,username,passwd,keys):
         keys['userid'] = username
-        keys['passwd'] = self._encrypt(passwd)
+        #from hashlib import md5
+        #m = md5()
+        #m.update(passwd)
+        # Use bcrypt now
+        keys['passwd'] = bcrypt.hashpw(passwd, bcrypt.gensalt())
+
         self.insert_dict('argo_user',keys)
 
-    def login(self,userid, passwd, host):
-        try:
-            user = User(userid)
-            user.login(passwd,host)
-            return User(userid)
-        except AuthError:
+    def check_passwd(self, userid, passwd):
+        res = self.query("SELECT passwd from argo_user where userid = '%s'" % userid)
+        if len(res) == 0: return False
+
+        code = res[0]['passwd']
+        if bcrypt.hashpw(passwd, code) == code:
+            return True
+        else:
+            return False
+
+    def login(self, userid, passwd):
+        userid = self.escape_string(userid)
+        if not self.check_passwd(userid, passwd):
             return None
+
+        self.set_add('online_userid', userid)
+
+        u = User(userid)
+
+        return u
+
+    def total_online(self):
+        '''
+            返回online_userid  set中的元素个数，即在线人数
+        '''
+        return self.set_card('online_userid')
+
+    def get_online_users(self):
+        '''
+            返回所有在线用户userid
+        '''
+        return self.set_members('online_userid')
 
 db_orm = DataBase()

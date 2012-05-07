@@ -13,7 +13,7 @@ from base_menu import BaseMenuFrame
 import config
 
 class UsernameInput(TextInput):
-    
+
     def acceptable(self,c):
         try:
             return c.isalnum() or is_chchar(c.decode('gbk')) or c == '+'

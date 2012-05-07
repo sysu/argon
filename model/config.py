@@ -1,51 +1,24 @@
 # -*- coding: utf-8 -*-
 import sys
-
 sys.path.append('../')
 
-"""
-    - - 直接保存成一个config.py就好了。然后直接import什么的。
+from argo_conf import ConfigDB,ConfigCache
 
-    将dbConfig写成类，可以读入配置文件,以后设置argo.conf配置文件, 对所有运行参数进行设置,格式如下：
-    [section1]
-    name1 = val1
-    name1 = val2
-    [section2]
-    name1 = val1
-    ...
+'''  MySQL setting '''
 
-    ie:
-    [database]
-    host=localhost
-    port=3306
-    ...
+HOST = ConfigDB.host
+PORT = ConfigDB.port
+USER = ConfigDB.user
+PASSWD = ConfigDB.passwd
+DBNAME = ConfigDB.dbname
 
-    运行sever时，格式 ./server -c argo.conf
+''' Cache settting '''
 
-    目前暂时hard code
-
-"""
+CHOST = ConfigCache.host
+CPORT = ConfigCache.port
 
 
-class baseConfig(object):
-    """
-        提供读入配置文件功能
-    """
-    def __init__(self, configfile = "argo.conf"):
-        self.conf = configfile;
-
-class dbConfig(baseConfig):
-
-    def __init__(self):
-        """ Read config from argo.conf, section database
-            Temporary hard code
-        """
-        # self.host= "172.18.42.164"
-        self.host = "localhost"
-        self.port= 3306
-        self.user= "bbs"
-        self.passwd= "forargo"
-        self.dbname = "argo"
+''' Other setting '''
 
 SQL_TPL_DIR = '/home/mo/argon/database/'
 BASE_TABLE = [ 'attachead','boardhead','mailhead',
