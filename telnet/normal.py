@@ -12,67 +12,6 @@ import chaofeng.ascii as ac
 from libtelnet import str_top,str_bottom,login_telnet
 from model import db_orm
 
-'''
-实现欢迎界面，验证登陆和菜单。
-
-可能的跳转是到相应的功能区，结束。
-'''
-
-@mark('welcome')
-class WelcomeFrame(Frame):
-    '''
-    实现欢迎界面。
-    调用model.db_orm的login验证并登陆
-    成功登陆后跳转到 name=main 的menu frame。输入new转入注册，输入guest以
-    guest为username登陆。
-    没有最大尝试要求，但超过120s还没有登陆将会自动关闭连接。
-    本页面也是全局入口，在config.root设定。
-    @para none
-    '''
-
-    background = static['welcome'].safe_substitute(online="%(online)4s")
-
-    hint = static['auth_prompt']
-    timeout = 10
-    
-    def initialize(self):
-
-        # todo : $online
-        self.write(self.background % { "online" : 0 })
-
-        p_username   =  self.hint[0]
-        p_password   =  '\r\n'+self.hint[1]
-        p_wrong =  '\r\n'+self.hint[2]+'\r\n'
-
-        input_name = self.sub(TextInput)
-        input_passwd = self.sub(Password)
-
-        with Timeout(self.timeout, EndInterrupt):
-            while True:
-                self.write(p_username)
-                username = input_name.read_until()
-                if username == 'new' :
-                    #todo : register
-                    self.goto(mark['register'])
-                elif username == 'guest' :
-                    #todo : login as guest
-                    self.session['userid'] = 'guest'
-                    self.goto(mark['main_menu'])
-                else :
-                    self.write(p_password)
-                    password = input_passwd.read_until()
-                    user = db_orm.login(username,password)
-                    if not user :
-                        self.write(p_wrong)
-                        input_name.clear()
-                        continue
-                    user.init_user_info()
-                    self.session.update(user.dict)
-                    self.session['_user'] = user
-                    self.session['userid'] = username
-                    self.goto(mark['main_menu'])
-                    self.write(p_wrong)
-
 class MenuFrame(Frame):
     
     '''

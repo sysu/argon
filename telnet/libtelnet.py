@@ -14,30 +14,13 @@ str_top = lambda f,l=u'',m=u'逸仙时空 Yat-Sen Channel' : _u(_top_str % ( _s(
 
 str_bottom = lambda f : _u(_bot_str % (datetime.now().ctime(),0,5,_s(f.session['userid'])))
 
-class TBoard:
-    '''
-    对Board的简单包装，使其更适于telnet使用。
-    TBoard[key] 没有任何意义，只是单纯地表示Board的第key张帖子。
-    '''
-    def __init__(self,boardobj,limit=20):
-        self.body = boardobj
-        self.start = -limit
-        self.limit = limit
-        self.res = []
-        self.len = int(self.body.get_total())
-
-    def __getitem__(self,key):
-        pos = key - self.start
-        if pos >= self.limit or pos < 0 :
-            pos = key % self.limit
-            self.start = key - pos
-            self.len = int(self.body.get_total())
-            self.res = self.body.get_post(self.start,
-                                               self.start + self.limit)
-        return self.res[pos]
-
-    def __len__(self):
-        return self.len
+def d_top_bar(l=u'',m=u'逸仙时空 Yat-Sen Channel',r=None):
+    def inner(fun):
+        def new_fun(self,*args,**kwargs):
+            fun(self,*kwargs,**kwargs)
+            self.write('123')
+        return new_fun
+    return inner
 
 def login_telnet(frame,username):
     user = User(username)

@@ -6,6 +6,8 @@ import bcrypt
 import dbapi
 from globaldb import global_conn, global_cache
 
+class AuthError(Exception):pass
+
 class Model(object):
 
     cache_prefix = 'argo_'
@@ -154,7 +156,7 @@ class Section(Model):
         return [Board(b['boardname']) for b in res]
 
     def dump_attr(self):
-        return self.dict.items()
+        return self.dict.copy()
 
 """
 Board:
@@ -465,7 +467,10 @@ class User(Model):
         return self.user_prefix + self.userid
 
     def dump_attr(self):
-        return self.dict.items()
+        return self.dict.copy()
+
+    def update_dict(self,new_dict):
+        self.dict.update(new_dict)
 
     def has_perm(self, perm):
         try:
@@ -479,8 +484,16 @@ class User(Model):
             The same as update_board
             如果upattr不是空，则只更新upattr中的属性
         """
-        pass
+        if not upattr : pass # todo
+        sql_value = [ "%s = '%s'" % (key,self[key]) for key in upattr ]
+        sql = "UPDATE argo_user SET %s WHERE uid = '%s'" %\
+            (','.join(sql_value),self['uid'])
+        self.execute(sql)
 
+    def set_passwd(self,passwd):
+        sql = "UPDATE argo_user SET passwd = '%s' WHERE uid = '%s'" % (self._encrypt(passwd),self['uid'])
+        self.execute(sql)
+        
     def update_attr(self):
         """
             Update dynamic attr
@@ -555,7 +568,6 @@ class User(Model):
         res = self.query(sql)[0]
         return res['total']
 
-
     def send_mail(self, touserid, mailobj):
         """
             destuser.recv_mail(self.userid, mailobj)
@@ -598,7 +610,7 @@ class Mail(Model):
         self.dict[name] = value
 
     def dump_attr(self):
-        return self.dict.items()
+        return self.dict.copy()
 
 class DataBase(Model):
 
