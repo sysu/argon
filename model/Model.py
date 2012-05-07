@@ -414,6 +414,8 @@ class User(Model):
 
     table = 'argo_user'
 
+    user_prefix = 'user:'
+
     '''
 		用户状态属性的hashkey例子： argo_user:gcc
         用redis的hash，不同的field存不同的动态属性，
@@ -423,14 +425,13 @@ class User(Model):
         3) 即时消息
         etc...
 	'''
-    user_prefix = 'user:'
 
     def __init__(self, userid = 'guest'):
 
         super(User, self).__init__()
         self.userid = self.escape_string(userid)
 
-        if self.init_user_info() < 0 and userid != 'guest':
+        if userid != 'guest' and self.init_user_info() < 0:
             return None
 
     def __getitem__(self, name):
@@ -459,6 +460,7 @@ class User(Model):
         self.cache_key = self.get_cache_key()
 
         # set last active time into cache
+        # in order to kick those inactive user
         self.hash_set(self.cache_key, 'last_active', time.time() )
         return 0
 
@@ -493,7 +495,7 @@ class User(Model):
     def set_passwd(self,passwd):
         sql = "UPDATE argo_user SET passwd = '%s' WHERE uid = '%s'" % (self._encrypt(passwd),self['uid'])
         self.execute(sql)
-        
+
     def update_attr(self):
         """
             Update dynamic attr
@@ -671,6 +673,7 @@ class DataBase(Model):
         res = self.query("SELECT userid FROM argo_user WHERE userid = '%s'" ,  (userid,))
 
     def login(self, userid, passwd):
+        userid = self.escape_string(userid)
         if not self.check_passwd(userid, passwd):
             return None
 
