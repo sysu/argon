@@ -2,7 +2,10 @@
 
 import dbapi
 from globaldb import global_conn
+from datetime import datetime
 import config
+
+class AuthError(Exception):pass
 
 class Model(object):
 
@@ -52,6 +55,13 @@ class Model(object):
     def dump_attr(self):
         pass
 
+    @staticmethod
+    def _encrypt(passwd):
+        from hashlib import md5
+        m = md5()
+        m.update(passwd)
+        return m.hexdigest()
+
 """
     `sid` int(11) unsigned NOT NULL auto_increment,
     `sectionname` varchar(20) NOT NULL, || ie. 校园社团
@@ -96,7 +106,7 @@ class Section(Model):
         return [Board(b['boardname']) for b in res]
 
     def dump_attr(self):
-        return self.dict.items()
+        return self.dict.copy()
 
 """
 Board:
@@ -397,7 +407,10 @@ class User(Model):
         self.dict[name] = value
 
     def dump_attr(self):
-        return self.dict.items()
+        return self.dict.copy()
+
+    def update_dict(self,new_dict):
+        self.dict.update(new_dict)
 
     def has_perm(self, perm):
         try:
@@ -411,8 +424,16 @@ class User(Model):
             The same as update_board
             如果upattr不是空，则只更新upattr中的属性
         """
-        pass
+        if not upattr : pass # todo
+        sql_value = [ "%s = '%s'" % (key,self[key]) for key in upattr ]
+        sql = "UPDATE argo_user SET %s WHERE uid = '%s'" %\
+            (','.join(sql_value),self['uid'])
+        self.execute(sql)
 
+    def set_passwd(self,passwd):
+        sql = "UPDATE argo_user SET passwd = '%s' WHERE uid = '%s'" % (self._encrypt(passwd),self['uid'])
+        self.execute(sql)
+        
     def update_attr(self):
         """
             Update dynamic attr in argo_userattr
@@ -441,8 +462,24 @@ class User(Model):
 
     # 用户操作相关
 
+    def check_passwd(self,passwd):
+        res = self.query("SELECT userid FROM argo_user WHERE uid = '%s' and passwd = '%s' " % ( self['uid'], self._encrypt(passwd)))
+        return len(res) == 1
+
+    def login(self,passwd,host):
+        if not self.check_passwd(passwd):
+            raise AuthError
+        self['numlogins'] += 1
+        self['lastlogin'] = datetime.now()
+        self._login_time = datetime.now()
+        self['lasthost'] = host
+        self.update_user(["numlogins","lastlogin","lasthost"])
+
     def logout(self):
-        pass
+        delta = datetime.now() - self._login_time
+        time_min = round(delta.seconds / 60)
+        self['stay'] += time_min
+        self.update_user(["stay"])
 
     def send_post(self, board, post):
         """
@@ -474,7 +511,6 @@ class User(Model):
         sql = "SELECT count(*) as total FROM %s WHERE touserid = '%s' and readmark = 0" % (table, self.userid)
         res = self.query(sql)[0]
         return res['total']
-
 
     def send_mail(self, touserid, mailobj):
         """
@@ -519,7 +555,7 @@ class Mail(Model):
         self.dict[name] = value
 
     def dump_attr(self):
-        return self.dict.items()
+        return self.dict.copy()
 
 class DataBase(Model):
 
@@ -560,7 +596,6 @@ class DataBase(Model):
 
     def add_board(self,boardname,section,keys):
         keys['boardname'] = boardname
-        print self.section
         keys['sid'] = self.section[section]['sid']
         sql = self.board_template % { "boardname" : boardname.encode('utf8')}
         self.execute(sql)
@@ -569,13 +604,6 @@ class DataBase(Model):
     def add_section(self,sectionname,keys):
         keys['sectionname'] = sectionname
         self.insert_dict('argo_sectionhead',keys)
-
-    @staticmethod
-    def _encrypt(passwd):
-        from hashlib import md5
-        m = md5()
-        m.update(passwd)
-        return m.hexdigest()
 
     def check_user_exist(self,userid):
         sql = "SELECT userid FROM argo_user WHERE userid = '%s'" % userid
@@ -587,9 +615,12 @@ class DataBase(Model):
         keys['passwd'] = self._encrypt(passwd)
         self.insert_dict('argo_user',keys)
 
-    def login(self,userid, passwd):
-        res = self.query("SELECT userid FROM argo_user WHERE userid = '%s' and passwd = '%s' " % ( userid, self._encrypt(passwd)))
-        if len(res) == 1 : return User(userid)
-        else : return None
+    def login(self,userid, passwd, host):
+        try:
+            user = User(userid)
+            user.login(passwd,host)
+            return User(userid)
+        except AuthError:
+            return None
 
 db_orm = DataBase()

@@ -1,0 +1,17 @@
+
+您的代号     : %(userid)-20s
+昵称         : %(nickname)s
+真实姓名     : %(realname)s
+出生日期     : %(birthday)-20s    性别 : %(gender)s
+居住住址     : %(address)s
+电子邮件信箱 : %(email)s
+最近光临机器 : %(lasthost)s
+帐号建立日期 : %(firstlogin)s
+最近光临日期 : %(lastlogin)s
+文章数目     : %(numposts)-20s    上站次数 : %(numlogins)s 次
+生命力       ：%(life)-20s
+称号         ：%(usertitle)s
+上站总时数   : %(stay)s
+
+
+  

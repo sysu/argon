@@ -14,7 +14,7 @@ CREATE TABLE IF NOT EXISTS `argo_user` (
     `lastlogin` datetime NOT NULL default '1970-01-01 00:00:00',
     `lasthost` varchar(20),
     `lastlogout` datetime NOT NULL default '1970-01-01 00:00:00',
-    `numlogins` int(11) unsigned default 1,
+    `numlogins` int(11) unsigned default 0,
     `numposts` int(11) unsigned default 0,
     `credit` int(11) unsigned default 0,
     `lastpost` datetime NOT NULL default '1970-01-01 00:00:00',
