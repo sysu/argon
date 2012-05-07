@@ -1,6 +1,7 @@
 # -*- coding: utf-8 -*-
 
 from string import Template
+import time
 import bcrypt
 import dbapi
 from globaldb import global_conn, global_cache
@@ -22,19 +23,28 @@ class Model(object):
     def __setitem__(self, name, value):
         self.dict[name] = value
 
-    def query(self, sql):
-        res = self.db.query(sql)
-        # print 'DEBUG: sql %s %d' % (sql,len(res))
-        return res
-
     def escape_string(self, rawsql):
         if type(rawsql) != type(''):
             return rawsql
         safe_sql = self.db.escape_string(rawsql)
         return safe_sql
 
-    def execute(self, sql):
-        self.db.execute(sql)
+    def query(self, sql, params = ()):
+        params = map(self.escape_string, params)
+        res = self.db.query(sql % tuple(params))
+        # print 'DEBUG: sql %s %d' % (sql,len(res))
+        return res
+
+    def query_noescape(self, sql, params = ()):
+        res = self.db.query(sql % tuple(params))
+        return res
+
+    def execute(self, sql, params = ()):
+        params = map(self.escape_string, params)
+        self.db.execute(sql % tuple(params))
+
+    def execute_noescape(self, sql, params = ()):
+        self.db.execute(sql % params)
 
     def escape_attr(self, dict):
         res = {}
@@ -46,8 +56,7 @@ class Model(object):
     def insert_dict(self,table,kv_pairs):
         exist_attr = kv_pairs.keys()
         exist_val = map(lambda x : self.to_str(self.escape_string(x)),kv_pairs.values())
-        sql = "INSERT INTO %s(%s) values(%s)" % (table, ','.join(exist_attr), ','.join(exist_val))
-        self.execute(sql)
+        self.execute_noescape("INSERT INTO %s(%s) values(%s)" , (table, ','.join(exist_attr), ','.join(exist_val)))
 
     def to_str(self, s):
         return "'%s'" % s;
@@ -82,6 +91,25 @@ class Model(object):
         key = self.gen_key(key)
         return self.cache.srem(key)
 
+    def hash_set(self, key, field, value):
+        key = self.gen_key(key)
+        print key,field, value
+        return self.cache.hset(key, field, value)
+
+    def hash_get(self, key, field):
+        key = self.gen_key(key)
+        return self.cache.hget(key, field)
+
+    def hash_mset(self, key, dict):
+        key = self.gen_key(key)
+        return self.cache.hmset(key, dict)
+
+    def hash_delall(self, key):
+        key = self.gen_key(key)
+        hash_fields = self.cache.hkeys(key)
+        for f in hash_fields:
+            self.cache.hdel(key, f)
+
 """
     `sid` int(11) unsigned NOT NULL auto_increment,
     `sectionname` varchar(20) NOT NULL, || ie. 校园社团
@@ -109,7 +137,7 @@ class Section(Model):
         self.dict[name] = value
 
     def init_section_info(self):
-        res = self.query("SELECT * FROM argo_sectionhead where sectionname='%s'" % self.sectionname)
+        res = self.query("SELECT * FROM argo_sectionhead where sectionname='%s'" , (self.sectionname,))
 
         if len(res) == 1:
             self.dict = self.escape_attr(res[0])
@@ -144,6 +172,7 @@ with lib :
 #    It seems that count(*) in InnoDB is slow.
 #    http://www.cloudspace.com/blog/2009/08/06/fast-mysql-innodb-count-really-fast/
 
+    May change to MyISAM for performance.
 """
 class Board(Model):
 
@@ -383,35 +412,24 @@ class User(Model):
 
     table = 'argo_user'
 
+    '''
+		用户状态属性的hashkey例子： argo_user:gcc
+        用redis的hash，不同的field存不同的动态属性，
+        如:
+        1) 最后活跃时间last_active
+        2) 所处模式mode(登录/文笔挥毫/信笺/etc)
+        3) 即时消息
+        etc...
+	'''
+    user_prefix = 'user:'
+
     def __init__(self, userid = 'guest'):
 
         super(User, self).__init__()
         self.userid = self.escape_string(userid)
-        if userid == 'guest':
-            return
 
-        if self.init_user_info() < 0:
+        if self.init_user_info() < 0 and userid != 'guest':
             return None
-
-    def init_user_info(self):
-
-        sql = "SELECT * FROM %s WHERE userid = '%s'" % (self.table, self.userid)
-        res = self.query(sql)
-        """ select static attrs """
-        if len(res) == 1:
-            self.dict = self.escape_attr(res[0]) # escape None value
-            return 0
-        else:
-            self.dict = {}
-            return -1
-
-        """ select dynamic attrs """
-        sql = "SELECT attr FROM %s WHERE userid = '%s'" (self.table, self.userid)
-        res = self.query(sql)
-        if len(res):
-            self.attr = cPickle.load(res['attr'])  # unpack from binary stream
-        else:
-            self.attr = {}
 
     def __getitem__(self, name):
         try:
@@ -421,6 +439,30 @@ class User(Model):
 
     def __setitem__(self, name, value):
         self.dict[name] = value
+
+    def init_user_info(self):
+
+        sql = "SELECT * FROM %s WHERE userid = '%s'" % (self.table, self.userid)
+        res = self.query(sql)
+        if len(res) == 0:
+            self.dict = {}
+            return -1
+
+        self.dict = self.escape_attr(res[0]) # escape None value
+        # load dynamic attrs from blob
+        if self.dict.has_key('attr'):
+            self.dict.attr = cPickle.loads(self.dict.attr)
+
+        self.mail_table = self.get_mail_table()
+        self.cache_key = self.get_cache_key()
+
+        # set last active time into cache
+        self.hash_set(self.cache_key, 'last_active', time.time() )
+        return 0
+
+    def get_cache_key(self):
+
+        return self.user_prefix + self.userid
 
     def dump_attr(self):
         return self.dict.items()
@@ -441,9 +483,10 @@ class User(Model):
 
     def update_attr(self):
         """
-            Update dynamic attr in argo_userattr
+            Update dynamic attr
         """
-        pass
+        pickattr = cPickle.dumps(self.dict.dattr, 2)
+        self.execute("UPDATE %s SET dattr = '%s' WHERE userid = '%s'", (self.table, pickattr, self.userid))
 
     #  版面相关
 
@@ -451,19 +494,21 @@ class User(Model):
         """
             Check if self.userid in board.bm  'gcc:cypress:LTS'
         """
-        pass
+        bms = board['bm'].split(':')
+        if self.userid in bms: return True
+        else: return False
 
     def has_post_perm(self, board):
         """
             Todo: phpbbs/common/class-user.php : has_post_perm
         """
-        pass
+        return True
 
     def has_read_perm(self, board):
         """
-            Todo: phpbbs/common/class-user.php : has_post_perm
+            Todo: phpbbs/common/class-user.php : has_read_perm
         """
-        pass
+        return True
 
     # 用户操作相关
 
@@ -475,6 +520,7 @@ class User(Model):
 
     def logout(self):
         self.set_rem(self.dict['userid'])
+        self.hash_delall(self.cache_key)
 
     def send_post(self, board, post):
         """
@@ -483,7 +529,10 @@ class User(Model):
                 self.numposts++;
                 self.update_user(['numposts'])
         """
-        pass
+        if not self.has_post_perm(board): return False
+        board.add_post(post)
+        self['numposts'] += 1
+        self.update_user(['numposts'])
 
     def del_post(self, board, post):
         """
@@ -502,8 +551,7 @@ class User(Model):
         """
             查是否有未读邮件
         """
-        table = self.get_mail_table()
-        sql = "SELECT count(*) as total FROM %s WHERE touserid = '%s' and readmark = 0" % (table, self.userid)
+        sql = "SELECT count(*) as total FROM %s WHERE touserid = '%s' and readmark = 0" % (self.mail_table, self.userid)
         res = self.query(sql)[0]
         return res['total']
 
@@ -512,7 +560,6 @@ class User(Model):
         """
             destuser.recv_mail(self.userid, mailobj)
         """
-        table = self.get_mail_table()
         # more to code
         pass
 
@@ -591,16 +638,14 @@ class DataBase(Model):
 
     def add_user(self,username,passwd,keys):
         keys['userid'] = username
-        #from hashlib import md5
-        #m = md5()
-        #m.update(passwd)
+
         # Use bcrypt now
         keys['passwd'] = bcrypt.hashpw(passwd, bcrypt.gensalt())
 
         self.insert_dict('argo_user',keys)
 
     def check_passwd(self, userid, passwd):
-        res = self.query("SELECT passwd from argo_user where userid = '%s'" % userid)
+        res = self.query("SELECT passwd FROM argo_user WHERE userid = '%s'" , (userid,))
         if len(res) == 0: return False
 
         code = res[0]['passwd']
@@ -609,8 +654,11 @@ class DataBase(Model):
         else:
             return False
 
-    def login(self, userid, passwd):
+    def check_user_exist(self, userid):
         userid = self.escape_string(userid)
+        res = self.query("SELECT userid FROM argo_user WHERE userid = '%s'" ,  (userid,))
+
+    def login(self, userid, passwd):
         if not self.check_passwd(userid, passwd):
             return None
 
@@ -628,7 +676,7 @@ class DataBase(Model):
 
     def get_online_users(self):
         '''
-            返回所有在线用户userid
+            返回所有在线用户userid list
         '''
         return self.set_members('online_userid')
 

@@ -82,8 +82,8 @@ class TestSuit(object):
         db_orm.add_user(userid,passwd,{'firstlogin':datetime.now()})
         print 'Add user %s DONE.' % userid
 
-    def get_user(self):
-        u = db_orm.get_user('Jia')
+    def get_user(self, userid = 'Jia'):
+        u = db_orm.get_user(userid)
         print u.dump_attr()
 
     def login(self, name, passwd):

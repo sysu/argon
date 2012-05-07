@@ -28,6 +28,8 @@ CREATE TABLE IF NOT EXISTS `argo_user` (
     `gender`  int(11) unsigned default 1,
     `realname` varchar(20),
     
+    `dattr` blob,
+
     PRIMARY KEY (`uid`),
     KEY `userid` (`userid`)
 

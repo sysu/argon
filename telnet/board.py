@@ -38,7 +38,7 @@ class AllDataMap:
         return len(self._data)
 
 COUNTER = 0
-    
+
 class NewDataMap:
 
     def __init__(self,data):
@@ -72,10 +72,10 @@ class SectionFrame(Frame):
         self.write(self.help_info)
         self.mode = mode
         self.write(self.thead[mode])
-        # self.data = 
+        # self.data =
         raw_input()
         self.table = self.sub(Table,self.p_format[self.mode],line=4)
-        
+
 @mark('board')
 class BoardFrame(Frame):
 

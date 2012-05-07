@@ -7,7 +7,7 @@ import sys
     Uint test for user
 """
 
-u = User('sysop')
+u = User('gcc')
 
 class TestSuit(object):
 
@@ -16,15 +16,13 @@ class TestSuit(object):
         print 'unread mail: %d' % newmails
 
     def usage(self):
-        print """
-        usage > python testboard.py
-                    check_mail
-        """
+        print '\r\n'.join(filter(lambda x : not x.endswith('__'),dir(self)))
+
 
 
 t = TestSuit()
 if len(sys.argv) < 2: t.usage()
-else: getattr(t, sys.argv[1])()
+else: getattr(t, sys.argv[1])(*sys.argv[2:])
 
 
 
