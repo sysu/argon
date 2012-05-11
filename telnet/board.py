@@ -2,140 +2,180 @@
 import sys
 sys.path.append('../')
 
-from chaofeng import Frame,static,EndInterrupt
+# from chaofeng import EndInterrupt,Timeout
+# from chaofeng import mark,static
+# from chaofeng.ui import ColMenu
+# import chaofeng.ascii as ac
+
+from chaofeng import Frame,BindFrame,static,EndInterrupt
 from chaofeng.g import mark
 from chaofeng.ui import Table,TextBox,TextEditor
 from chaofeng import ascii as ac
-from libtelnet import TBoard,str_top,str_bottom
+from libtelnet import str_top,str_bottom
 from model import *
 from datetime import datetime
-
-class PostMap:
-
-    def __init__(self,t_boardobj):
-        self.tb = t_boardobj
-
-    @staticmethod
-    def wrap_up(data):
-        return ( data['pid'],data['flag'],data['owner'],data['posttime'],data['title'] )
-
-    def __getitem__(self,key):
-        return self.wrap_up(self.tb[key])
-
-    def __len__(self):
-        return len(self.tb)
-
-class AllDataMap:
-
-    def __init__(self,data):
-        self._data = data
-
-    def __getitem__(self,key):
-        data = self._data[key]
-        return (data["total"],u"◆",data["descript"],data["type"],u"○",u"没有中文叙述",2012,'',u"SYSOP")
-
-    def __len__(self):
-        return len(self._data)
-
-COUNTER = 0
-
-class NewDataMap:
-
-    def __init__(self,data):
-        self._data = data
-
-    def __getitem__(self,key):
-        data = self._data[key]
-        global COUNTER
-        COUNTER += 1
-        return (COUNTER,data["descript"],data["type"],u"○",u"没有中文叙述",2012,'',u"SYSOP")
-
-    def __len__(self):
-        return len(self._data)
+import config
+import re
 
 @mark('boardlist')
-class SectionFrame(Frame):
-    '''
-    实现讨论区列表。
-
-    @para sid : 分类编号为sid的讨论区
-    @para new : 有新文章发布的讨论区
-    '''
+class BoardListFrame(Table):
+    
     help_info = static['boardlist'][0] + '\r\n'
     thead    = (static['boardlist'][1], static['boardlist'][2])
     p_format = (static['boardlist'][3], static['boardlist'][4])
-    m_map    = (AllDataMap,NewDataMap)
+    shortcuts = config.default_shortcuts
 
-    def initialize(self,sectionname,mode=0):
-        self.body = db_orm.get_section(sectionname)
+    class TableMap:
+        
+        def __init__(self,data):
+            self.data = data
+            self.len = len(data)
+            
+        def __getitem__(self,key):
+            board = self.data[key]
+            return {
+                "total":board.get_total(),
+                "boardname":board['boardname'],
+                "number":key,
+                "type":'',
+                "reproduced":'',
+                "description":board['description'],
+                'online':0,
+                'unknow':'',
+                'bm': board['bm'] and ' '.join(board['bm'].split(':')),
+                'have_news':'',
+                }
+        
+        def __len__(self):
+            return self.len
+
+    def initialize(self,section_name='Test',mode=0):
+        self.write(ac.clear)
         self.write(str_top(self,u'[讨论区列表]'))
         self.write(self.help_info)
-        self.mode = mode
         self.write(self.thead[mode])
-        # self.data =
-        raw_input()
-        self.table = self.sub(Table,self.p_format[self.mode],line=4)
+        self.write(ac.move2(24,0)+str_bottom(self))
+        self.mode = mode
+        self.data = self.TableMap(
+            db_orm.get_section(section_name).get_allboards())
+        super(BoardListFrame,self).initialize(
+            self.p_format[mode],line=4,data=self.data)
 
+    def do_boardlist_change_mode(self):
+        self.mode = 1 - self.mode
+        self.write(ac.move2(3,0)+self.thead[self.mode])
+        self.set_format(self.p_format[self.mode])
+
+    def get(self,data):
+        super(BoardListFrame,self).get(data)
+        if data in ac.ks_finish :
+            f = self.data[self.fetch()]['boardname']
+            self.goto(mark['board'],boardname=f)
+        
 @mark('board')
-class BoardFrame(Frame):
-
-    '''
-    版块文章浏览。
-
-    @goto : post ( num=index, t_board )
-    @para boardname : 要浏览的版块的名称
-    '''
-
+class BoardFrame(Table):
+    
     help_info = static['board'][0] + '\r\n' + static['board'][1]
     li_format = static['board'][2]
+    shortcuts = config.default_shortcuts
 
-    def initialize(self,boardname=u"Test"):
+    class BoardMap:
 
-        self.session['lastboard'] = boardname
+        def __init__(self,boardobj):
+            self.board = boardobj
+            self.start = -20  # Max Row
+            self.limit = 20
+            self.res = []
+            self.len = int(boardobj.get_total())
 
-        self.body = TBoard(Board(boardname))
-        self.data = PostMap(self.body)
+        def get_post(self,key):
+            if key >= self.len : return None
+            pos = key - self.start
+            if pos >= self.limit or pos < 0 :
+                pos = key % self.limit
+                self.start = key - pos
+                self.len = int(self.board.get_total())
+                self.res = self.board.get_post(self.start,
+                                               self.start + self.limit)
+            return self.res[pos]
 
-        self.write(ac.clear+str_top(self,'bm',boardname))
+        def __getitem__(self,key):
+            d = self.get_post(key).dump_attr()
+            d['number'] = key
+            d['data'] = ''
+            return d
+
+        def __len__(self):
+            return self.len
+            
+    def initialize(self,boardname):
+        self.session['last_boardname'] = boardname
+        self.data = db_orm.get_board(boardname)
+        self.w_data = self.BoardMap(self.data)
+        self.write(ac.clear+str_top(self,self.data['bm'],boardname))
         self.write(self.help_info)
         self.write(ac.move2(24,0)+str_bottom(self))
-
-        self.table = self.sub(Table,self.li_format,data=self.data,line=4)
-        res = self.table.read_until()
-        self.goto(mark['post'],num=res,t_board=self.body)
+        super(BoardFrame,self).initialize(self.li_format,line=4,
+                                            data=self.w_data)
 
     def get(self,data):
-        print repr(data)
-        if data == ac.k_c_c :
-            self.close()
-        if data == ac.k_c_p :
-            self.goto(mark['editpost'],board=self.body.body)
+        super(BoardFrame,self).get(data)
+        if data in ac.ks_finish :
+            postobj = self.w_data.get_post(self.fetch())
+            if postobj :
+                self.goto(mark['post'],postobj=postobj)
+        elif data == ac.k_c_p :
+            self.goto(mark['add_post'],boardobj=self.data)
 
 @mark('post')
-class PostFrame(Frame):
+class PostFrame(TextBox):
 
-    def initialize(self,body=None,num=0,t_board=None):
-        if body is None :
-            body = t_board[num]
-        self.body = body
-        self.box = self.sub(TextBox,self.body["content"])
+    def initialize(self,postobj):
+        self.body = postobj
+        super(PostFrame,self).initialize(postobj['content'])
 
     def get(self,data):
-        self.box.get(data)
-        if data == ac.k_left :
-            self.goto(mark['board'])
+        super(PostFrame,self).get(data)
+        if data == ac.k_ctrl_c :
+            self.goto(mark['board'],boardname=self.session['last_boardname'])
 
-@mark('editpost')
-class EditPostFrame(Frame):
+@mark('add_post')
+class AddPostFrame(TextEditor):
 
-    def initialize(self,board):
-        self.editor = self.sub(TextEditor,text='Test')
-        p = {}
-        p["bid"] = board.bid
-        p["content"] = self.editor.read_until(termitor=ac.k_c_c)
-        p["owner"] = self.session["username"]
-        # p["posttime"] = datetime.now()
-        p["title"] = u"Hello,Test"
-        p["flag"] = 88
-        board.add_post(Post(p))
-        self.goto(mark["board"])
+    re_c = re.compile('[^\r\n]+')
+
+    def initialize(self,boardobj):
+        self.write(ac.clear)
+        self.board = boardobj
+        self.body = Post(dict(
+                bid=boardobj['bid'],
+                owner=self.session['userid'],
+                fromaddr=self.session['ip']))        
+        super(AddPostFrame,self).initialize()
+        self.get(ac.k_ctrl_l)
+
+    def get(self,data):
+        super(AddPostFrame,self).get(self,data)
+
+    def do_cancel(self):
+        self.write(ac.move2(24,0)+u'按下y确认发布，Ctrl+C离开')
+        c =  self.static_read()
+        if c == 'y':
+            print repr(self.re_c)
+            print repr(self.buf[0])
+            title_re = re.match(self.re_c,''.join(self.buf[0]))
+            if not title_re  :
+                self.write(u'错误的标题！')
+                return
+            self.body['title'] = title_re.group(0)
+            self.body['content'] = self.fetch()
+            self.write(u'\r\n 标题 : %s \r\n' % self.body['title'])
+            self.board.add_post(self.body)
+            self.write(u'发帖成功！')
+            self.pause()
+            self.goto(mark['board'],boardname=self.board['boardname'])
+        elif c == ac.k_ctrl_c :
+            self.goto(mark['board'],board['boardname'])
+        
+# todo :
+# better wrap up for UI,Frame, and Frame,get

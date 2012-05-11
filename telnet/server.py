@@ -5,7 +5,7 @@ sys.path.append('../')
 
 from chaofeng import Server,g
 from chaofeng.g import mark,static
-import menu,login,board_new,user
+import login,user,menu
 import config
 
 if __name__ == '__main__' :

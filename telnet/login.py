@@ -3,79 +3,63 @@
 import sys
 sys.path.append('../')
 
-from chaofeng import Frame,EndInterrupt,Timeout
-from chaofeng.g import mark,static,_w
-from chaofeng.ui import TextInput,Password
-import config
+from chaofeng import EndInterrupt,Timeout
+from chaofeng.g import mark,static
+from chaofeng.ui import TextInput,Password,DatePicker
 import chaofeng.ascii as ac
+from argo_frame import ArgoBaseFrame
 from model import db_orm
 from datetime import datetime
+import config
 
 @mark('welcome')
-class WelcomeFrame(Frame):
+class WelcomeFrame(ArgoBaseFrame):
 
-    '''
-    实现欢迎界面。
-    调用model.db_orm的login验证并登陆
-    成功登陆后跳转到 name=main 的menu frame。输入new转入注册，输入guest以
-    guest为username登陆。
-    没有最大尝试要求，但超过120s还没有登陆将会自动关闭连接。
-    本页面也是全局入口，在config.root设定。
-    @para none
-    '''
-    
     background = static['welcome'].safe_substitute(online="%(online)4s")
-    hint = static['auth_prompt']
-    timeout = 10
-
-    def login_guest(self):
-        self.session['_user'] = None
-        self.session['userid'] = 'guest'
-        self.goto(mark['main'])
-
-    def login(self,user):
-        self.session.update(user.dict)
-        self.session['_user'] = user
-        self.session['userid'] = user['userid']
-        if user['numlogins'] == 1 :
-            self.goto(mark['first_login'])
-        self.goto(mark['main'])
+    timeout = 50
+    prompt = static['auth_prompt']
+    wrong_prompt = '\r\n' + prompt[2]
+    
+    ix_userid = TextInput(prompt='\r\n'+prompt[0])
+    ix_passwd = Password(prompt='\r\n'+prompt[1])
     
     def initialize(self):
-
-        # todo : $online
-        self.write(self.background % { "online" : 0 })
-
-        p_username   =  self.hint[0]
-        p_password   =  '\r\n'+self.hint[1]
-        p_wrong =  '\r\n'+self.hint[2]+'\r\n'
-
-        input_name = self.sub(TextInput)
-        input_passwd = self.sub(Password)
-
-        with Timeout(self.timeout, EndInterrupt):
-            while True:
-                self.write(p_username)
-                username = input_name.read_until()
-                if username == 'new' :
-                    self.goto(mark['register'])
-                elif username == 'guest' :
-                    self.login_guest()
+        self.render_background(online=db_orm.total_online())
+        i_name = self.load(self.ix_userid)
+        i_passwd = self.load(self.ix_passwd)
+        with Timeout(self.timeout,EndInterrupt):
+            while True :
+                userid = i_name.read()
+                if userid == 'new' :
+                    self.goto('register')
+                elif userid == 'register' :
+                    self.hook_login_guest()
                 else :
-                    self.write(p_password)
-                    password = input_passwd.read_until()
-                    user = db_orm.login(username,password,self.session['ip'])  # here call the modellogin
-                    if not user :
-                        self.write(p_wrong)
-                        input_name.clear()
+                    passwd = i_passwd.read()
+                    user = db_orm.login(userid,passwd)
+                    if user is None :
+                        self.write(self.wrong_prompt)
                         continue
-                    user.init_user_info()
-                    self.login(user)
+                    self.hook_login(user)
+
+    def _login(self,userobj,userid):
+        self.session._user = userobj # put into session
+        self.session.userid = userid  # put the userid
+
+    def hook_login(self,userobj):
+        self._login(userobj,userobj['userid'])
+        if userobj['numlogins'] == 1 :  # do when frist login
+            self.goto('first_login')
+        else : self.goto('main')
+
+    def hook_login_guest(self):
+        self._login(None,'guest')
+        self.goto('main')
 
 @mark('first_login')
-class FirstLoginFrame(Frame):
+class FirstLoginFrame(ArgoBaseFrame):
 
     def initialize(self):
         self.write(static['first_login'] % self.session['_user']['firstlogin'])
-        self.goto(mark['main'])
+        self.goto('main')
 

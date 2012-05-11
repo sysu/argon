@@ -10,6 +10,7 @@ from libtelnet import str_top,str_bottom
 from model import *
 from datetime import datetime
 from base_menu import BaseMenuFrame
+from argo_frame import ArgoBaseFrame
 import config
 
 class UsernameInput(TextInput):
@@ -21,48 +22,59 @@ class UsernameInput(TextInput):
             return False
 
 @mark('register')
-class RegisterFrame(BindFrame):
+class RegisterFrame(ArgoBaseFrame):
 
-    shortcuts = config.default_shortcuts
+    background = ac.clear + static['register_anno']
     ban_userid = ['guest','new']
+    ix_name = TextInput(prompt= u'请输入帐号名称 (Enter User ID, leave blank to abort): ')
+    ix_passwd = Password(prompt= u'请设定您的密码 (Setup Password): ')
+    timeout = 150
 
-    def initialize(self):
-        self.write(ac.clear+static['register_anno'])
-        input_name = self.sub(UsernameInput)
-        input_passwd = self.sub(Password)
-        p_userid = u'请输入帐号名称 (Enter User ID, leave blank to abort): '
-        p_passwd = u'请设定您的密码 (Setup Password): '
-        with Timeout(150,EndInterrupt):
-            while True :
-                self.write(p_userid)
-                userid = input_name.read_until()
-                self.write('\r\n')
-                if userid in self.ban_userid :
-                    self.write(u'抱歉, 您不能使用该id。 请再拟。\r\n')
-                elif len(userid) < 3 :
-                    self.write(u'抱歉，您的id太短撩。 请再拟。\r\n')
-                elif db_orm.check_user_exist(userid) :
-                    self.write(u'抱歉，您的id已经被注册了。 请再拟。\r\n')
-                else : break
-            while True :
-                self.write(p_passwd)
-                passwd = input_passwd.read_until()
-                self.write('\r\n')
-                if len(passwd) < 6 :
-                    self.write(u'密码太短了，请大于6位。\r\n')
-                else : break
-            db_orm.add_user(userid,passwd,{
-                    'firstlogin':datetime.now(),
-                    'firsthost':self.session['ip'],
-                    })
-            self.write(ac.clear+static['register_succ'] % userid)
-            self.pause()
-            self.goto(mark['welcome'])
+    def check_userid(self,userid):
+        if userid in self.ban_userid :
+            self.write(u'抱歉, 您不能使用该id。 请再拟。\r\n')
+        elif len(userid) < 3 :
+            self.write(u'抱歉，您的id太短撩。 请再拟。\r\n')
+        elif db_orm.check_user_not_exist(userid) != True :
+            self.write(u'抱歉，您的id已经被注册了。 请再拟。\r\n')
+        else : return True
+        return False
 
-    def do_cancel(self):
-        self.write(u'\r\n你按下了Ctrl+C ，将会取消本次的活动。\r\n :-) 别害怕，你可以再来一次。')
+    def check_passwd(self,passwd):
+        if len(passwd) < 6 :
+            self.write(u'密码太短了，请大于6位。\r\n')
+            return False
+        return True
+
+    def register(self,userid,passwd):
+        print userid
+        print passwd
+        db_orm.add_user(userid,passwd,{
+                'firstlogin':datetime.now(),
+                'firsthost':self.session.ip,
+                })
+        self.write(ac.clear+static['register_succ'] % userid)
         self.pause()
-        self.goto(mark['welcome'])
+        self.goto('welcome')
+    
+    def initialize(self):
+        self.render_background()
+        i_name = self.load(self.ix_name)
+        i_passwd = self.load(self.ix_passwd)
+        with Timeout(self.timeout,EndInterrupt) :
+            while True :
+                userid = i_name.readln()
+                if self.check_userid(userid) : break
+            while True :
+                passwd = i_passwd.readln()
+                if self.check_passwd(passwd) : break
+        self.register(userid,passwd)
+
+    def get(self,data):
+        if data == ac.k_ctrl_c :
+            self.write(u'\r\n你按下了Ctrl+C ，将会取消本次的活动。\r\n :-) 别害怕，你可以再来一次。')
+            self.pause()
+            self.goto('welcome')
 
 @mark('user_space')
 class UserSpaceFrame(BaseMenuFrame):

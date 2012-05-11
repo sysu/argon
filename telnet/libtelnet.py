@@ -30,3 +30,7 @@ def login_telnet(frame,username):
     frame.session['username'] = username
     return user
 
+def zh_format(mod,*args):
+    args = tuple(map(lambda x : x.encode('gbk') if isinstance(x,unicode) else x,
+                     args))
+    return (mod.encode('gbk') % args).decode('gbk')
