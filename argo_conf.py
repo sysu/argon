@@ -9,8 +9,8 @@ class ConfigDB:
     '''
         Database config
     '''
-    host= "10.42.43.1"
-    #host = "localhost"
+    # host= "10.42.43.1"
+    host = "localhost"
     port= 3306
     user= "bbs"
     passwd= "forargo"
@@ -20,7 +20,8 @@ class ConfigCache:
     '''
         Cache config
     '''
-    host = '10.42.43.1'
+    # host = '10.42.43.1'
+    host = "localhost"
     port = 6379
 
 

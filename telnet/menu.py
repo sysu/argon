@@ -24,14 +24,14 @@ class BaseMenuFrame(ArgoStatusFrame):
         self.anim = self.load(self.x_anim)
         self.anim.lanuch()
         self.write('\r\n')
-        self.write(self.background)
-        self.menu = self.load(x_menu)
+        self.menu = self.load(x_menu,refresh=False)
         self.refresh()
-
+        
     def refresh(self):
         self.write(ac.move2(11,0) + self.background)
         self.write(ac.move2(24,0))
         self.bottom_bar()
+        self.menu.refresh()
 
     def get(self,data):
         self.menu.send(data)

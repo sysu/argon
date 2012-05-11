@@ -337,6 +337,9 @@ class Board(Model):
     def dump_attr(self):
         return self.dict.items()
 
+    def dump_attr_dict(self):
+        return self.dict.copy()
+
 """
 Post:
     `pid` int(11) unsigned NOT NULL auto_increment,
@@ -621,12 +624,22 @@ class DataBase(Model):
         self.set_up_section()
         # self.set_up_board()
 
+    def init_database(self):
+        import config
+        for table_name in config.BASE_TABLE :
+            with open(config.SQL_TPL_DIR+'argo_'+table_name+'.sql') as f:
+                sql = f.read()
+                self.execute(sql)
+
     def set_up_section(self):
         res = self.query("SELECT sectionname FROM argo_sectionhead")
-        self.section = dict(map(lambda x : (x["sectionname"],Section(x["sectionname"])),res))
+        self.sections = dict(map(lambda x : (x["sectionname"],Section(x["sectionname"])),res))
 
     def get_section(self,sectionname):
-        return self.section[sectionname]
+        return self.sections[sectionname]
+
+    def get_all_section(self):
+        return self.sections
 
     def get_board(self,boardname):
         return Board(boardname)
@@ -659,18 +672,24 @@ class DataBase(Model):
         self.insert_dict('argo_user',keys)
 
     def check_passwd(self, userid, passwd):
+
         res = self.query("SELECT passwd FROM argo_user WHERE userid = '%s'" , (userid,))
         if len(res) == 0: return False
 
         code = res[0]['passwd']
+
         if bcrypt.hashpw(passwd, code) == code:
             return True
         else:
             return False
 
-    def check_user_exist(self, userid):
+    def check_user_not_exist(self, userid):
         userid = self.escape_string(userid)
         res = self.query("SELECT userid FROM argo_user WHERE userid = '%s'" ,  (userid,))
+        print res
+        if len(res) == 0 :
+            return True
+        return False
 
     def login(self, userid, passwd):
         userid = self.escape_string(userid)
@@ -682,6 +701,9 @@ class DataBase(Model):
         u = User(userid)
 
         return u
+
+    def login_guest(self):
+        pass
 
     def total_online(self):
         '''

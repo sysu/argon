@@ -54,19 +54,19 @@ class TestSuit(object):
         print s.dump_attr()
         print s.get_allboards()
 
-    def add_board(self,boardname,section,description):
+    def add_board(self,boardname,sid,description):
         u'''
         增加一个讨论区。
         '''
         db_orm.add_board(
-            boardname.decode('utf8'),section.decode('utf8'),
+            boardname.decode('utf8'),sid.decode('utf8'),
             {"description":description.decode('utf8')})
-        print 'Add board %s to %s DONE. ' % (boardname,section)
+        print 'Add board %s to %s DONE. ' % (boardname,sid)
 
     def get_section_board(self,section_name):
         b = db_orm.get_section(section_name.decode('utf8'))
         for board in b.get_allboards() :
-            print board.dump_attr()
+            print board.dump_attr_dict()
 
     def add_post(self,boardname,title,owner,content,fromhost):
         b = db_orm.get_board(boardname)

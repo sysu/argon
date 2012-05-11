@@ -27,7 +27,7 @@ menu = {
         ( u'(T)alk         谈天说地区',"undone",'t' ),
         ( u'(C)onfig       系统信息区',"undone",'c' ),
         ( u'(P)ersonal     个人文集区',"undone",'p' ),
-        ( u'(G)oodbye    离开逸仙时空',"bye",'g' ),),
+        ( u'(G)oodbye    离开逸仙时空 ',"bye",'g' ),),
     "userspace":(
         ( u'I) 设定个人资料','user_edit_data','i',(12,4)),
         ( u'P) 修改个人密码','change_passwd','p'),
