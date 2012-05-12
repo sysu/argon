@@ -186,8 +186,8 @@ class Board(Model):
         self.boardname = self.escape_string(boardname)
         self.table = 'argo_filehead_' + self.boardname
 
-        if self.init_board_info() < 0:
-            return None
+        if self.init_board_info() < 0: # 
+            raise ValueError('No Such board [%s]' % boardname)
 
     def __getitem__(self, name):
         try:
@@ -641,41 +641,59 @@ class DataBase(Model):
                 self.execute(sql)
 
     def set_up_section(self):
-        res = self.query("SELECT sectionname FROM argo_sectionhead")
-        self.sections = dict(map(lambda x : (x["sectionname"],Section(x["sectionname"])),res))
+        res = self.query("SELECT sectionname FROM argo_sectionhead ORDER BY sid ")
+        self.sections_l = map(lambda x : Section(x["sectionname"]),res)
+        self.sections = dict(map(lambda x : (x["sectionname"],x),self.sections_l))
 
     def get_section(self,sectionname):
         return self.sections[sectionname]
 
     def get_all_section(self):
-        return self.sections
+        return self.sections_l
 
     def get_board(self,boardname):
         return Board(boardname)
 
-    def get_boards(self,section_name): 
+    def get_boards(self,section_name,ord_by='bid'): 
         if section_name in self.sections :
             sid = self.sections[section_name]['sid']
-            sql = "SELECT boardname FROM argo_boardhead WHERE sid = %d" % sid
+            sql = "SELECT boardname FROM argo_boardhead WHERE sid = %d ORDER BY '%s'" % (sid,ord_by)
             res = self.db.query(sql)
             return [Board(b['boardname']) for b in res]
 
     def get_user(self,userid):
         return User(userid)
 
-    def add_board(self, boardname, sid, keys):
+    def add_board(self, boardname, sectionname, keys, sid=None, force=False):
 
+        if force is False : # 检查sectionname是否唯一
+            try:
+                t = Board(boardname)
+            except ValueError:
+                pass
+            else:
+                raise ValueError(u'已经存在该版块')
+            
         with open('database/template/argo_filehead.sql') as f :
             board_template = Template(f.read())
 
+        sid = sid or self.sections[sectionname]['sid']
         keys['sid'] = sid
         keys['boardname'] = boardname
         self.execute(board_template.safe_substitute({'boardname' : boardname}))
         self.insert_dict('argo_boardhead',keys)
 
-    def add_section(self,sectionname,keys):
+    def add_section(self,sectionname,keys,force=False):
+        if force is False and self.sections.get(sectionname) :
+            raise ValueError(u'已经存在该讨论区')
         keys['sectionname'] = sectionname
         self.insert_dict('argo_sectionhead',keys)
+        self.sections[sectionname] = Section(sectionname)
+
+    def del_section(self,sectionname):
+        sql = "DELETE FROM argo_sectionhead WHERE sectionname = '%s' " % sectionname
+        print sql
+        self.execute(sql)
 
     '''  User relate functions '''
 

@@ -30,6 +30,15 @@ class BoardListFrame(BaseTableFrame):
     thead = tuple(static['boardlist'][1:3])
     format_strs = tuple(static['boardlist'][3:5])
     
+    key_maps = {
+        ac.k_up : "move_up",
+        ac.k_down : "move_down",
+        ac.k_page_down : "page_down",
+        ac.k_page_up : "page_up",
+        ac.k_home : "go_first",
+        ac.k_end : "go_last",
+        }
+    
     class Wrapper:
 
         def __init__(self,data):
@@ -42,7 +51,6 @@ class BoardListFrame(BaseTableFrame):
                 "total":board.get_total(),
                 "boardname":board['boardname'],
                 "number":key,
-                "type":'',
                 "reproduced":'',
                 "description":board['description'],
                 'online':board.count_online(),
@@ -65,9 +73,28 @@ class BoardListFrame(BaseTableFrame):
         self.table = self.load(self.x_table,self.format_strs[mode],self.data)
 
     def get(self,data):
-        self.table.send(data)
+        if data in self.key_maps :
+            getattr(self,self.key_maps[data])()
+
+    def move_down(self):
+        self.table.goto_offset(1)
+    
+    def move_up(self):
+        self.table.goto_offset(-1)
+
+    def page_down(self):
+        self.table.goto_offset(self.table.limit)
         
-        
+    def page_up(self):
+        self.table.goto_offset(-self.table.limit)
+
+    def go_first(self):
+        self.table.goto(0)
+
+    def go_last(self):
+        self.table.goto(len(self.table.data))
+
+
 # @mark('boardlist')
 # class BoardListFrame(Table):
     

@@ -4,7 +4,7 @@ import sys
 sys.path.append('../')
 
 from chaofeng import Frame,static
-from libtelnet import zh_format
+from libtelnet import zh_format,zh_format_d
 import chaofeng.ascii as ac
 import config
 
@@ -43,3 +43,9 @@ class ArgoStatusFrame(ArgoBaseFrame):
                               self.session.userid))
         if close : self.write(ac.restore)
         
+
+    def fm(self,format_str,args):
+        if isinstance(args,tuple):
+            return zh_format(format_str,*args)
+        if isinstance(args,dict):
+            return zh_format_d(format_str,**args)

@@ -34,3 +34,9 @@ def zh_format(mod,*args):
     args = tuple(map(lambda x : x.encode('gbk') if isinstance(x,unicode) else x,
                      args))
     return (mod.encode('gbk') % args).decode('gbk')
+
+def zh_format_d(mod,**kwargs):
+    for key in kwargs :
+        if isinstance(kwargs[key],unicode) :
+            kwargs[key] = kwargs[key].encode('gbk')
+    return (mod.encode('gbk') % kwargs).decode('gbk')

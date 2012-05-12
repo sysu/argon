@@ -63,7 +63,7 @@ class MainMenuFrame(BaseMenuFrame):
 class SectionMenuFrame(BaseMenuFrame):
 
     background = static['menu_section']
-    sections = db_orm.get_all_section().values()
+    sections = db_orm.get_all_section()
     wrapper = lambda x : ( zh_format('%d) %8s -- %s',
                                      x[0],
                                      x[1]['sectionname'],
