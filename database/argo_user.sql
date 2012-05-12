@@ -5,7 +5,8 @@ CREATE TABLE IF NOT EXISTS `argo_user` (
     `passwd` varchar(60),
     `nickname` varchar(20),
     `email` varchar(80),
-    `userlevel` int(11) unsigned NOT NULL default 0,
+/*    `userlevel` int(11) unsigned NOT NULL default 0, */
+    `identity` int(11) unsigned NOT NULL default 2,
     `netid`  varchar(20),
     `iconidx` varchar(20),
 

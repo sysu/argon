@@ -1,7 +1,7 @@
 # -*- coding: utf-8 -*-
 from chaofeng import ascii
 
-root = 'login_debug'
+root = 'welcome'
 
 # 菜单的设定
 # 第一项是一个字符串，将会显示到屏幕。第二项是跳转的页面的mark，和goto的参数。

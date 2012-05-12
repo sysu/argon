@@ -340,6 +340,15 @@ class Board(Model):
     def dump_attr_dict(self):
         return self.dict.copy()
 
+    ### Cache
+
+    def user_enter(self,userid):
+        userid = self.escape_string(userid)
+        self.set_add(self['boardname'] + '_online_userid',userid)
+        
+    def count_online(self):
+        return self.set_card(self['boardname'] + '_online_userid')
+
 """
 Post:
     `pid` int(11) unsigned NOT NULL auto_increment,
@@ -644,6 +653,13 @@ class DataBase(Model):
     def get_board(self,boardname):
         return Board(boardname)
 
+    def get_boards(self,section_name): 
+        if section_name in self.sections :
+            sid = self.sections[section_name]['sid']
+            sql = "SELECT boardname FROM argo_boardhead WHERE sid = %d" % sid
+            res = self.db.query(sql)
+            return [Board(b['boardname']) for b in res]
+
     def get_user(self,userid):
         return User(userid)
 
@@ -697,6 +713,7 @@ class DataBase(Model):
             return None
 
         self.set_add('online_userid', userid)
+        print self.set_card('online_userid')
 
         u = User(userid)
 

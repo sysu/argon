@@ -45,7 +45,7 @@ class BoardListFrame(BaseTableFrame):
                 "type":'',
                 "reproduced":'',
                 "description":board['description'],
-                'online':0,
+                'online':board.count_online(),
                 'unknow':'',
                 'bm': board['bm'] and ' '.join(board['bm'].split(':')),
                 'have_news':'',
@@ -63,6 +63,9 @@ class BoardListFrame(BaseTableFrame):
         self.mode = mode
         self.data = self.Wrapper(db_orm.get_boards(section_name))
         self.table = self.load(self.x_table,self.format_strs[mode],self.data)
+
+    def get(self,data):
+        self.table.send(data)
         
         
 # @mark('boardlist')
