@@ -9,6 +9,7 @@ from chaofeng.ui import Animation,ColMenu
 import chaofeng.ascii as ac
 from argo_frame import ArgoStatusFrame
 from model import db_orm
+from libtelnet import zh_format
 import config
 
 class BaseMenuFrame(ArgoStatusFrame):
@@ -36,13 +37,16 @@ class BaseMenuFrame(ArgoStatusFrame):
     def get(self,data):
         self.menu.send(data)
         if data in ac.ks_finish :
-            print self.menu.fetch()
+            self.handle_finish()
+
+    def handle_finish(self):
+        raise NotImplementedError
 
 @mark('main')
 class MainMenuFrame(BaseMenuFrame):
 
     background = static['menu_main']
-    x_menu = {
+    x_menus = {
         True:ColMenu(config.menu['main_guest']),
         False:ColMenu(config.menu['main']),
         }
@@ -50,17 +54,32 @@ class MainMenuFrame(BaseMenuFrame):
 
     def initialize(self):
         super(MainMenuFrame,self).\
-            initialize(self.x_menu[self.session.userid == 'guest'])
+            initialize(self.x_menus[self.session.userid == 'guest'])
+
+    def handle_finish(self):
+        self.goto(self.menu.fetch())
 
 @mark('section_menu')
 class SectionMenuFrame(BaseMenuFrame):
 
-    item_wraper = lambda x : ( zh_fromat('%d) %8s -- %s',
-                                         x[0],x[1]['sectionname'],x[1]['description']),
-                               ('boardlist',{'section_name':x[1]['sectionname']}),
-                               x[0])
+    background = static['menu_section']
+    sections = db_orm.get_all_section().values()
+    wrapper = lambda x : ( zh_format('%d) %8s -- %s',
+                                     x[0],
+                                     x[1]['sectionname'],
+                                     x[1]['description']),
+                           ('boardlist',{'section_name':x[1]['sectionname']}),
+                           x[0])
+    sections_d = map(wrapper,enumerate(sections))
+    sections_d[0] += ((11,5),) 
+
+    x_menu = ColMenu(tuple(sections_d)+config.menu['section'])
 
     def initialize(self):
-        sections = db_orm.get_all_section()
-        d = map(self.item_wraper ,enumerate(sections))
-        super(SectionMenuFrame,self).initialize(static['menu_section'],tuple(d)+config.menu['section'])
+        super(SectionMenuFrame,self).initialize(self.x_menu)
+
+    def handle_finish(self):
+        res = self.menu.fetch()
+        if isinstance(res,tuple) :
+            self.goto(res[0],**res[1])
+        else : self.goto(res)
