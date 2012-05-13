@@ -24,6 +24,20 @@ class ArgoBaseFrame(Frame):
     def render_background(self,*args,**kwargs):
         self.write(self.background % kwargs)
 
+    def record(self,*args,**kwargs):
+        self.history.append((self.__class__,args,kwargs))
+
+    def goto_back(self):
+        if self.history :
+            frame,args,kwargs = self.history.pop()
+            self.raw_goto(frame,*args,**kwargs)
+
+    @property
+    def history(self):
+        if not hasattr(self.session,"history") :
+            self.session.history = []
+        return self.session.history
+
 class ArgoStatusFrame(ArgoBaseFrame):
 
     top_txt = static['top']
@@ -49,3 +63,9 @@ class ArgoStatusFrame(ArgoBaseFrame):
             return zh_format(format_str,*args)
         if isinstance(args,dict):
             return zh_format_d(format_str,**args)
+
+class ArgoKeymapsFrame(ArgoBaseFrame):
+
+    def get(self,data):
+        if data in self.key_maps :
+            getattr(self,self.key_maps[data])()

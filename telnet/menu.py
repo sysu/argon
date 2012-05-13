@@ -5,7 +5,7 @@ sys.path.append('../')
     
 from chaofeng import EndInterrupt,Timeout
 from chaofeng.g import mark,static
-from chaofeng.ui import Animation,ColMenu
+from chaofeng.ui import Animation,ColMenu,SingleTextBox
 import chaofeng.ascii as ac
 from argo_frame import ArgoStatusFrame
 from model import db_orm
@@ -16,16 +16,18 @@ class BaseMenuFrame(ArgoStatusFrame):
 
     x_anim = Animation(static['active'],start_line=3)
 
+    x_help_box = None
     x_menu = None
     background = ''
     
-    def initialize(self,x_menu):
+    def initialize(self,x_menu,default=0):
         self.write(ac.clear)
         self.top_bar()
         self.anim = self.load(self.x_anim)
         self.anim.lanuch()
         self.write('\r\n')
-        self.menu = self.load(x_menu,refresh=False)
+        self.menu = self.load(x_menu,default=default,refresh=False)
+        self.help_box = self.load(self.x_help_box)
         self.refresh()
         
     def refresh(self):
@@ -38,6 +40,10 @@ class BaseMenuFrame(ArgoStatusFrame):
         self.menu.send(data)
         if data in ac.ks_finish :
             self.handle_finish()
+        elif data == ac.k_ctrl_c :
+            self.goto_back()
+        elif data == 'h' :
+            self.help_box.show()
 
     def handle_finish(self):
         raise NotImplementedError
@@ -50,13 +56,14 @@ class MainMenuFrame(BaseMenuFrame):
         True:ColMenu(config.menu['main_guest']),
         False:ColMenu(config.menu['main']),
         }
+    x_help_box = SingleTextBox(static['help_main'],start_line=15)
 
-
-    def initialize(self):
+    def initialize(self,default=0):
         super(MainMenuFrame,self).\
-            initialize(self.x_menus[self.session.userid == 'guest'])
+            initialize(self.x_menus[self.session.userid == 'guest'],default)
 
     def handle_finish(self):
+        self.record(default=self.menu.hover)
         self.goto(self.menu.fetch())
 
 @mark('section_menu')
@@ -74,11 +81,13 @@ class SectionMenuFrame(BaseMenuFrame):
     sections_d[0] += ((11,5),) 
 
     x_menu = ColMenu(tuple(sections_d)+config.menu['section'])
+    x_help_box = SingleTextBox(static['help_main'])
 
-    def initialize(self):
-        super(SectionMenuFrame,self).initialize(self.x_menu)
+    def initialize(self,default=0):
+        super(SectionMenuFrame,self).initialize(self.x_menu,default)
 
     def handle_finish(self):
+        self.record(default=self.menu.hover)
         res = self.menu.fetch()
         if isinstance(res,tuple) :
             self.goto(res[0],**res[1])

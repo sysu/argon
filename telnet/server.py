@@ -5,7 +5,7 @@ sys.path.append('../')
 
 from chaofeng import Server,g
 from chaofeng.g import mark,static
-import login,user,menu,board
+import login,user,menu,board,post
 import config
 from model import db_orm
 
@@ -25,5 +25,5 @@ class LoginDebugFrame(login.WelcomeFrame):
         self.hook_login(user)
         
 if __name__ == '__main__' :
-    s = Server(mark[config.root])
+    s = Server(mark['debug'])
     s.run()
