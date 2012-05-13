@@ -9,11 +9,12 @@ sys.path.append('../')
 
 from chaofeng import static
 from chaofeng.g import mark
-from chaofeng.ui import BaseTable,SingleTextBox,TextEditor
+from chaofeng.ui import BaseTable,SingleTextBox,TextEditor,LongTextBox
 from chaofeng import ascii as ac
 from model import *
 from datetime import datetime
-from argo_frame import ArgoBaseFrame,ArgoStatusFrame,ArgoKeymapsFrame,in_history
+from argo_frame import ArgoBaseFrame,ArgoStatusFrame,\
+    ArgoKeymapsFrame,in_history,ex_curses
 import chaofeng.ascii as ac
 from argo_editor import ArgoEditor
 import config
@@ -120,7 +121,6 @@ class BoardListFrame(BaseTableFrame):
 
     @in_history
     def finish(self):
-        self.record_x()
         d = self.table.fetch()
         self.goto('board',self.data[d]['boardname'])
         
@@ -189,6 +189,10 @@ class BoardFrame(BaseTableFrame):
                     default=self.table.hover)
 
     @in_history
+    def finish(self):
+        self.goto('post',self.w_data.get_post(self.table.fetch()))
+
+    @in_history
     def show_help(self):
         self.goto('tutorial','tut_board')
 
@@ -206,23 +210,31 @@ class BoardFrame(BaseTableFrame):
     #     self.goto('post',self.boardname,
         
 
-# @mark('post')
-# class PostFrame(TextBox):
+@mark('post')
+class PostFrame(ArgoBaseFrame):
 
-#     def initialize(self,postobj):
-#         self.body = postobj
-#         super(PostFrame,self).initialize(postobj['content'])
+    class ArgoTextBox(LongTextBox):
 
-#     def get(self,data):
-#         super(PostFrame,self).get(data)
-#         if data == ac.k_ctrl_c :
-#             self.goto(mark['board'],boardname=self.session['last_boardname'])
+        def handle_finish(self):
+            self.frame.goto_back()
+
+    x_cbox = ArgoTextBox()
+
+    def initialize(self,postobj):
+        self.body = postobj
+        self.post = self.load(self.x_cbox,postobj['content'])
+        
+    def get(self,data):
+        self.post.send(data)
 
 @mark('add_post')
 class AddPostFrame(ArgoBaseFrame):
 
     re_c = re.compile('[^\r\n]+')
     x_editor = ArgoEditor()
+    key_maps = {
+        ac.k_ctrl_c : "cancel",
+        }
     
     def initialize(self,boardname):
         self.write(ac.clear)
@@ -232,26 +244,29 @@ class AddPostFrame(ArgoBaseFrame):
 
     def get(self,data):
         self.editor.send(data)
+        if data in self.key_maps :
+            getattr(self,self.key_maps[data])()
 
-    def do_cancel(self):
-        self.write(ac.move2(24,0)+u'按下y确认发布，Ctrl+C离开')
-        c =  self.static_read()
-        if c == 'y':
-            print repr(self.re_c)
-            print repr(self.buf[0])
-            title_re = re.match(self.re_c,''.join(self.buf[0]))
+    @ex_curses
+    def cancel(self):
+        self.editor.message(u'按下y确认发布，Ctrl+C离开')
+        c = self.read_secret()
+        if c == 'y' :
+            content = self.editor.fetch()
+            title_re = re.match(self.re_c,content)
             if not title_re  :
                 self.write(u'错误的标题！')
                 return
-            self.body['title'] = title_re.group(0)
-            self.body['content'] = self.fetch()
-            self.write(u'\r\n 标题 : %s \r\n' % self.body['title'])
-            self.board.add_post(self.body)
-            self.write(u'发帖成功！')
-            self.pause()
-            self.goto(mark['board'],boardname=self.board['boardname'])
+            title = title_re.group(0),
+            p = {
+                'title':title,
+                'content':content,
+                }
+            self.session._user.add_post(self.boardname,p)
+            self.editor.message(u'发帖成功！ 《%s》' % title)
+            self.goto_back()
         elif c == ac.k_ctrl_c :
-            self.goto(mark['board'],board['boardname'])
+            self.goto_back()
         
 # todo :
 # better wrap up for UI,Frame, and Frame,get

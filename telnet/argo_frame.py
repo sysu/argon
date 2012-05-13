@@ -19,6 +19,12 @@ class ArgoBaseFrame(Frame):
     全部类的基类。
     '''
 
+    def u(self,data):
+        return data.decode('gbk')
+
+    def s(self,data):
+        return data.encode('gbk')
+
     def cls(self):
         self.write(ac.clear)
         
@@ -60,8 +66,6 @@ class ArgoStatusFrame(ArgoBaseFrame):
         
 
     def fm(self,format_str,args):
-        print 'z'*20
-        print format_str
         if isinstance(args,tuple):
             return zh_format(format_str,*args)
         elif isinstance(args,dict):
@@ -81,3 +85,13 @@ def in_history(f):
         self.record_x()
         return f(self,*args,**kwargs)
     return wrapper
+
+def ex_curses(f):
+    @functools.wraps(f)
+    def wrapper(self,*args,**kwargs):
+        self.write(ac.save)
+        f(self,*args,**kwargs)
+        self.write(ac.restore)
+    return wrapper
+
+
