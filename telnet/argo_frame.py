@@ -9,6 +9,7 @@ import chaofeng.ascii as ac
 import config
 
 from datetime import datetime
+import functools
 
 class ArgoBaseFrame(Frame):
 
@@ -59,13 +60,24 @@ class ArgoStatusFrame(ArgoBaseFrame):
         
 
     def fm(self,format_str,args):
+        print 'z'*20
+        print format_str
         if isinstance(args,tuple):
             return zh_format(format_str,*args)
-        if isinstance(args,dict):
+        elif isinstance(args,dict):
             return zh_format_d(format_str,**args)
+        else :
+            raise TypeError(u'No tuple or dict')
 
 class ArgoKeymapsFrame(ArgoBaseFrame):
 
     def get(self,data):
         if data in self.key_maps :
             getattr(self,self.key_maps[data])()
+
+def in_history(f):
+    @functools.wraps(f)
+    def wrapper(self,*args,**kwargs):
+        self.record_x()
+        return f(self,*args,**kwargs)
+    return wrapper

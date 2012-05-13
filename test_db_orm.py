@@ -1,5 +1,5 @@
-# -*- coding: utf-8 -*-
 #!/usr/bin/env python
+# -*- coding: utf-8 -*-
 
 from model.Model import db_orm,Post
 from datetime import datetime
@@ -70,15 +70,16 @@ class TestSuit(object):
             print board.dump_attr_dict()
 
     def add_post(self,boardname,title,owner,content,fromhost):
-        b = db_orm.get_board(boardname)
-        b.add_post(Post({
-                    "title":title.decode('utf8'),
-                    "owner":owner.decode('utf8'),
-                    "content":content.decode('utf8'),
-                    "fromhost":fromhost.decode('utf8'),
-                    }))
+        u = db_orm.get_user(owner)
+        u.add_post(boardname,dict(title=title,owner=owner,content=content,fromhost=fromhost))
         print "Add post %s to %s DONE." % (title,boardname)
 
+    def get_board_post(self,boardname):
+        b = db_orm.get_board(boardname)
+        da = b.get_post(0)
+        for post in da :
+            print post.dict
+            
     def add_user(self,userid,passwd):
         db_orm.add_user(userid,passwd,{'firstlogin':datetime.now()})
         print 'Add user %s DONE.' % userid

@@ -11,7 +11,10 @@ class AuthError(Exception):pass
 class Model(object):
 
     cache_prefix = 'argo_'
-
+    
+    db = global_conn # for classmethod
+    cache = global_cache
+    
     def __init__(self):
         self.db = global_conn
         self.cache = global_cache
@@ -25,10 +28,11 @@ class Model(object):
     def __setitem__(self, name, value):
         self.dict[name] = value
 
-    def escape_string(self, rawsql):
-        if type(rawsql) != type(''):
+    @classmethod
+    def escape_string(cls, rawsql):
+        if not isinstance(rawsql,str):
             return rawsql
-        safe_sql = self.db.escape_string(rawsql)
+        safe_sql = cls.db.escape_string(rawsql)
         return safe_sql
 
     def query(self, sql, params = ()):
@@ -41,12 +45,14 @@ class Model(object):
         res = self.db.query(sql % tuple(params))
         return res
 
-    def execute(self, sql, params = ()):
-        params = map(self.escape_string, params)
-        self.db.execute(sql % tuple(params))
+    @classmethod
+    def execute(cls, sql, params = ()):
+        params = map(cls.escape_string, params)
+        cls.db.execute(sql % tuple(params))
 
-    def execute_noescape(self, sql, params = ()):
-        self.db.execute(sql % params)
+    @classmethod
+    def execute_noescape(cls, sql, params = ()):
+        cls.db.execute(sql % params)
 
     def escape_attr(self, dict):
         res = {}
@@ -55,12 +61,14 @@ class Model(object):
                 res[k] = v
         return res
 
-    def insert_dict(self,table,kv_pairs):
+    @classmethod
+    def insert_dict(cls,table,kv_pairs):
         exist_attr = kv_pairs.keys()
-        exist_val = map(lambda x : self.to_str(self.escape_string(x)),kv_pairs.values())
-        self.execute_noescape("INSERT INTO %s(%s) values(%s)" , (table, ','.join(exist_attr), ','.join(exist_val)))
+        exist_val = map(lambda x : cls.to_str(cls.escape_string(x)),kv_pairs.values())
+        cls.execute_noescape("INSERT INTO %s(%s) values(%s)" , (table, ','.join(exist_attr), ','.join(exist_val)))
 
-    def to_str(self, s):
+    @classmethod
+    def to_str(cls, s):
         return "'%s'" % s;
 
     def close():
@@ -143,10 +151,8 @@ class Section(Model):
 
         if len(res) == 1:
             self.dict = self.escape_attr(res[0])
-            return 0
         else:
-            self.dict = {}
-            return -1
+            raise ValueError(u'No such section [%s]' % self.sectionname)
 
     def get_allboards(self):
         if not self.dict.has_key('sid'): return []
@@ -185,9 +191,7 @@ class Board(Model):
         super(Board, self).__init__()
         self.boardname = self.escape_string(boardname)
         self.table = 'argo_filehead_' + self.boardname
-
-        if self.init_board_info() < 0: # 
-            raise ValueError('No Such board [%s]' % boardname)
+        self.init_board_info()
 
     def __getitem__(self, name):
         try:
@@ -207,10 +211,8 @@ class Board(Model):
 
         if len(res) == 1:
             self.dict = self.escape_attr(res[0])
-            return 0
         else:
-            self.dict = {}
-            return -1
+            raise ValueError('No Such board [%s]' % boardname)
 
     def get_post(self, start, end=-1):
         """
@@ -279,12 +281,13 @@ class Board(Model):
         if start <= 0: start = 0
         return self.get_topic(start, end)
 
-    def add_post(self, post):
+    def add_post(self, post_dict):
         """
             Add post.
             TODO: escape string
         """
-        self.insert_dict(self.table , post.dict)
+        post_dict['bid'] = self['bid']
+        self.insert_dict(self.table , post_dict)
 
     def del_post(self, start, end = -1):
         """
@@ -379,6 +382,9 @@ class Post(Model):
     def __init__(self, dict = {}):
        self.dict = self.escape_attr(dict)
 
+    def __str__(self):
+        return 'Post{%s}' % self.dict
+
     def __getitem__(self, name):
         try:
             return self.dict[name]
@@ -390,7 +396,6 @@ class Post(Model):
 
     def dump_attr(self):
         return self.dict.items()
-
 """
     `uid` int(11) unsigned NOT NULL auto_increment,
     `userid` varchar(20) NOT NULL,
@@ -549,6 +554,11 @@ class User(Model):
         self.set_rem(self.dict['userid'])
         self.hash_delall(self.cache_key)
 
+    def add_post(self,boardname,post_dict):
+        post_dict['owner'] = self['userid']
+        b = Board(boardname)
+        b.add_post(post_dict)
+
     def send_post(self, board, post):
         """
             if self.has_post_perm(board):
@@ -685,7 +695,7 @@ class DataBase(Model):
 
     def add_section(self,sectionname,keys,force=False):
         if force is False and self.sections.get(sectionname) :
-            raise ValueError(u'已经存在该讨论区')
+            raise ValueError(u'已经存在该讨论区 [%s]' % sectionname)
         keys['sectionname'] = sectionname
         self.insert_dict('argo_sectionhead',keys)
         self.sections[sectionname] = Section(sectionname)
@@ -694,6 +704,10 @@ class DataBase(Model):
         sql = "DELETE FROM argo_sectionhead WHERE sectionname = '%s' " % sectionname
         print sql
         self.execute(sql)
+
+    def get_post(self,postname,boardname):
+        # sql = "SELETE *
+        pass
 
     '''  User relate functions '''
 
@@ -720,7 +734,6 @@ class DataBase(Model):
     def check_user_not_exist(self, userid):
         userid = self.escape_string(userid)
         res = self.query("SELECT userid FROM argo_user WHERE userid = '%s'" ,  (userid,))
-        print res
         if len(res) == 0 :
             return True
         return False
@@ -751,5 +764,10 @@ class DataBase(Model):
             返回所有在线用户userid list
         '''
         return self.set_members('online_userid')
-
+    
+    def add_post(self,boardname,**attr):
+        b = Board(boardname)
+        attr['bid'] = b['bid']
+        b.add_post(attr)
+        
 db_orm = DataBase()

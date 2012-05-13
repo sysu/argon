@@ -5,7 +5,7 @@
 DROP TABLE IF EXISTS `argo_filehead_${boardname}`;
 CREATE TABLE IF NOT EXISTS `argo_filehead_${boardname}` (
     `pid` int(11) unsigned NOT NULL auto_increment,
-    `bid` int(11) unsigned NOT NULL, 
+    `bid` int(11) unsigned NOT NULL,
     `owner` varchar(14),
     `realowner` varchar(14),
     `title` varchar(60),

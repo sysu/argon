@@ -39,4 +39,8 @@ def zh_format_d(mod,**kwargs):
     for key in kwargs :
         if isinstance(kwargs[key],unicode) :
             kwargs[key] = kwargs[key].encode('gbk')
+    print 'c'*20
+    print mod
+    print kwargs
+    print 'd'*20
     return (mod.encode('gbk') % kwargs).decode('gbk')
