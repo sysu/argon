@@ -31,6 +31,9 @@ class BaseTableFrame(ArgoStatusFrame):
         ac.k_end : "go_last",
         ac.k_ctrl_c : "goto_back",
         "h":"show_help",
+        "q":"goto_back",
+        ac.k_left:"goto_back",
+        ac.k_right:"finish",
         }
 
     def get(self,data):
@@ -82,13 +85,9 @@ class BoardListFrame(BaseTableFrame):
             return {
                 "total":board.get_total(),
                 "boardname":board['boardname'],
-                "number":key,
-                "reproduced":'',
                 "description":board['description'],
                 'online':board.count_online(),
-                'unknow':'',
                 'bm': board['bm'] and ' '.join(board['bm'].split(':')),
-                'have_news':'',
                 }
         
         def __len__(self):
@@ -160,13 +159,14 @@ class BoardFrame(BaseTableFrame):
         def __getitem__(self,key):
             d = self.get_post(key).dict.copy()
             d['number'] = key
-            d['data'] = ''
+            d['data'] = d['posttime'].strftime("%b %d %a")
             return d
 
         def __len__(self):
             return self.len
             
     def initialize(self,boardname,default=0):
+        self.session.lastboard = boardname
         self.boardname = boardname
         self.session.last_board = boardname
         self.data = db_orm.get_board(boardname)

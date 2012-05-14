@@ -10,23 +10,23 @@ root = 'welcome'
 menu = {
     "main":(
         ( u'(E)Group       分类讨论区','section_menu','e',(12,5)),
-        ( u'(D)igest       本站精华区',"undone",'d' ),
-        ( u'(F)avourite    个人收藏夹',"undone",'f' ),
-        ( u'(R)ecommend    推荐版面区',"undone",'r' ),
-        ( u'(M)ail         处理信笺区',"undone",'m' ),
-        ( u'(T)alk         谈天说地区',"undone",'t' ),
-        ( u'(I)nfoEdit     个人工具箱',"user_space",'i' ),
-        ( u'(S)ervice      特别服务区',"undone",'s' ),
-        ( u'(C)onfig       系统信息区',"undone",'c' ),
-        ( u'(P)ersonal     个人文集区',"undone",'p' ),
+        # ( u'(D)igest       本站精华区',"undone",'d' ),
+        # ( u'(F)avourite    个人收藏夹',"undone",'f' ),
+        # ( u'(R)ecommend    推荐版面区',"undone",'r' ),
+        # ( u'(M)ail         处理信笺区',"undone",'m' ),
+        # ( u'(T)alk         谈天说地区',"undone",'t' ),
+        # ( u'(I)nfoEdit     个人工具箱',"user_space",'i' ),
+        # ( u'(S)ervice      特别服务区',"undone",'s' ),
+        # ( u'(C)onfig       系统信息区',"undone",'c' ),
+        # ( u'(P)ersonal     个人文集区',"undone",'p' ),
         ( u'(G)oodbye    离开逸仙时空',"bye",'g' )),
     "main_guest":(
         ( u'(E)Group       分类讨论区','section_menu','e',(12,5)),
-        ( u'(D)igest       本站精华区',"undone",'d' ),
-        ( u'(R)ecommend    推荐版面区',"undone",'r' ),
-        ( u'(T)alk         谈天说地区',"undone",'t' ),
-        ( u'(C)onfig       系统信息区',"undone",'c' ),
-        ( u'(P)ersonal     个人文集区',"undone",'p' ),
+        # ( u'(D)igest       本站精华区',"undone",'d' ),
+        # ( u'(R)ecommend    推荐版面区',"undone",'r' ),
+        # ( u'(T)alk         谈天说地区',"undone",'t' ),
+        # ( u'(C)onfig       系统信息区',"undone",'c' ),
+        # ( u'(P)ersonal     个人文集区',"undone",'p' ),
         ( u'(G)oodbye    离开逸仙时空 ',"bye",'g' ),),
     "userspace":(
         ( u'I) 设定个人资料','user_edit_data','i',(12,4)),
@@ -52,3 +52,5 @@ default_shortcuts = {
     ascii.k_ctrl_c:"cancel",
     'h':"help",
     }
+
+# userid_char = 

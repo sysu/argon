@@ -4,7 +4,7 @@ import sys
 sys.path.append('../')
 
 from chaofeng import Frame,static
-from libtelnet import zh_format,zh_format_d
+from libtelnet import zh_format,zh_format_d,zh_center
 import chaofeng.ascii as ac
 import config
 
@@ -19,11 +19,8 @@ class ArgoBaseFrame(Frame):
     全部类的基类。
     '''
 
-    def u(self,data):
-        return data.decode('gbk')
-
-    def s(self,data):
-        return data.encode('gbk')
+    u = lambda self,d : d.decode(self.session.charset)
+    s = lambda self,s : s.encode(self.session.charset)
 
     def cls(self):
         self.write(ac.clear)
@@ -50,17 +47,20 @@ class ArgoStatusFrame(ArgoBaseFrame):
     top_txt = static['top']
     bottom_txt = static['bottom']
 
-    def top_bar(self,left=u'',mid=u'逸仙时空 Yat-Sen Channel'):
+    def top_bar(self,left=u'',mid=u'逸仙时空 Yat-Sen Channel',right=None):
+        if right is None :
+            try:
+                right = self.session.lastboard
+            except AttributeError:
+                right = ''
         self.write( zh_format(self.top_txt,
-                              left, mid, '007') )
+                              left, zh_center(mid,40), right) )
 
     def bottom_bar(self,repos=False,close=False):
         if close : self.write(ac.save)
         if repos : self.write(ac.move2(24,0))
         self.write( zh_format(self.bottom_txt,
                               datetime.now().ctime(),
-                              0,
-                              0,
                               self.session.userid))
         if close : self.write(ac.restore)
         
@@ -93,5 +93,4 @@ def ex_curses(f):
         f(self,*args,**kwargs)
         self.write(ac.restore)
     return wrapper
-
 

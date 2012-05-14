@@ -2,7 +2,7 @@
 from chaofeng.g import static,_s,_u
 from datetime import datetime
 
-_wCenter = lambda s,w : s.encode('gbk').center(w).decode('gbk')
+zh_center = lambda s,w : s.encode('gbk').center(w).decode('gbk')
 
 _top_str = _s(static['top'])
 _bot_str = _s(static['bottom'])
