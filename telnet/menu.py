@@ -41,7 +41,9 @@ class BaseMenuFrame(ArgoStatusFrame):
         elif data == ac.k_ctrl_c :
             self.goto_back()
         elif data == 'h' :
+            print 1
             self.show_help()
+            print 2
 
     def handle_finish(self):
         raise NotImplementedError
@@ -52,7 +54,7 @@ class BaseMenuFrame(ArgoStatusFrame):
 @mark('main')
 class MainMenuFrame(BaseMenuFrame):
 
-    background = static['menu_main']
+    background = static['menu/main']
     x_menus = {
         True:ColMenu(config.menu['main_guest']),
         False:ColMenu(config.menu['main']),
@@ -68,12 +70,12 @@ class MainMenuFrame(BaseMenuFrame):
 
     @in_history
     def show_help(self):
-        self.goto('tutorial','tut_main')
+        self.goto('help','main')
 
 @mark('section_menu')
 class SectionMenuFrame(BaseMenuFrame):
 
-    background = static['menu_section']
+    background = static['menu/section']
     sections = db_orm.get_all_section()
     wrapper = lambda x : ( zh_format('%d) %8s -- %s',
                                      x[0],
@@ -98,4 +100,4 @@ class SectionMenuFrame(BaseMenuFrame):
 
     @in_history
     def show_help(self):
-        self.goto('tutorial','tut_section')
+        self.goto('help','section')

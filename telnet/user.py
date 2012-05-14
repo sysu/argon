@@ -24,7 +24,7 @@ class UsernameInput(TextInput):
 @mark('register')
 class RegisterFrame(ArgoBaseFrame):
 
-    background = ac.clear + static['register_anno']
+    background = ac.clear + static['page/register_notice']
     ban_userid = ['guest','new']
     ix_name = TextInput(prompt= u'请输入帐号名称 (Enter User ID, leave blank to abort): ')
     ix_passwd = Password(prompt= u'请设定您的密码 (Setup Password): ')

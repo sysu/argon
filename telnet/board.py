@@ -81,14 +81,17 @@ class BoardListFrame(BaseTableFrame):
             self.len = len(data)
                         
         def __getitem__(self,key):
-            board = self.data[key]
-            return {
-                "total":board.get_total(),
-                "boardname":board['boardname'],
-                "description":board['description'],
-                'online':board.count_online(),
-                'bm': board['bm'] and ' '.join(board['bm'].split(':')),
-                }
+            try:
+                board = self.data[key]
+                return {
+                    "total":board.get_total(),
+                    "boardname":board['boardname'],
+                    "description":board['description'],
+                    'online':board.count_online(),
+                    'bm': board['bm'] and ' '.join(board['bm'].split(':')),
+                    }
+            except IndexError:
+                return None
         
         def __len__(self):
             return self.len
@@ -116,12 +119,13 @@ class BoardListFrame(BaseTableFrame):
 
     @in_history
     def show_help(self):
-        self.goto('tutorial','tut_boardlist')
+        self.goto('help','boardlist')
 
     @in_history
     def finish(self):
         d = self.table.fetch()
-        self.goto('board',self.data[d]['boardname'])
+        if self.data[d] is not None :
+            self.goto('board',self.data[d]['boardname'])
         
 @mark('board')
 class BoardFrame(BaseTableFrame):
@@ -194,7 +198,7 @@ class BoardFrame(BaseTableFrame):
 
     @in_history
     def show_help(self):
-        self.goto('tutorial','tut_board')
+        self.goto('help','board')
 
     @in_history
     def new_post(self):

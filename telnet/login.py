@@ -17,7 +17,7 @@ class WelcomeFrame(ArgoBaseFrame):
 
     background = static['welcome'].safe_substitute(online="%(online)4s")
     timeout = 50
-    prompt = static['auth_prompt']
+    prompt = static['prompt/auth']
     wrong_prompt = '\r\n' + prompt[2]
 
     class UseridInput(TextInput):
