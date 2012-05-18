@@ -35,10 +35,10 @@ menu = {
         ( u'E) 回到主选单','main','e'),),
     "section":(
         # dy + append
-          ( u'A) 所有讨论区 -- [ALL]',"boardlist",            'a',(11,41)),
-          ( u'N) 阅读新文章',         ("boardlist",{"new":True}),  'n'),
-          ( u'E) 回到主选单 -- [EXIT]',"main",'e'),
-          )
+        ( u"[1;32mA[0m) 所有讨论区 -- [ALL]",("boardlist",{"section_name":True}),'a',(11,41)),
+        ( u"[1;36mN[0m) 阅读新文章 -- [NEW]","undone",'n'),
+        ( u"[1;36mE[0m) 回到主选单 -- [EXIT]","main",'e'),
+        )
 }
 
 default_shortcuts = {

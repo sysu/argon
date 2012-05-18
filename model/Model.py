@@ -670,6 +670,10 @@ class DataBase(Model):
             sql = "SELECT boardname FROM argo_boardhead WHERE sid = %d ORDER BY '%s'" % (sid,ord_by)
             res = self.db.query(sql)
             return [Board(b['boardname']) for b in res]
+        if section_name is True :
+            sql = "SELECT boardname FROM argo_boardhead ORDER BY '%s'" % ord_by
+            res = self.db.query(sql)
+            return [Board(b['boardname']) for b in res]
 
     def get_user(self,userid):
         return User(userid)

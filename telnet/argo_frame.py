@@ -4,6 +4,7 @@ import sys
 sys.path.append('../')
 
 from chaofeng import Frame,static
+from chaofeng.g import mark
 from libtelnet import zh_format,zh_format_d,zh_center
 import chaofeng.ascii as ac
 import config
@@ -25,8 +26,11 @@ class ArgoBaseFrame(Frame):
     def cls(self):
         self.write(ac.clear)
         
-    def render_background(self,*args,**kwargs):
-        self.write(self.background % kwargs)
+    def render_background(self,**kwargs):
+        if kwargs :
+            self.write(self.background % kwargs)
+        else :
+            self.write(self.background)
 
     def record(self,*args,**kwargs):
         self.history.append((self.__class__,args,kwargs))
@@ -94,3 +98,12 @@ def ex_curses(f):
         self.write(ac.restore)
     return wrapper
 
+@mark('undone')
+class UnDoneFrame(ArgoBaseFrame):
+
+    background = static['undone']
+    
+    def initialize(self,*args,**kwargs):
+        self.render_background()
+        self.pause()
+        self.goto_back()

@@ -69,6 +69,8 @@ class WelcomeFrame(ArgoBaseFrame):
             if userobj['numlogins'] == 1 :  # do when frist login
                 self.goto('first_login')
             else : self.goto('main')
+        else :
+            self.write(self.wrong_prompt)
 
     def hook_login_guest(self):
         self._login(None,'guest')

@@ -253,9 +253,9 @@ class AddPostFrame(ArgoBaseFrame):
 
     @ex_curses
     def cancel(self):
-        self.editor.message(u'按下y确认发布，Ctrl+C离开')
+        self.editor.message(u'回车确认发表，Ctrl+C离开，任意键继续编辑')
         c = self.read_secret()
-        if c == 'y' :
+        if c in ac.ks_finish :
             content = self.editor.fetch()
             title_re = re.match(self.re_c,content)
             if not title_re  :

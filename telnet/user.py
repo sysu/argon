@@ -53,7 +53,7 @@ class RegisterFrame(ArgoBaseFrame):
                 'firstlogin':datetime.now(),
                 'firsthost':self.session.ip,
                 })
-        self.write(ac.clear+static['register_succ'] % userid)
+        self.write(ac.clear+static['page/register_succ'] % userid)
         self.pause()
         self.goto('welcome')
     

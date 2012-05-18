@@ -12,17 +12,9 @@ from model import db_orm
 @mark('debug')
 class LoginDebugFrame(login.WelcomeFrame):
 
-    def hook_login(self,userobj):
-        self._login(userobj,userobj['userid'])
-        if userobj['numlogins'] == 1 :
-            self.goto('first_login')
-        self.goto('main')
-
     def initialize(self):
-        userid = '111'
-        passwd = '111111'
-        user = db_orm.login(userid,passwd)
-        self.hook_login(user)
+        self.session.charset = 'gbk'
+        self.handle_login('111','111111')
         
 if __name__ == '__main__' :
     s = Server(mark[config.root])
