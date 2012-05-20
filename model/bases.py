@@ -108,7 +108,3 @@ class Model:
     @classmethod
     def sql_tuple(cls,tup):
         return ' '.join( '%s = %%s' % x for x in tup)
-
-    @classmethod
-    def sql_value(cls,value):
-        return "'"+str(value)+"'"

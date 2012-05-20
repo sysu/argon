@@ -32,6 +32,5 @@ CREATE TABLE IF NOT EXISTS `argo_user` (
     `dattr` blob,
 
     PRIMARY KEY (`uid`),
-    KEY `userid` (`userid`)
-
+    UNIQUE KEY `userid` (`userid`)
 ) ENGINE=InnoDB  DEFAULT CHARSET=UTF8;

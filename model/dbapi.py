@@ -214,7 +214,6 @@ class Connection(object):
             self.close()
             raise
 
-
 class Row(dict):
     """A dict that allows for object-like property access syntax."""
     def __getattr__(self, name):

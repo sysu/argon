@@ -21,5 +21,3 @@ class Board(Model):
     @classmethod
     def get_by_bid(cls,bid):
         return cls.table.one('*',"bid = %d" % bid)
-
-

@@ -16,5 +16,5 @@ CREATE TABLE IF NOT EXISTS `argo_boardhead` (
     `r_prem` int(11) unsigned default 1, /* read permissions */
     `p_prem` int(11) unsigned default 2, /* post permissions */
     PRIMARY KEY (`bid`),
-    KEY `boardname` (`boardname`)
+    UNIQUE KEY `boardname` (`boardname`)
 ) ENGINE=MyISAM  DEFAULT CHARSET=UTF8;

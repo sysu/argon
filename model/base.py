@@ -6,7 +6,7 @@ from globaldb import global_cache
 class Table:
 
     def __init__(self,tablename=None,db=global_conn):
-        self.db = global_db
+        self.db = db
         if tablename is not None:
             self.bind(tablename)
 
@@ -20,13 +20,13 @@ class Table:
         self._sql_delete    = "DELETE FROM %s WHERE %%s "         % tablename
         self._sql_insert    = "INSERT INTO %s (%%s) VALUES (%%s)" % tablename
         self._sql_update    = "UPDATE %s SET %%s WHERE %%s"       % tablename
-        self._sql_select    = "SELECT %%s FROM %s WHERE %%s"
+        self._sql_select    = "SELECT %%s FROM %s WHERE %%s"      % tablename
 
     def select(self,what,condition):
         return self.db.query(self._sql_select,what,condition)
 
     def one(self,what,condition):
-        return self.db.one(self._sql_select,what,condition)
+        return self.db.get(self._sql_select % (what,condition))
         
     def filters(self,condition=None):
         if condition is not None :
@@ -36,11 +36,12 @@ class Table:
         return res
 
     def delete(self,condition):
-        self.db.execute(self._sql_delete,condition)
+        self.db.execute(self._sql_delete % condition)
         
     def insert(self,kwargs):
         names,values = zip(*kwargs.items())
-        return self.db.execute(self._sql_insert, ','.join(names), ','.join(values))
+        return self.db.execute(self._sql_insert % ( ','.join(names),
+                                                    ','.join(map(sql_str,values))))
 
     def update(self,kwargs,condition):
         action = nice_dict("%s = %s",kwargs,',')
@@ -49,7 +50,7 @@ class Table:
 class MetaModel(type):
     
     def __new__(cls,names,bases,attrs):
-        super(MetaModel,cls).__new__(cls,names,bases,attrs)
+        cls = super(MetaModel,cls).__new__(cls,names,bases,attrs)
         if '__database__' in attrs :
             cls.db = __database__
         if attrs.get('__tablename__') is not None :
@@ -88,15 +89,15 @@ class Model:
     
     def __str__(self):
         return "<%s>{%s}" % (self.__class__.__name__,
-                             nice_dict(lambda k,w : "%s:%s",
-                                       self.items()))
+                             nice_dict(lambda k,w : "'%s':'%s'" % (k,w),
+                                       self.dump_attr(),','))
 
     @property
     def sql_id(self):
         return "id = %s" % self['id']
 
     def save(self):
-        self.table.insert(self.dump_attr())
+        self['id'] = self.table.insert(self.dump_attr())
         self.pull()
 
     def update(self):
@@ -106,7 +107,7 @@ class Model:
         self.dict = self.table.one('*',self.sql_id)
 
     def delete(self):
-        self.delete(self.sql_id)
+        self.table.delete(self.sql_id)
 
     ##############################
     # base for orm               #
@@ -118,9 +119,12 @@ class Model:
     
     @classmethod
     def wrap_up(cls,res):
-        return [ cls(**res) for x in res]
+        return [ cls(**x) for x in res]
 
 def nice_dict(lbd_format,dic,seq=' '):
-    buf = reduce(lambda p,x : p.append(lbd_format(x[0],x[1])),
-                 dic.items,[])
+    buf = map(lambda x : lbd_format(*x),dic.items())
     return seq.join(buf)
+
+def sql_str(data):
+    return "'%s'" % data
+    

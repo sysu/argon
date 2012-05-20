@@ -37,24 +37,26 @@ class Holder:
         secs = model.Section.all()
         print '\r\n'.join(map(str,secs))
 
-    # def add_section(self,sectionname,description):
-    #     u'''
-    #     增加一个讨论区。
-    #     '''
-    #     print 'Add Section : [%s] %s' % (sectionname,description)
-    #     s = model.Section(sectionname=sectionname,description=description)
-    #     s.save()
-    #     print 'All DONE.'
+    def add_section(self,sectionname,description):
+        u'''
+        增加一个讨论区。
+        '''
+        print 'Add Section : [%s] %s' % (sectionname,description)
+        s = model.Section(sectionname=sectionname,description=description)
+        s.save()
+        print 'All DONE.'
 
-    # def del_section(self,sectionname):
-    #     u'''
-    #     删除一个讨论区。
-    #     '''
-    #     print 'Del Section : [%s] ' % sectionname
-    #     raw_input()
-    #     s = model.Section.get_by_sectionname(sectionname)
-    #     s.delete()
-    #     print 'All DONE.'
+    def del_section(self,sectionname):
+        u'''
+        删除一个讨论区。
+        '''
+        print 'Del Section : [%s] ' % sectionname
+        s = model.Section.get_by_sectionname(sectionname)
+        if s is None :
+            print 'No such Section.'
+        else:
+            s.delete()
+            print 'All DONE.'
 
     # def add_board(self,boardname,sectionname,description):
     #     u'''

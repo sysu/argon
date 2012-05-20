@@ -5,6 +5,6 @@ CREATE TABLE IF NOT EXISTS `argo_sectionhead` (
     `description` varchar(50) NOT NULL,
 
     PRIMARY KEY (`sid`),
-    KEY `sectionname` (`sectionname`)
+    UNIQUE KEY `sectionname` (`sectionname`)
 ) ENGINE=MyISAM  DEFAULT CHARSET=UTF8;
 
