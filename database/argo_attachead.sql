@@ -1,7 +1,7 @@
 
 DROP TABLE IF EXISTS `argo_attachead`;
 CREATE TABLE IF NOT EXISTS `argo_attachead` (
-    `id` int(11) unsigned NOT NULL auto_increment,
+    `aid` int(11) unsigned NOT NULL auto_increment,
     `bid` int(11) unsigned NOT NULL,
     `pid` int(11) unsigned NOT NULL,
     `uid` int(11) unsigned NOT NULL,

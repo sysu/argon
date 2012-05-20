@@ -1,4 +1,4 @@
-# -*- coding: utf-8 -*-
+\# -*- coding: utf-8 -*-
 
 from string import Template
 import time
@@ -642,13 +642,6 @@ class DataBase(Model):
         super(DataBase,self).__init__()
         self.set_up_section()
         # self.set_up_board()
-
-    def init_database(self):
-        import config
-        for table_name in config.BASE_TABLE :
-            with open(config.SQL_TPL_DIR+'argo_'+table_name+'.sql') as f:
-                sql = f.read()
-                self.execute(sql)
 
     def set_up_section(self):
         res = self.query("SELECT sectionname FROM argo_sectionhead ORDER BY sid ")

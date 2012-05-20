@@ -4,7 +4,7 @@
 */
 DROP TABLE IF EXISTS `argo_filehead_${bid}`;
 CREATE TABLE IF NOT EXISTS `argo_filehead_${bid}` (
-    `id` int(11) unsigned NOT NULL auto_increment,
+    `pid` int(11) unsigned NOT NULL auto_increment,
     `bid` int(11) unsigned NOT NULL,
     `owner` varchar(14),
     `realowner` varchar(14),
@@ -26,7 +26,5 @@ CREATE TABLE IF NOT EXISTS `argo_filehead_${bid}` (
     `disagree` int(11) unsigned NOT NULL default 0,
     `credit`  int(11) NOT NULL default 0,
 
-    PRIMARY KEY (`id`)
+    PRIMARY KEY (`pid`)
 ) ENGINE=InnoDB  DEFAULT CHARSET=UTF8;
-
-

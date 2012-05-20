@@ -37,44 +37,44 @@ class Holder:
         secs = model.Section.all()
         print '\r\n'.join(map(str,secs))
 
-    def add_section(self,sectionname,description):
-        u'''
-        增加一个讨论区。
-        '''
-        print 'Add Section : [%s] %s' % (sectionname,description)
-        s = model.Section(sectionname=sectionname,description=description)
-        s.save()
-        print 'All DONE.'
+    # def add_section(self,sectionname,description):
+    #     u'''
+    #     增加一个讨论区。
+    #     '''
+    #     print 'Add Section : [%s] %s' % (sectionname,description)
+    #     s = model.Section(sectionname=sectionname,description=description)
+    #     s.save()
+    #     print 'All DONE.'
 
-    def del_section(self,sectionname):
-        u'''
-        删除一个讨论区。
-        '''
-        print 'Del Section : [%s] ' % sectionname
-        raw_input()
-        s = model.Section.get_by_sectionname(sectionname)
-        s.delete()
-        print 'All DONE.'
+    # def del_section(self,sectionname):
+    #     u'''
+    #     删除一个讨论区。
+    #     '''
+    #     print 'Del Section : [%s] ' % sectionname
+    #     raw_input()
+    #     s = model.Section.get_by_sectionname(sectionname)
+    #     s.delete()
+    #     print 'All DONE.'
 
-    def add_board(self,boardname,sectionname,description):
-        u'''
-        增加一个讨论区。
-        '''
-        b = model.Board(boardname=boardname,
-                        sid=model.Section.get_sid_by_name(sectionname),
-                        description=description)
-        b.save()
-        print 'Add board %s to %s DONE. ' % (boardname,sectionname)
+    # def add_board(self,boardname,sectionname,description):
+    #     u'''
+    #     增加一个讨论区。
+    #     '''
+    #     b = model.Board(boardname=boardname,
+    #                     sid=model.Section.get_sid_by_name(sectionname),
+    #                     description=description)
+    #     b.save()
+    #     print 'Add board %s to %s DONE. ' % (boardname,sectionname)
 
-    def get_section_board(self,sectionname):
-        res = model.Board.all(sid = model.Section.get_sid_by_name(sectionname))
-        print '\r\n'.join(map(str,res))
+    # def get_section_board(self,sectionname):
+    #     res = model.Board.all(sid = model.Section.get_sid_by_name(sectionname))
+    #     print '\r\n'.join(map(str,res))
 
-    def add_post(self,boardname,title,owner,content,fromhost):
-        p = model.Post(bid = model.Board.get_id_by_name(boardname),
-                 title = title,owner=owner,content=content,fromhost=fromhost)
-        p.save()
-        print "Add post %s to %s DONE." % (title,boardname)
+    # def add_post(self,boardname,title,owner,content,fromhost):
+    #     p = model.Post(bid = model.Board.get_id_by_name(boardname),
+    #              title = title,owner=owner,content=content,fromhost=fromhost)
+    #     p.save()
+    #     print "Add post %s to %s DONE." % (title,boardname)
 
     # def get_board_post(self,boardname):
     #     b = db_orm.get_board(boardname)

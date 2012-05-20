@@ -2,17 +2,17 @@ from base import Model
 
 class Section(Model):
 
-    tablename = 'argo_sectionhead'
+    __tablename__ = 'argo_sectionhead'
 
     @classmethod
     def get_by_sectionname(cls,sectionname):
-        return cls.get(sectionname=sectionname)
+        return cls.table.one('*',"sectionname = %s" % sectionname)
 
     @classmethod
     def get_by_sid(cls,sid):
-        return cls.get(sid=sid)
+        return cls.table.one('*',"sid = %s" % sid)
 
-    @classmethod
-    def get_sid_by_name(cls,sectionname):
-        d = cls.get_by_sectionname(sectionname)
-        return d['id']
+    # @classmethod
+    # def get_sid_by_name(cls,sectionname):
+    #     d = cls.get_by_sectionname(sectionname)
+    #     return d['id']

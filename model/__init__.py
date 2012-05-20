@@ -9,8 +9,10 @@ from user import User
 from post import Post
 from section import Section
 
-all_tables = [Board,User,Post,Section]
-
 def init_database():
-    for t in all_tables :
-        t.init()
+    from globaldb import global_conn as db
+    for table_name in config.BASE_TABLE :
+        with open(config.SQL_TPL_DIR+'argo_'+table_name+'.sql') as f:
+            sql = f.read()
+            print sql
+            db.execute(sql)
