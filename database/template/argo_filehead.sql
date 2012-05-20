@@ -2,9 +2,9 @@
     Just a template.
     Using string.Template.safe_substitute({ ... })
 */
-DROP TABLE IF EXISTS `argo_filehead_${boardname}`;
-CREATE TABLE IF NOT EXISTS `argo_filehead_${boardname}` (
-    `pid` int(11) unsigned NOT NULL auto_increment,
+DROP TABLE IF EXISTS `argo_filehead_${bid}`;
+CREATE TABLE IF NOT EXISTS `argo_filehead_${bid}` (
+    `id` int(11) unsigned NOT NULL auto_increment,
     `bid` int(11) unsigned NOT NULL,
     `owner` varchar(14),
     `realowner` varchar(14),
@@ -26,7 +26,7 @@ CREATE TABLE IF NOT EXISTS `argo_filehead_${boardname}` (
     `disagree` int(11) unsigned NOT NULL default 0,
     `credit`  int(11) NOT NULL default 0,
 
-    PRIMARY KEY (`pid`)
+    PRIMARY KEY (`id`)
 ) ENGINE=InnoDB  DEFAULT CHARSET=UTF8;
 
 

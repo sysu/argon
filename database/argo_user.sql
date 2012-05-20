@@ -1,6 +1,6 @@
 DROP TABLE IF EXISTS `argo_user`;
 CREATE TABLE IF NOT EXISTS `argo_user` (
-    `uid` int(11) unsigned NOT NULL auto_increment,
+    `id` int(11) unsigned NOT NULL auto_increment,
     `userid` varchar(20) NOT NULL,
     `passwd` varchar(60),
     `nickname` varchar(20),
@@ -31,7 +31,7 @@ CREATE TABLE IF NOT EXISTS `argo_user` (
     
     `dattr` blob,
 
-    PRIMARY KEY (`uid`),
+    PRIMARY KEY (`id`),
     KEY `userid` (`userid`)
 
 ) ENGINE=InnoDB  DEFAULT CHARSET=UTF8;
