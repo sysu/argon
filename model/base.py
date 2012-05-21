@@ -3,24 +3,27 @@ __metaclass__ = type
 from globaldb import global_conn
 from globaldb import global_cache
 
+from functools import wraps
+
 class Table:
 
-    def __init__(self,tablename=None,db=global_conn):
-        self.db = db
-        if tablename is not None:
-            self.bind(tablename)
-
+    def __init__(self,tablename=None,db=None):
+        self.bind(tablename,db)
+        
     def __set__(self,obj,val):
-        raise Exception(u'Should never set value to db')
+        raise Exception(u'Should never set value to Table')
 
-    def bind(self,tablename):
-        self.tablename = tablename
-        self._sql_filters   = "SELECT * FROM %s WHERE %%s"        % tablename
-        self._sql_filters_n = "SELECT * FROM %s"                  % tablename
-        self._sql_delete    = "DELETE FROM %s WHERE %%s "         % tablename
-        self._sql_insert    = "INSERT INTO %s (%%s) VALUES (%%s)" % tablename
-        self._sql_update    = "UPDATE %s SET %%s WHERE %%s"       % tablename
-        self._sql_select    = "SELECT %%s FROM %s WHERE %%s"      % tablename
+    def bind(self,tablename=None,db=None):
+        if tablename is not None :
+            self.tablename = tablename
+            self._sql_filters   = "SELECT * FROM %s WHERE %%s"        % tablename
+            self._sql_filters_n = "SELECT * FROM %s"                  % tablename
+            self._sql_delete    = "DELETE FROM %s WHERE %%s "         % tablename
+            self._sql_insert    = "INSERT INTO %s (%%s) VALUES (%%s)" % tablename
+            self._sql_update    = "UPDATE %s SET %%s WHERE %%s"       % tablename
+            self._sql_select    = "SELECT %%s FROM %s WHERE %%s"      % tablename
+        if db is not None:
+            self.db = db
 
     def select(self,what,condition):
         return self.db.query(self._sql_select,what,condition)
@@ -53,23 +56,24 @@ class MetaModel(type):
         cls = super(MetaModel,cls).__new__(cls,names,bases,attrs)
         if '__database__' in attrs :
             cls.db = __database__
-        if attrs.get('__tablename__') is not None :
-            if hasattr(cls,'db') :
-                cls.table = Table(attrs['__tablename__'],cls.db)
-            else :
-                cls.table = Table(attrs['__tablename__'])
+        for key,val in attrs.items() :
+            if isinstance(val,Table) and val.db is None :
+                val.bind(cls.db)
+        # For cacher
+        if attrs.get('__cacheprefix__') is not None:
+            if attrs.get('__cache__') is None:
+                cls.cacher = Cacher(attrs['__cacheprefix__'])
+            else:
+                cls.cacher = Cacher(attrs['__cacherprefix__'],cls.__cache__)
         return cls
 
 class Model:
 
     __metaclass__ = MetaModel
-    __tabelename__ = None
+    __database__ = global_conn
 
-    db = global_conn
-    cache = global_cache
-    
     #######################
-    # for record in table #
+    # for record in model #
     #######################
     
     def __init__(self,**attr):
@@ -92,6 +96,26 @@ class Model:
                              nice_dict(lambda k,w : "'%s':'%s'" % (k,w),
                                        self.dump_attr(),','))
 
+    ##############################
+    # base for orm               #
+    ##############################
+
+    @classmethod
+    def escape_string(cls,rowsql):
+        pass
+    
+    @classmethod
+    def wrap_up(cls,res):
+        return [ cls(**x) for x in res]
+    
+
+class SingleModel(Model):
+
+    '''
+    Model with one table.
+    ! Need to set the ``table`` attr of class.
+    '''
+    
     @property
     def sql_id(self):
         return "id = %s" % self['id']
@@ -109,22 +133,9 @@ class Model:
     def delete(self):
         self.table.delete(self.sql_id)
 
-    ##############################
-    # base for orm               #
-    ##############################
-
-    @classmethod
-    def escape_string(cls,rowsql):
-        pass
-    
-    @classmethod
-    def wrap_up(cls,res):
-        return [ cls(**x) for x in res]
-
 def nice_dict(lbd_format,dic,seq=' '):
     buf = map(lambda x : lbd_format(*x),dic.items())
     return seq.join(buf)
 
 def sql_str(data):
     return "'%s'" % data
-    

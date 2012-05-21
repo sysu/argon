@@ -1,8 +1,8 @@
-from base import Model,Table
+from base import SingleModel,Table
 
-class Board(Model):
+class Board(SingleModel):
 
-    __tablename__ = 'argo_boardhead'
+    tablen = Table('argo_boardhead')
 
     prefix = 'argo_filehead_'
 
