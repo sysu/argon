@@ -58,15 +58,15 @@ class Holder:
             s.delete()
             print 'All DONE.'
 
-    # def add_board(self,boardname,sectionname,description):
-    #     u'''
-    #     增加一个讨论区。
-    #     '''
-    #     b = model.Board(boardname=boardname,
-    #                     sid=model.Section.get_sid_by_name(sectionname),
-    #                     description=description)
-    #     b.save()
-    #     print 'Add board %s to %s DONE. ' % (boardname,sectionname)
+    def add_board(self,boardname,sectionname,description):
+        u'''
+        增加一个讨论区。
+        '''
+        b = model.Board(boardname=boardname,
+                        sid=model.Section.get_sid_by_name(sectionname),
+                        description=description)
+        b.save()
+        print 'Add board %s to %s DONE. ' % (boardname,sectionname)
 
     # def get_section_board(self,sectionname):
     #     res = model.Board.all(sid = model.Section.get_sid_by_name(sectionname))
