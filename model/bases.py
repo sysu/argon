@@ -1,110 +1,108 @@
+__metaclass__ = type
+
 from globaldb import global_conn
 from globaldb import global_cache
+
+class MetaModel(type):
+    pass
 
 class Model:
 
     db = global_conn
-    cache = global_cache
-
+    ch = global_cache
+    
     #######################
     # for record in table #
     #######################
     
-    def __init__(self,**kwargs):
-        self.dict = {}
-        self.update_dict(kwargs)
+    def __init__(self,**attr):
+        self.dict = attr
         
     def __getitem__(self,key):
         return self.dict.get(key)
             
     def __setitem__(self,key,value):
         self.dict[key] = value
-        
-    def keys(self):
-        return self.dict.keys()
 
-    def values(self):
-        return self.dict.values()
+    def dump_attr(self):
+        return self.dict
 
-    def update_dict(self,dic):
-        # call the __setitem__ not simplily dict.update
-        for key in dic :
-            self[key] = dic[key]
+    def dump_attr_safe(self):
+        return self.dict.copy()
+    
+    def __str__(self):
+        return "<%s>{%s}" % (self.__class__.__name__,
+                             nice_dict(lambda k,w : "'%s':'%s'" % (k,w),
+                                       self.dump_attr(),','))
 
-    def delete(self):
-        self.db.execute("DELETE FROM %s WHERE id = '%s'",
-                        self.tablename,self['id'])
-        self.dict = {}
-            
-    def save(self,refresh=True):
-        names = self.keys()
-        values = map(lambda x: self.sql_value(x),self.values())
-        sql = u"INSERT INTO %s (%s) VALUES (%s)" %\
-                                     (self.tablename, ','.join(names), ','.join(values))
-        self['id'] = self.db.execute(sql)
-        if refresh :
-            self.refresh()
-
-    def update(self):
-        self.db.execute(u"UPDATE %s SET %s WHERE id = '%s'" %
-                        (self.tablename,self.sql_dict(self.dict),self.id))
-        
-    def refresh(self):
-        if self['id'] is None :
-            raise Exception(u'Cannot refresh without id fields.')
-        res = self.__class__.get(id=self['id'])
-        self._init_fresh(res)
-
-    ####################
-    # method for table #
-    ####################
-
-    @classmethod
-    def drop(cls):
-        cls.db.execute("DROP TABLE IF EXISTS `%s`",cls.tablename)
-
-    @classmethod
-    def create(self):
-        raise NotImplementedError
-
-    @classmethod
-    def init(self):
-        self.drop()
-        self.create()
-        
-    @classmethod
-    def bind(cls,tablename):
-        cls.tablename = tablename
-
-    @classmethod
-    def wrap_up(cls,res):
-        return [ cls(**res) for x in res]
-        
-    @classmethod
-    def all(cls, **filters):
-        if filters :
-            sql = "SELECT * FROM %s WHERE %s" % (cls.tablename,
-                                                 cls.sql_dict(filters))
-        else :
-            sql = "SELECT * FROM %s" % cls.tablename
-        res = cls.db.query(sql)
-        return [ cls(**x) for x in res ]
-
-    @classmethod
-    def get(cls, **filters):
-        sql = "SELECT * from %s WHERE %s" % (cls.tablename,
-                                             cls.sql_dict(filters))
-        res = cls.db.get(sql)
-        return cls(res)
+    ##############################
+    # base for orm               #
+    ##############################
 
     @classmethod
     def escape_string(cls,rowsql):
-        return cls.db.escape_string(rowsql)
+        pass
+    
+    @classmethod
+    def wrap_up(cls,res):
+        return [ cls(**x) for x in res]
+
+class TableModel(Model):
+
+    __ = 'tablename'
 
     @classmethod
-    def sql_dict(cls,dic):
-        return ','.join( "%s = %s" % (key,cls.sql_value(dic[key])) for key in dic)
+    def get_all_nw(cls):
+        return cls.db.execute("SELECT * FROM %s", cls.__)
 
     @classmethod
-    def sql_tuple(cls,tup):
-        return ' '.join( '%s = %%s' % x for x in tup)
+    def get_all(cls):
+        return wrap_up(cls,cls.get_all_nw())
+
+class IdModel(TableModel):
+
+    __idname__ = 'id'
+    
+    @property
+    def id(self):
+        return self.dict[self.__idname__]
+
+    def save(self):
+        self[self.__idname__] = self.db.execute(sql_insert(self.__,self.dict))
+        self.fetch()
+
+    def update(self):
+        self[self.__idname__] = self.db.execute("UPDATE %s SET %s WHERE %s = %s",
+                                                self.__, sql_update_set(self.dict),
+                                                self.__idname__, self.id)
+
+    def delete(self):
+        return self.db.execute("DELETE %s WHERE %s = %s", self.__,
+                               self.__idname__, self.id)
+
+    def fetch(self):
+        res = self.get_nw(self.id)
+        self.dict = res
+
+    @classmethod
+    def get_nw(cls, _id):
+        return self.db.execute("SELECT * FROM %s WHERE %s = %s", cls.__,
+                               cls.__idname__, _id)
+
+    @classmethod
+    def get(cls, _id):
+        return cls(**cls.one_nw(_id))
+
+def nice_dict(lbd_format,dic,seq=' '):
+    buf = map(lambda x : lbd_format(*x),dic.items())
+    return seq.join(buf)
+
+def sql_str(data):
+    return "'%s'" % data
+
+def sql_insert(tablename, kwargs):
+    names,values = zip(*kwargs.items())
+    return "INSERT INTO %s (%s) VALUES (%s)" % (','.join(names) , ','.join(values))
+
+def sql_update_set(kwargs):
+    s_set = nice_dict(lambda k,w: "%s = %s" % (k,w),kwargs, ',')

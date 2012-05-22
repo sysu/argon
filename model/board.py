@@ -1,11 +1,10 @@
-from base import Model,Table
+from bases import Model,IdModel
 
-class Board(Model):
+class Board(IdModel):
 
-    __tablename__ = 'argo_boardhead'
-
-    prefix = 'argo_filehead_'
-
+    __idname__ = 'bid'
+    __ = 'argo_boardhead'
+    
     # def get_total(self):
     #     res = self.db.get("SELECT count(*) as total FROM %s%s" % (self.prefix,self["bid"]))
     #     return res
@@ -13,11 +12,3 @@ class Board(Model):
     # def get_topic_total(self):
     #     res = self.db.get("SELECT count(*) as total WHERE tid = 0 FROM %s%s" % (self.prefix,self["bid"]))
     #     return res
-
-    @classmethod
-    def get_by_boardname(cls,boardname):
-        return cls.table.one('*',"boardname = '%s'" % boardname)
-
-    @classmethod
-    def get_by_bid(cls,bid):
-        return cls.table.one('*',"bid = %d" % bid)
