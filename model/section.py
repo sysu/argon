@@ -6,7 +6,7 @@ class Section(IdModel):
     __ = 'argo_sectionhead'
     
     @classmethod
-    def _get_by_sectionname(cls,sectionname):
+    def get_by_sectionname(cls,sectionname):
         res = cls.table.one('*',"sectionname = '%s'" % sectionname)
         return res and cls(**res)
 

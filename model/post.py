@@ -1,3 +1,5 @@
+# need to reconstruction after change the model base
+
 from base import Model
 from MySQLdb import ProgrammingError
 
