@@ -34,7 +34,7 @@ class Holder:
         u'''
         输出全部的讨论区。
         '''
-        secs = model.Section.all()
+        secs = model.Section.get_all()
         print '\r\n'.join(map(str,secs))
 
     def add_section(self,sectionname,description):

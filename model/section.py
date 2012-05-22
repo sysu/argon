@@ -5,9 +5,14 @@ class Section(IdModel):
     __idname__ = 'sid'
     __ = 'argo_sectionhead'
     
+    # @classmethod
+    # def get_by_sectionname(cls,sectionname):
+    #     res = cls.table.one('*',"sectionname = '%s'" % sectionname)
+    #     return res and cls(**res)
+
     @classmethod
     def get_by_sectionname(cls,sectionname):
-        res = cls.table.one('*',"sectionname = '%s'" % sectionname)
+        res = cls.db.get("SELECT * FROM %s WHERE sectionname = %%s" % cls.__, sectionname)
         return res and cls(**res)
 
     # @classmethod
