@@ -15,6 +15,24 @@ import sys,inspect
 class Holder:
 
     ### TODO
+
+    def test_all(self):
+        from random import randint
+        rand = 007
+        sname = "Section"
+        bname = "Board"
+        work = (
+            ("get_all_section",tuple()),
+            # ("add_section",(sname,"Test section [%s]" % rand)),
+            # ("add_board",(bname,sname,"DESC")),
+            ("get_all_board",tuple()),
+            ("add_post",(bname,"Title","OWNER","CONTENT","from")),
+            ("get_board_post",(bname, 0 ,200)),
+            )
+        for method,args in work :
+            print "------------------------ Start test {{%s}} " % method
+            getattr(self,method)(*args)
+            print "------------------------ DONE"
     
     def init_database(self):
         u'''
@@ -62,48 +80,46 @@ class Holder:
         u'''
         增加一个讨论区。
         '''
-        b = model.Board(boardname=boardname,
-                        sid=model.Section.get_sid_by_name(sectionname),
-                        description=description)
-        b.save()
-        print 'Add board %s to %s DONE. ' % (boardname,sectionname)
+        sid = model.Section.get_sid_by_name(sectionname)
+        if sid is None:
+            print 'No such section [%s] ' % sectionname
+        else:
+            b = model.Board(boardname=boardname,
+                            sid=sid,
+                            description=description)
+            b.save()
+            print 'Add board %s to %s DONE. ' % (boardname,sectionname)
 
-    # def get_section_board(self,sectionname):
-    #     res = model.Board.all(sid = model.Section.get_sid_by_name(sectionname))
-    #     print '\r\n'.join(map(str,res))
+    def get_section_board(self,sectionname):
+        sid = model.Section.get_sid_by_name(sectionname)
+        res = model.Board.get_board_by_sid(sid = sid)
+        print '\r\n'.join(map(str,res))
 
-    # def add_post(self,boardname,title,owner,content,fromhost):
-    #     p = model.Post(bid = model.Board.get_id_by_name(boardname),
-    #              title = title,owner=owner,content=content,fromhost=fromhost)
-    #     p.save()
-    #     print "Add post %s to %s DONE." % (title,boardname)
+    def get_all_board(self):
+        res = model.Board.get_all()
+        print '\n'.join(map(str,res))
 
-    # def get_board_post(self,boardname):
-    #     b = db_orm.get_board(boardname)
-    #     da = b.get_post(0)
-    #     for post in da :
-    #         print post.dict
-            
-    # def add_user(self,userid,passwd):
-    #     db_orm.add_user(userid,passwd,{'firstlogin':datetime.now()})
-    #     print 'Add user %s DONE.' % userid
+    def add_post(self,boardname,title,owner,content,fromhost):
+        p = model.Post(bid = model.Board.get_bid_by_name(boardname),
+                 title = title,owner=owner,content=content,fromhost=fromhost)
+        p.save()
+        print "Add post %s to %s DONE." % (title,boardname)
 
-    # def get_user(self, userid = 'Jia'):
-    #     u = db_orm.get_user(userid)
-    #     print u.dump_attr()
+    def get_board_post(self, boardname, offset, limit):
+        res = model.Post.get_by_bid(
+            model.Board.get_bid_by_name(boardname),int(offset),int(limit))
+        print '\r\n'.join(map(str,res))
 
-    # def login(self, name, passwd):
-    #     u = db_orm.login(name, passwd)
-    #     if u == None:
-    #         print 'login error'
-    #         return
+    def add_user(self,userid,passwd):
+        model.User.add_user(userid=userid,passwd=passwd)
+                                    
+    def get_user(self, userid):
+        uid = model.User.get_uid_by_userid(userid)
+        d = model.User.get(uid)
+        print str(d)
 
-    #     print 'online: ' , db_orm.get_online_users()
-    #     print u.dump_attr()
-
-    # def online_users(self):
-    #     users = db_orm.get_online_users()
-    #     print users
+    def get_user_auth(self, userid, passwd):
+        print model.User.get_user_auth(userid,passwd)
 
     def help(self,command):
         foo = getattr(self,command)

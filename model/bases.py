@@ -23,13 +23,17 @@ class Model:
     #######################
     
     def __init__(self,**attr):
-        self.dict = attr
+        self.dict = {}
+        self.update_dict(attr)
         
     def __getitem__(self,key):
         return self.dict.get(key)
             
     def __setitem__(self,key,value):
         self.dict[key] = value
+
+    def update_dict(self,dic):
+        self.dict.update(dic)
 
     def dump_attr(self):
         return self.dict
@@ -63,21 +67,32 @@ class TableModel(Model):
     __ = 'tablename'
 
     @classmethod
-    def get_all_nw(cls):
+    def tb_get_all_nw(cls,tablename):
         return cls.db.query("SELECT * FROM %s" % cls.__)
 
     @classmethod
-    def get_all(cls):
-        return cls.wrap_up(cls.get_all_nw())
+    def tb_get_all(cls,tablename=None):
+        return cls.wrap_up(cls.tb_get_all_nw(tablename))
 
     @classmethod
-    def insert_dict(cls,tablename,dic):
+    def tb_insert_dict(cls,tablename,dic):
         ''' Change to INSERT INTO tablename (col1,col2,col3..) VALUES (%s,%s,%s...),
         and auto escape string. '''
         names,values = zip(*dic.items())
         sql = "INSERT INTO %s (%s) VALUES (%s)" % \
             (tablename, ','.join(names) , ','.join(['%s'] * len(values)))
         return cls.db.execute(sql,*values)
+    
+    @classmethod
+    def get_all_nw(cls):
+        return cls.tb_get_all_nw(cls.__)
+
+    @classmethod
+    def get_all(cls):
+        return cls.tb_get_all(cls.__)
+
+    # @classmethod
+    
     
 class IdModel(TableModel):
 
@@ -89,7 +104,7 @@ class IdModel(TableModel):
         return self.dict[self.__idname__]
 
     def save(self):
-        self[self.__idname__] = self.insert_dict(self.__,self.dump_attr())
+        self[self.__idname__] = self.tb_insert_dict(self.__,self.dump_attr())
         self.fetch()
 
     def update(self):
@@ -105,18 +120,23 @@ class IdModel(TableModel):
                                self.id)
 
     def fetch(self):
-        res = self.get_nw(self.id)
+        res = self.tb_get_nw(self.__, self.__idname__, self.id)
         self.dict = res
 
     @classmethod
-    def get_nw(cls, _id):
-        return cls.db.execute("SELECT * FROM %s WHERE %s = %%s" %\
-                                   ( cls.__, cls.__idname__),
-                               _id)
+    def tb_get_nw(cls, tablename, idname, _id):
+        return cls.db.get("SELECT * FROM %s WHERE %s = %%s" %\
+                                ( tablename, idname),
+                            _id)
+
+    @classmethod
+    def tb_get(cls, tablename, _id):
+        res = cls.tb_get_nw(tablename, cls.__idname__, _id)
+        return res and cls(**res)
 
     @classmethod
     def get(cls, _id):
-        return cls(**cls.one_nw(_id))
+        return cls.tb_get(cls.__,_id)
 
 def nice_dict(lbd_format,dic,seq=' '):
     buf = map(lambda x : lbd_format(*x),dic.items())
@@ -141,3 +161,4 @@ def test_print(s,*args):
 def _p(args):
     print args
     return args
+

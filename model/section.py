@@ -11,11 +11,8 @@ class Section(IdModel):
     #     return res and cls(**res)
 
     @classmethod
-    def get_by_sectionname(cls,sectionname):
-        res = cls.db.get("SELECT * FROM %s WHERE sectionname = %%s" % cls.__, sectionname)
-        return res and cls(**res)
-
-    # @classmethod
-    # def get_sid_by_name(cls,sectionname):
-    #     d = cls.get_by_sectionname(sectionname)
-    #     return d['id']
+    def get_sid_by_name(cls,sectionname):
+        d = cls.db.get("SELECT sid FROM %s WHERE sectionname = %%s" % cls.__,
+                       sectionname)
+        print 'get_sid_by_name [%s]' % d
+        return d and d['sid']
