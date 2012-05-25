@@ -1,3 +1,6 @@
+#!/usr/bin/python2
+# -*- coding: utf-8 -*-
+
 __metaclass__ = type
 
 from globaldb import global_conn
@@ -9,12 +12,52 @@ class MetaModel(type):
         cls = super(MetaModel,cls).__new__(cls,names,bases,attrs)
         if attrs.get('__clsinit__') :
             cls.__clsinit__(names,bases,attrs)
+        if cls.ch is not None:
+            for key in attrs:
+                attr = attrs[key]
+                if isinstance(attr,Cacher) and attr.ch is None:
+                    attr.bind(ch=cls.ch)
         return cls
+
+class Cacher:
+
+    _prefix = 'argo_'
+
+    def __init__(self,prefix,ch=None):
+        self.ch = None
+        self.bind(prefix,ch)
+
+    def bind(self,prefix=None,ch=None):
+        if prefix :
+            self.__ = self._prefix + prefix
+        if ch :
+            self.ch = ch
+
+    def exists(self):
+        return self.ch.exists(self.__)
+
+    def hgetall(self):
+        return self.ch.hgetall(self.__)
+
+    def hget(self,field):
+        return self.ch.hget(self.__, field)
+
+    def hmset(self,field):
+        return self.ch.hmset(self.__,field)
+
+    def scard(self):
+        return self.ch.scard(self.__)
+
+    def sadd(self,mem):
+        return self.ch.sadd(self.__, mem)
+
+    def srem(self,mem):
+        return self.ch.srem(self.__, mem)
 
 class Model:
 
     __metaclass__ = MetaModel
-
+    
     db = global_conn
     ch = global_cache
     

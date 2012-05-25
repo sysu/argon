@@ -8,7 +8,7 @@ from chaofeng.g import mark,static
 from chaofeng.ui import TextInput,Password,DatePicker
 import chaofeng.ascii as ac
 from argo_frame import ArgoBaseFrame
-from model import db_orm
+# from model import UserState
 from datetime import datetime
 import config
 

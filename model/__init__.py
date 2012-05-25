@@ -9,6 +9,7 @@ from board import Board
 from user import User
 from post import Post
 from section import Section
+from userstate import UserState
 
 def init_database():
     from globaldb import global_conn as db

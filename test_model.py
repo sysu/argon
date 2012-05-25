@@ -1,4 +1,4 @@
-#!/usr/bin/env python
+#!/usr/bin/python2
 # -*- coding: utf-8 -*-
 
 __metaclass__ = type
@@ -133,6 +133,9 @@ class Holder:
     def run(self):
         while True:
             input()
+
+    def test(self,sectionname):
+        return model.Section.get_sid_by_name(sectionname)
 
 t = Holder()
 if len(sys.argv) < 2: t.usage()

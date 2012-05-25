@@ -1,9 +1,11 @@
-from bases import IdModel
+from bases import IdModel,Cacher
 
 class Section(IdModel):
 
     __idname__ = 'sid'
     __ = 'argo_sectionhead'
+
+    id2name_cache = Cacher('section_sid')
     
     # @classmethod
     # def get_by_sectionname(cls,sectionname):
@@ -11,8 +13,18 @@ class Section(IdModel):
     #     return res and cls(**res)
 
     @classmethod
-    def get_sid_by_name(cls,sectionname):
+    def _get_sid_by_name(cls,sectionname):
         d = cls.db.get("SELECT sid FROM %s WHERE sectionname = %%s" % cls.__,
                        sectionname)
-        print 'get_sid_by_name [%s]' % d
         return d and d['sid']
+
+    @classmethod
+    def get_sid_by_name(cls,sectionname):
+        d = cls.id2name_cache.hget(sectionname)
+        if d :
+            return d
+        else :
+            d = cls._get_sid_by_name(sectionname)
+            if d :
+                cls.id2name_cache.hmset(field, d)
+                return d
