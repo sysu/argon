@@ -7,6 +7,7 @@ import model
 from datetime import datetime
 
 import sys,inspect
+from model import manager
 
 """
     Uint test for db_orm
@@ -16,37 +17,8 @@ class Holder:
 
     ### TODO
 
-    def test_all(self):
-        from random import randint
-        rand = 007
-        sname = "Section"
-        bname = "Board"
-        work = (
-            ("get_all_section",tuple()),
-            # ("add_section",(sname,"Test section [%s]" % rand)),
-            # ("add_board",(bname,sname,"DESC")),
-            ("get_all_board",tuple()),
-            ("add_post",(bname,"Title","OWNER","CONTENT","from")),
-            ("get_board_post",(bname, 0 ,200)),
-            )
-        for method,args in work :
-            print "------------------------ Start test {{%s}} " % method
-            getattr(self,method)(*args)
-            print "------------------------ DONE"
-    
-    def init_database(self):
-        u'''
-        初始化数据库。
-        '''
-        print
-        print 'Init Database will kill all data. Are you sure?'
-        print
-        print 'Type INIT_YES to continue.',
-        if raw_input() == 'INIT_YES' :
-            print 'Init Database start ...'
-            model.init_database()
-            print 'Init Database DONE.'
-        print 'All DONE.'
+    def nothing(self):
+        print 'DONE'
 
     def get_all_section(self):
         u'''

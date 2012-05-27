@@ -7,7 +7,7 @@ from chaofeng.g import mark,is_chchar
 from chaofeng.ui import TextInput,Password,DatePicker
 from chaofeng import ascii as ac
 from libtelnet import str_top,str_bottom
-from model import *
+from model import manager
 from datetime import datetime
 from base_menu import BaseMenuFrame
 from argo_frame import ArgoBaseFrame
@@ -25,37 +25,38 @@ class UsernameInput(TextInput):
 class RegisterFrame(ArgoBaseFrame):
 
     background = ac.clear + static['page/register_notice']
-    ban_userid = ['guest','new']
     ix_name = TextInput(prompt= u'请输入帐号名称 (Enter User ID, leave blank to abort): ')
     ix_passwd = Password(prompt= u'请设定您的密码 (Setup Password): ')
     timeout = 150
 
-    def check_userid(self,userid):
-        if userid in self.ban_userid :
-            self.write(u'抱歉, 您不能使用该id。 请再拟。\r\n')
-        elif len(userid) < 3 :
-            self.write(u'抱歉，您的id太短撩。 请再拟。\r\n')
-        elif db_orm.check_user_not_exist(userid) != True :
-            self.write(u'抱歉，您的id已经被注册了。 请再拟。\r\n')
-        else : return True
-        return False
+    code_zh = {
+        0:u"成功",
+        1:u"抱歉，您不能使用该id。请再拟。",
+        2:u"抱歉，您的id太短撩。 请再拟。",
+        3:u"抱歉，您的id已经被注册了。 请再拟。",
+        4:u"密码太短了，请大于6位。",
+        }
 
-    def check_passwd(self,passwd):
-        if len(passwd) < 6 :
-            self.write(u'密码太短了，请大于6位。\r\n')
+    def check_userid(self,userid):
+        s = manager.auth.is_unvail_userid(userid)
+        if not s :
+            self.writeln(self.code_zh[s.key])
             return False
         return True
-
+    
+    def check_passwd(self,passwd):
+        s = manager.auth.is_unvail_passwd(passwd)
+        if not s :
+            self.writeln(self.code_zh[s.key])
+            return False
+        return True
+        
     def register(self,userid,passwd):
-        print userid
-        print passwd
-        db_orm.add_user(userid,passwd,{
-                'firstlogin':datetime.now(),
-                'firsthost':self.session.ip,
-                })
-        self.write(ac.clear+static['page/register_succ'] % userid)
-        self.pause()
-        self.goto('welcome')
+        s = manager.auth.register(userid,passwd,firsthost=self.session.ip)
+        if s :
+            self.write(ac.clear+static['page/register_succ'] % userid)
+            self.pause()
+            self.goto('welcome')
     
     def initialize(self):
         self.render_background()

@@ -2,14 +2,7 @@ import MySQLdb
 import cPickle
 import config
 
-# from Model import *
-# from Model import db_orm
-
-from board import Board
-from user import User
-from post import Post
-from section import Section
-from userstate import UserState
+from Model import Manager
 
 def init_database():
     from globaldb import global_conn as db
@@ -18,3 +11,26 @@ def init_database():
             sql = f.read()
             print sql
             db.execute(sql)
+
+class CF:
+
+    from globaldb import global_conn,global_cache
+    from Model import Section,Online,UserInfo,UserAuth
+    
+    db = global_conn
+    ch = global_cache
+
+    section   = Section()
+    online    = Online(max_login=3)
+    userinfo  = UserInfo()
+    auth      = UserAuth(userinfo,online)
+
+    loads = [section,online,userinfo,auth]
+
+    use = {
+        "section":section,
+        "online":online,
+        "auth":auth,
+        }
+
+manager = Manager(CF)
