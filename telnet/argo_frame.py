@@ -66,8 +66,7 @@ class ArgoStatusFrame(ArgoBaseFrame):
         self.write( zh_format(self.bottom_txt,
                               datetime.now().ctime(),
                               self.session.userid))
-        if close : self.write(ac.restore)
-        
+        if close : self.write(ac.restore)        
 
     def fm(self,format_str,args):
         if isinstance(args,tuple):
@@ -86,7 +85,7 @@ class ArgoKeymapsFrame(ArgoBaseFrame):
 def in_history(f):
     @functools.wraps(f)
     def wrapper(self,*args,**kwargs):
-        self.record_x()
+        self.handle_record()
         return f(self,*args,**kwargs)
     return wrapper
 

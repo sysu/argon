@@ -43,11 +43,17 @@ class WelcomeFrame(ArgoBaseFrame):
                 else :
                     passwd = i_passwd.readln()
                 # try login
-                authobj = manager.auth.login(userid,passwd,self.session.ip)
-                if authobj :
-                    self.login(authobj)
-                else :
-                    self.writeln(self.wrong_prompt)
+                self.try_login(userid,passwd)
+                
+    def try_login(self,userid,passwd):
+        print userid
+        print passwd
+        authobj = manager.auth.login(userid,passwd,self.session.ip)
+        if authobj :
+            self.login(authobj)
+        else:
+            print authobj.content
+            self.writeln(self.wrong_prompt)
 
     def login(self,authobj):
         # if userid.endswith('.') :

@@ -251,6 +251,12 @@ class Online(Model):
     def total_online(self):
         return self.ch_sessions.hlen() or 0
 
+class AuthUser(dict):
+    def __getattr__(self, name):
+        return super(AuthUser,self).get(name)
+    def __setattr__(self,name,value):
+        self[name] = value
+
 class UserAuth(Model):
     
     ban_userid = ['guest','new']
@@ -297,7 +303,14 @@ class UserAuth(Model):
             )
         return True
 
+    GUEST = AuthUser(userid='guest',is_first_login=None)
+    def get_guest(self):
+        return self.GUEST        
+
     def login(self,userid,passwd,host):
+
+        if userid == 'guest':
+            return self.get_guest()
 
         # user_exist
         code = self.table.select_attr(userid,"passwd")
@@ -316,9 +329,12 @@ class UserAuth(Model):
 
         #set_state
         seid = self.online.login(userid)
-        if seid is False :
-            return error.LOGIN_MAX_LOGIN
+        # if seid is False :
+        #     return error.LOGIN_MAX_LOGIN
         res.seid = seid
+
+        if res['userid'] == 'argo' :
+            res['is_admin'] = True
         
         return res
 

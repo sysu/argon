@@ -19,7 +19,8 @@ menu = {
         # ( u'(S)ervice      特别服务区',"undone",'s' ),
         # ( u'(C)onfig       系统信息区',"undone",'c' ),
         # ( u'(P)ersonal     个人文集区',"undone",'p' ),
-        ( u'(G)oodbye    离开逸仙时空',"bye",'g' )),
+        ( u'(G)oodbye    离开逸仙时空',"bye",'g' )
+        ),
     "main_guest":(
         ( u'(E)Group       分类讨论区','section_menu','e',(12,5)),
         # ( u'(D)igest       本站精华区',"undone",'d' ),
@@ -27,7 +28,8 @@ menu = {
         # ( u'(T)alk         谈天说地区',"undone",'t' ),
         # ( u'(C)onfig       系统信息区',"undone",'c' ),
         # ( u'(P)ersonal     个人文集区',"undone",'p' ),
-        ( u'(G)oodbye    离开逸仙时空 ',"bye",'g' ),),
+        ( u'(G)oodbye    离开逸仙时空 ',"bye",'g' )
+        ),
     "userspace":(
         ( u'I) 设定个人资料','user_edit_data','i',(12,4)),
         ( u'P) 修改个人密码','change_passwd','p'),
@@ -40,6 +42,11 @@ menu = {
         ( u"[1;36mE[0m) 回到主选单 -- [EXIT]","main",'e'),
         )
 }
+
+key_maps = {
+    "super_key": "a",
+    "super_key_2": "r",
+    }
 
 default_shortcuts = {
     ascii.k_up:"move_up",
