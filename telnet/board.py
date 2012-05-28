@@ -84,10 +84,10 @@ class BoardListFrame(BaseTableFrame):
             try:
                 board = self.data[key]
                 return {
-                    "total":board.get_total(),
+                    "total":0,#board.get_total(),
                     "boardname":board['boardname'],
                     "description":board['description'],
-                    'online':board.count_online(),
+                    'online':0,#board.count_online(),
                     'bm': board['bm'] and ' '.join(board['bm'].split(':')),
                     }
             except IndexError:
@@ -96,10 +96,10 @@ class BoardListFrame(BaseTableFrame):
         def __len__(self):
             return self.len
 
-    def initialize(self,section_name='Test',mode=0,default=0):
+    def initialize(self,sid,mode=0,default=0):
         self.mode = mode
-        self.section_name = section_name
-        self.data = self.Wrapper(db_orm.get_boards(section_name))
+        self.sid = sid
+        self.data = self.Wrapper(manager.board.get_by_sid(sid))
         self.table = self.load(self.x_table,
                                self.format_strs[mode],
                                self.data,default=default,refresh=False)
@@ -113,8 +113,8 @@ class BoardListFrame(BaseTableFrame):
         self.bottom_bar(repos=True)
         self.table.refresh()
 
-    def record_x(self):
-        self.record(section_name=self.section_name,
+    def handle_record(self):
+        self.record(sid=self.sid,
                     mode=self.mode,default=self.table.hover)
 
     @in_history
@@ -173,7 +173,7 @@ class BoardFrame(BaseTableFrame):
         self.session.lastboard = boardname
         self.boardname = boardname
         self.session.last_board = boardname
-        self.data = db_orm.get_board(boardname)
+        self.data = manager.board.get_board(boardname)
         self.w_data = self.Wrapper(self.data)
         self.table = self.load(self.x_table,
                                self.format_str,
@@ -188,7 +188,7 @@ class BoardFrame(BaseTableFrame):
         self.bottom_bar(repos=True)
         self.table.refresh()
 
-    def record_x(self):
+    def handle_record(self):
         self.record(boardname=self.boardname,
                     default=self.table.hover)
 

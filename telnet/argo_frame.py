@@ -76,6 +76,28 @@ class ArgoStatusFrame(ArgoBaseFrame):
         else :
             raise TypeError(u'No tuple or dict')
 
+    def send_message(self):
+        pass
+
+    def goto_friend(self):
+        pass
+
+    def goto_out(self):
+        pass
+
+    def watch_message(self):
+        pass
+
+    def goto_top_ten(self):
+        pass
+
+    def goto_check_user(self):
+        pass
+
+    def goto_mail(self):
+        pass
+
+    
 class ArgoKeymapsFrame(ArgoBaseFrame):
 
     def get(self,data):

@@ -1,5 +1,5 @@
 # -*- coding: utf-8 -*-
-from chaofeng import ascii
+from chaofeng import ascii as ac
 
 root = 'welcome'
 
@@ -49,15 +49,29 @@ key_maps = {
     }
 
 default_shortcuts = {
-    ascii.k_up:"move_up",
-    ascii.k_down:"move_down",
-    ascii.k_end:"goto_last",
-    ascii.k_home:"goto_first",
-    ascii.k_page_up:"page_up",
-    ascii.k_page_down:"page_down",
-    ascii.k_ctrl_l:"refresh",
-    ascii.k_ctrl_c:"cancel",
+    ac.k_up:"move_up",
+    ac.k_down:"move_down",
+    ac.k_end:"goto_last",
+    ac.k_home:"goto_first",
+    ac.k_page_up:"page_up",
+    ac.k_page_down:"page_down",
+    ac.k_ctrl_l:"refresh",
+    ac.k_ctrl_c:"cancel",
     'h':"help",
+    }
+
+TABLE_KEY_MAPS = {
+    ac.k_up : "move_up",
+    ac.k_down : "move_down",
+    ac.k_page_down : "page_down",
+    ac.k_page_up : "page_up",
+    ac.k_home : "go_first",
+    ac.k_end : "go_last",
+    ac.k_ctrl_c : "goto_back",
+    "h":"show_help",
+    "q":"goto_back",
+    ac.k_left:"goto_back",
+    ac.k_right:"finish",
     }
 
 # userid_char = 

@@ -69,24 +69,22 @@ class MenuFrame(ArgoStatusFrame):
 class MainMenuFrame(MenuFrame):
 
     key_maps = MenuFrame.key_maps.copy()
-    # key_maps.update({
-    #         })
 
     def initialize(self,default=0):
-        super(MainMenuFrame,self).initialize('main',default)
-
+        menuname = 'main_guest' if self.session.auth.userid == 'guest' else 'main'
+        super(MainMenuFrame,self).initialize(menuname, default)
 
 @mark('section_menu')
 class SectionMenuFrame(MenuFrame):
 
     key_maps = MenuFrame.key_maps.copy()
     sections = None
-    wrapper = lambda x : ( zh_format('%d) %8s -- %s',
-                                     x[0],
-                                     x[1]['sectionname'],
-                                     x[1]['description']),
-                           ('boardlist',{'section_name':x[1]['sectionname']}),
-                           x[0])
+    wrapper = staticmethod(lambda x : ( zh_format('%d) %8s -- %s',
+                                                  x[0],
+                                                  x[1]['sectionname'],
+                                                  x[1]['description']),
+                                        ('boardlist',dict(sid=x[1]['sid'])),
+                                        x[0]))
     p_menu = ColMenu()
     
     def initialize(self,default=0):
@@ -97,14 +95,14 @@ class SectionMenuFrame(MenuFrame):
         cls.sections = sections
         sections_d = map(cls.wrapper,enumerate(sections))
         if sections_d :
-            sections_d[0] += ((11,5),)
+            sections_d[0] += ((11,7),)
         cls.p_menu.setup(tuple(sections_d) + config.menu['section'],
                          background=static['menu/section'])
 
     @classmethod
     def get_menu(cls): 
         sections = manager.section.get_all_section()
-        if sections is not cls.sections :
+        if sections != cls.sections :
             cls.refresh_menu(sections)
         return cls.p_menu
 
@@ -114,4 +112,4 @@ class SectionMenuFrame(MenuFrame):
         if isinstance(args,str):
             self.goto(args)
         else:
-            self.goto(*args)
+            self.goto(args[0],**args[1])

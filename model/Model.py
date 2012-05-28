@@ -123,6 +123,10 @@ class Board(Model):
 
     __ = 'argo_boardhead'
 
+    def get_by_sid(self,sid):
+        return self.db.query("SELECT * FROM %s WHERE sid = %%s" % self.__,
+                             sid)
+
     def get_all_board(self):
         return self.table_select_all(self.__)
 
@@ -141,12 +145,6 @@ class Board(Model):
     def name2id(self,boardname):
         d = self.table_select_by_key(self.__, 'bid', 'boardname', boardname)
         return d and d['bid']
-
-    def get_posts_total(self,boardname):
-        pass
-
-    def get_topic_total(self,boardname):
-        pass
 
 class Post(Model):
 
@@ -224,6 +222,7 @@ class Online(Model):
         if ch is not None:
             self.ch_status = Cacher('argo:user_statue',ch=self.ch)
             self.ch_sessions = Cacher('argo:user_sessions',ch=self.ch)
+            self.ch_board_online = Cacher('argo:board_online',ch=self.ch)
 
     def login(self,userid):
         d = self.ch_sessions.hget(userid)
@@ -250,6 +249,15 @@ class Online(Model):
 
     def total_online(self):
         return self.ch_sessions.hlen() or 0
+
+    def enter_board(self,boardname):
+        return self.ch_board_online.hincrby(boardname)
+
+    def exit_board(self,boardname):
+        return self.ch_board_online.hincrby(boardname,-1)
+
+    def board_online(self,boardname):
+        return self.ch_board_online.hget(boardname)
 
 class AuthUser(dict):
     def __getattr__(self, name):
