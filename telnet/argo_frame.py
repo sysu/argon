@@ -12,6 +12,21 @@ import config
 from datetime import datetime
 import functools
 
+def in_history(f):
+    @functools.wraps(f)
+    def wrapper(self,*args,**kwargs):
+        self.handle_record()
+        return f(self,*args,**kwargs)
+    return wrapper
+
+def save_curses(f):
+    @functools.wraps(f)
+    def wrapper(self,*args,**kwargs):
+        self.write(ac.save)
+        f(self,*args,**kwargs)
+        self.write(ac.restore)
+    return wrapper
+
 class ArgoBaseFrame(Frame):
 
     shortcuts = config.default_shortcuts
@@ -22,6 +37,8 @@ class ArgoBaseFrame(Frame):
 
     u = lambda self,d : d.decode(self.session.charset)
     s = lambda self,s : s.encode(self.session.charset)
+
+    help_page = None
 
     def cls(self):
         self.write(ac.clear)
@@ -46,6 +63,10 @@ class ArgoBaseFrame(Frame):
             self.session.history = []
         return self.session.history
 
+    @in_history
+    def show_help(self):
+        self.goto('help',self.help_page)
+
 class ArgoStatusFrame(ArgoBaseFrame):
 
     top_txt = static['top']
@@ -66,7 +87,10 @@ class ArgoStatusFrame(ArgoBaseFrame):
         self.write( zh_format(self.bottom_txt,
                               datetime.now().ctime(),
                               self.session.userid))
-        if close : self.write(ac.restore)        
+        if close : self.write(ac.restore)
+
+    # def callout(self,text):
+        
 
     def fm(self,format_str,args):
         if isinstance(args,tuple):
@@ -103,21 +127,6 @@ class ArgoKeymapsFrame(ArgoBaseFrame):
     def get(self,data):
         if data in self.key_maps :
             getattr(self,self.key_maps[data])()
-
-def in_history(f):
-    @functools.wraps(f)
-    def wrapper(self,*args,**kwargs):
-        self.handle_record()
-        return f(self,*args,**kwargs)
-    return wrapper
-
-def ex_curses(f):
-    @functools.wraps(f)
-    def wrapper(self,*args,**kwargs):
-        self.write(ac.save)
-        f(self,*args,**kwargs)
-        self.write(ac.restore)
-    return wrapper
 
 @mark('undone')
 class UnDoneFrame(ArgoBaseFrame):

@@ -4,7 +4,7 @@ sys.path.append('../')
 
 from chaofeng import ascii as ac
 from chaofeng.g import static,mark
-from chaofeng.ui import SimpleTable
+from chaofeng.ui import SimpleTable,HiddenInput
 from model import manager
 from argo_frame import ArgoStatusFrame,in_history
 
@@ -17,21 +17,39 @@ class BoardMapper:
 
     format_str = static['boardlist'][4]
     
-    def __init__(self,sid=None):
-        self.setup(sid)
+    def __init__(self,sid=None,sort=None):
+        self.setup(sid,sort)
         
-    def setup(self,sid=None):
+    def setup(self,sid=None,sort=None):
+        '''
+        sort ::
+          0 -- by bid
+          1 -- by online
+          2 -- by boardname
+          3 -- by description
+        '''
         if sid :
-            print sid
-            lmd = lambda : manager.board.get_by_sid(sid)
-            self.select = lmd
-            self._data = self.select()
+            self._data = manager.board.get_by_sid(sid)
+        if sid is True:
+            self._data = manager.board.get_all_board()
+        if sort == 0:
+            self._data.sort(key = lambda x : x['bid'])
+        elif sort == 1 :
+            self._data.sort(key = lambda x: manager.online.board_online(x['boardname'] or 0),
+                            reverse=True)
+        elif sort == 2:
+            self._data.sort(key = lambda x: x['boardname'])
+        elif sort == 3:
+            self._data.sort(key = lambda x: x['description'])
 
     def __getitem__(self,key):
         return self.format_str % dict(read=u'◆',
                                       online=manager.online.board_online(self._data[key]['boardname']) or 0,
                                       mark='',
                                       **self._data[key])
+
+    def raw(self):
+        return self._data
 
     def __len__(self):
         return len(self._data)
@@ -52,15 +70,16 @@ class BaseTableFrame(ArgoStatusFrame):
             "#":"try_jump",
             "$":"go_last",
             "/":"search",
-            ac.k_right:"finish"
+            ac.k_right:"finish",
             "q":"go_back",
             "e":"go_back",
-            ac.k_left:"go_back",
+            ac.k_left:"goto_back",
             "s":"change_sort",
             "S":"send_message",
             "f":"goto_friend",
             "!":"goto_out",
             ac.k_ctrl_z:"watch_message",
+            "h":"show_help",
             "H":"goto_top_ten",
             "u":"goto_check_user",
             "l":"goto_mail",
@@ -69,21 +88,26 @@ class BaseTableFrame(ArgoStatusFrame):
             ac.k_ctrl_e:"change_board_attr",
             })            
             
-    help_info = static['boardlist'][0]
     thread = static['boardlist'][2]
     x_table = SimpleTable(start_line=4)
-    
-    def initialize(self,sid=None,default=0):
+    x_input = HiddenInput(text=static['boardlist'][0],start_line=2)
+
+    help_page = 'boardlist'
+        
+    def initialize(self,sid=None,default=0,sort=0):
         self.data = BoardMapper()
         self.table = self.load(self.x_table,self.data,refresh=False)
+        self.input = self.load(self.x_input)
+        self.sort = sort
+        self.sid = sid
         self.set_data(sid=sid)
         self.refresh()
         
     def refresh(self):
         self.cls()
         self.top_bar()
-        self.writeln(self.help_info)
-        self.write(self.thread)
+        self.writeln(self.input.text)
+        self.writeln(self.thread)
         self.bottom_bar(repos=True)
         self.table.refresh()
 
@@ -120,16 +144,39 @@ class BaseTableFrame(ArgoStatusFrame):
 #todo:2012-5-29-01:58
 
     def try_jump(self):
-        pass
+        text = self.input.read(prompt=u"跳转到哪个讨论区？")
+        self.table.refresh_cursor()
+        try:
+            g = int(text)
+        except:
+            return
+        self.table.goto(g)
 
+    def goto_with_prefix(self,data):
+        for index,item in enumerate(self.data.raw()) :
+            if item['boardname'].startswith(data):
+                self.write(ac.save)
+                self.table.goto(index)
+                self.write(ac.restore)
+                return
+            
     def search(self):
-        pass
-
+        text = self.input.read_with_hook(hook = lambda x : self.goto_with_prefix(x) ,
+                                         prompt=u'搜寻讨论区：')
+        self.table.refresh_cursor()
+        
     def change_sort(self):
-        pass
+        self.sort += 1
+        if self.sort > 3 :
+            self.sort = 0
+        self.data.setup(sort=self.sort)
+        self.refresh()
+
+    def hover_now(self):
+        return self.data.raw()[self.table.fetch()]
 
     def watch_board(self):
-        pass
+        self.goto('board_info',self.hover_now()['boardname'])
 
     def set_readonly(self):
         pass

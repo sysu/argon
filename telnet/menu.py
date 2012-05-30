@@ -63,7 +63,7 @@ class MenuFrame(ArgoStatusFrame):
 
     @in_history
     def show_help(self):
-        self.goto('help',self.menuname)
+        self.goto('help','menu_'+self.menuname)
 
 @mark('main')
 class MainMenuFrame(MenuFrame):
