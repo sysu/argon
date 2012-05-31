@@ -150,17 +150,33 @@ class Post(Model):
 
     _prefix = 'argo_filehead_'
     
-    @property
     def __(self,boardname):
         return self._prefix + boardname
 
-    def get_posts_by_boardname(self,boardname,offset,limit):
-        return self.db.query("SELECT * FROM %s ORDER BY pid LIMIT %%s,%%s" % \
+    def _create_table(self,boardname,**kwargs):
+        import config
+        from string import Template
+        with open(config.SQL_TPL_DIR + 'template/argo_filehead.sql') as f :
+            board_template = Template(f.read())
+            self.db.execute(board_template.safe_substitute(boardname=boardname))        
+
+    def get_posts_by_boardname(self,boardname,offset,limit,order='pid'):
+        return self.db.query("SELECT * FROM %s ORDER BY %s LIMIT %%s,%%s" % \
+                                 (self.__(boardname),order),
+                             offset,limit)
+    
+    def get_g_posts_by_boardname(self,boardname,offset,limit):
+        return self.db.query("SELECT * FROM %s WHERE flag & 1 ORDER BY pid LIMIT %%s,%%s" %\
+                                 self.__(boardname),
+                             offset,limit)
+
+    def get_m_posts_by_boardname(self,boardname,offset,limit):
+        return self.db.query("SELECT * FROM %s WHERE flag & 2 ORDER BY pid LIMIT %%s,%%s" %\
                                  self.__(boardname),
                              offset,limit)
 
     def get_topic_by_boardname(self,boardname,offset,limit):
-        return self.db.query("SELECT * FROM %s WHERE tid = 0 ORDER BY pid LIMIT %%s,%%s" % \
+        return self.db.query("SELECT * FROM %s WHERE tid = 0 ORDER BY pid  LIMIT %%s,%%s" % \
                                  self.__(boardname),
                              offset,limit)
 
@@ -179,6 +195,9 @@ class Post(Model):
         '''
         pass
 
+    def get_board_total(self,boardname):
+        return 0
+    
 class UserInfo(Model):
 
     __ = 'argo_user'

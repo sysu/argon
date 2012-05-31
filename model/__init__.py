@@ -18,7 +18,7 @@ def init_table(table_name):
 class CF:
 
     from globaldb import global_conn,global_cache
-    from Model import Section,Online,UserInfo,UserAuth,Board
+    from Model import Section,Online,UserInfo,UserAuth,Board,Post
     
     db = global_conn
     ch = global_cache
@@ -28,14 +28,16 @@ class CF:
     userinfo  = UserInfo()
     auth      = UserAuth(userinfo,online)
     board     = Board()
+    post      = Post()
     
-    loads = [section,online,userinfo,auth,board]
+    loads = [section,online,userinfo,auth,board,post]
 
     use = {
         "section":section,
         "online":online,
         "auth":auth,
         "board":board,
+        "post":post,
         }
 
 manager = Manager(CF)

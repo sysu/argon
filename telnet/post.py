@@ -14,6 +14,7 @@ class TutorialFrame(ArgoKeymapsFrame):
     
     def initialize(self,page):
         self.cls()
+        self.write(ac.move2(24,40))
         self.anim = self.load(self.x_anim,static['help/'+page],
                               auto_play=True,playone=True)
 

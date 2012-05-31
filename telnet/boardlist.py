@@ -42,11 +42,12 @@ class BoardMapper:
         elif sort == 3:
             self._data.sort(key = lambda x: x['description'])
 
-    def __getitem__(self,key):
-        return self.format_str % dict(read=u'◆',
-                                      online=manager.online.board_online(self._data[key]['boardname']) or 0,
-                                      mark='',
-                                      **self._data[key])
+    def get(self,start,limit):
+        return map(lambda x : self.format_str % dict(read=u'◆',
+                                                     online=manager.online.board_online(x['boardname']) or 0,
+                                                     mark='',
+                                                     **x),
+                   self._data[start:start+limit])
 
     def raw(self):
         return self._data
@@ -186,4 +187,5 @@ class BaseTableFrame(ArgoStatusFrame):
 
     @in_history
     def finish(self):
-        print self.table.fetch()
+        r = self.hover_now()
+        self.goto('board',r['boardname'])
