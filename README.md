@@ -5,8 +5,9 @@ argon是全新的[argo](http://bbs.sysu.edu.cn)实现。使用python实现。
 
   * database: sql表，数据库层
   * model: 数据表达层,提供Board, User等模型及其相关操作，封装底层数据库操作
-  * web: argo 的web端逻辑, unstart
+  * web: argo 的web端逻辑, 使用tornado
   * lib: 公用函数库
+  * test: 各类测试工具
   * telnet: argo 的telnet端逻辑. base on [chaofeng](https://github.com/LTaoist/chaofeng)
 
 Todo

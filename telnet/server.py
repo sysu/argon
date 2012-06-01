@@ -15,7 +15,7 @@ class LoginDebugFrame(login.WelcomeFrame):
 
     def initialize(self):
         self.try_login('333','123456')
-        
+
 if __name__ == '__main__' :
     s = Server(mark['debug'])
     s.run()
