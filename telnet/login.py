@@ -70,6 +70,8 @@ class WelcomeFrame(ArgoBaseFrame):
         #     userid = userid[:-1]
         self.session.auth = authobj # put into session
         self.session.userid = authobj.userid  # put the userid
+        self.session.seid = authobj.seid
+        print authobj
         if authobj.is_first_login :
             self.goto('first_login')
         else : self.goto('main')

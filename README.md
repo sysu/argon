@@ -9,6 +9,10 @@ argon是全新的[argo](http://bbs.sysu.edu.cn)实现。使用python实现。
   * lib: 公用函数库
   * telnet: argo 的telnet端逻辑. base on [chaofeng](https://github.com/LTaoist/chaofeng)
 
+我们不喜欢重造轮子，如果你有好的建议，务必告诉我们！
+
+一些我们的讨论可以在[这里](http://bbs.sysu.edu.cn/bbstcon?board=Programming&file=M.1338262485.A)找到。
+
 Todo
 ----
 

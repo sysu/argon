@@ -27,26 +27,28 @@ class PostWrapper:
         self.setup(mode)
 
     def setup(self,mode):
-        if mode == 0:
-            self.select = lambda offset,limit : manager.\
-                post.get_posts_by_boardname(self.boardname,offset,limit)
-        elif mode == 1:
-            self.select = lambda offset,limit : manager.\
-                post.get_g_posts_by_boardname(self.boardname,offset,limit)                
-        elif mode == 2:
-            self.select = lambda offset,limit : manager.\
-                post.get_posts_by_boardname(self.boardname,offset,limit,order='tid')
-        elif mode == 3:
-            self.select = lambda offset,limit : manager.\
-                post.get_m_posts_by_boardname(self.boardname,offset,limit)
-        elif mode == 4:
-            self.select = lambda offset,limit : manager.\
-                post.get_topic_by_boardname(self.boardname,offset,limit)
+        self.select = lambda offset,limit : manager.\
+            post.get_posts_advan(self.boardname,offset,limit)
+        # if mode == 0:
+        #     self.select = lambda offset,limit : manager.\
+        #         post.get_posts_by_boardname(self.boardname,offset,limit)
+        # elif mode == 1:
+        #     self.select = lambda offset,limit : manager.\
+        #         post.get_g_posts_by_boardname(self.boardname,offset,limit)                
+        # elif mode == 2:
+        #     self.select = lambda offset,limit : manager.\
+        #         post.get_posts_by_boardname(self.boardname,offset,limit,order='tid')
+        # elif mode == 3:
+        #     self.select = lambda offset,limit : manager.\
+        #         post.get_m_posts_by_boardname(self.boardname,offset,limit)
+        # elif mode == 4:
+        #     self.select = lambda offset,limit : manager.\
+        #         post.get_topic_by_boardname(self.boardname,offset,limit)
         # todo:
         #    mode 5,and mode 6
 
     def format(self,d):
-        return "%5s  %12s %6 %ss" % (d['pid'],d['owner'],
+        return "%5s  %12s %6s %s" % (d['pid'],d['owner'],
                                      d['posttime'].strftime("%b %d %a"),
                                      d['title'])
 
@@ -61,11 +63,12 @@ class BaseTableFrame(ArgoStatusFrame):
 
     key_maps = config.TABLE_KEY_MAPS.copy()
     key_maps.update({
-            })            
+            ac.k_ctrl_p:"new_post",
+            })
             
-    thread = ["TableHead"]
+    thread = static['board'][1]
     x_table = SimpleTable(start_line=4)
-    x_input = HiddenInput(text="help info",start_line=2)
+    x_input = HiddenInput(text=static['board'][0],start_line=2)
 
     help_page = 'board'
         
@@ -82,15 +85,21 @@ class BaseTableFrame(ArgoStatusFrame):
         self.cls()
         self.top_bar()
         self.writeln(self.input.text)
-        self.writeln(self.thread[self.mode])
+        self.writeln(self.thread)
         self.bottom_bar(repos=True)
         self.table.refresh()
 
     def set_mode(self,mode):
         self.data.setup(mode)
 
+    @property
+    def state(self):
+        return dict(boardname=self.boardname,
+                    default=self.table.hover,
+                    mode=self.mode)
+
     def handle_record(self):
-        self.record(boardname=self.boardname,default=self.table.hover,mode=mode)
+        self.record(self.state)
         
     def get(self,data):
         if data in self.key_maps :
@@ -209,9 +218,17 @@ class BaseTableFrame(ArgoStatusFrame):
     def find_content(self):
         pass
 
+    def new_post_callback(self,data):
+        print data
+        manager.action.new_post(self.boardname,
+                                self.session.userid,
+                                data['title'],
+                                data['content'])
+        self.goto('board',boardname=self.boardname,default=self.table.hover,mode=self.mode)
+        
     def new_post(self):
-        pass
-
+        self.goto('edit_post',self.new_post_callback,'')
+    
     def edit_post(self):
         pass
 
@@ -285,4 +302,7 @@ class BaseTableFrame(ArgoStatusFrame):
 
     @in_history
     def finish(self):
-        print self.table.fetch()
+        s = self.table.fetch()
+        c = manager.post.get_post(self.boardname,s)
+        self.goto('read_post',c and c['content'] or '',
+                  ('board',self.state))

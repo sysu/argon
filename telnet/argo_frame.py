@@ -27,9 +27,11 @@ def save_curses(f):
         self.write(ac.restore)
     return wrapper
 
+
 class ArgoBaseFrame(Frame):
 
     shortcuts = config.default_shortcuts
+    status = Status()
     
     '''
     全部类的基类。
@@ -120,14 +122,13 @@ class ArgoStatusFrame(ArgoBaseFrame):
 
     def goto_mail(self):
         pass
-
     
 class ArgoKeymapsFrame(ArgoBaseFrame):
 
     def get(self,data):
         if data in self.key_maps :
             getattr(self,self.key_maps[data])()
-
+        
 @mark('undone')
 class UnDoneFrame(ArgoBaseFrame):
 

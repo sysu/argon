@@ -18,19 +18,22 @@ def init_table(table_name):
 class CF:
 
     from globaldb import global_conn,global_cache
-    from Model import Section,Online,UserInfo,UserAuth,Board,Post
+    from Model import Section,Online,UserInfo,UserAuth,\
+        Board,Post,Action,ReadMark
     
     db = global_conn
     ch = global_cache
 
     section   = Section()
-    online    = Online(max_login=3)
+    online    = Online(max_login=999)
     userinfo  = UserInfo()
     auth      = UserAuth(userinfo,online)
     board     = Board()
     post      = Post()
+    action    = Action(board,online,post)
+    readmark  = ReadMark()
     
-    loads = [section,online,userinfo,auth,board,post]
+    loads = [section,online,userinfo,auth,board,post,readmark]
 
     use = {
         "section":section,
@@ -38,6 +41,8 @@ class CF:
         "auth":auth,
         "board":board,
         "post":post,
+        "action":action,
+        "readmark":readmark,
         }
 
 manager = Manager(CF)

@@ -5,6 +5,7 @@ from globaldb import global_conn,global_cache
 import error 
 import bcrypt
 from datetime import datetime
+import mode
 
 class MetaModel(type):
 
@@ -131,7 +132,7 @@ class Board(Model):
         return self.table_select_all(self.__)
 
     def get_board(self,name):
-        return self.table_get_by_key(self.__, 'boardname')
+        return self.table_get_by_key(self.__, 'boardname', name)
 
     def add_board(self,**kwargs):
         return self.table_insert(self.__, kwargs)
@@ -158,27 +159,20 @@ class Post(Model):
         from string import Template
         with open(config.SQL_TPL_DIR + 'template/argo_filehead.sql') as f :
             board_template = Template(f.read())
-            self.db.execute(board_template.safe_substitute(boardname=boardname))        
+            self.db.execute(board_template.safe_substitute(boardname=boardname))
 
-    def get_posts_by_boardname(self,boardname,offset,limit,order='pid'):
-        return self.db.query("SELECT * FROM %s ORDER BY %s LIMIT %%s,%%s" % \
-                                 (self.__(boardname),order),
-                             offset,limit)
-    
-    def get_g_posts_by_boardname(self,boardname,offset,limit):
-        return self.db.query("SELECT * FROM %s WHERE flag & 1 ORDER BY pid LIMIT %%s,%%s" %\
-                                 self.__(boardname),
-                             offset,limit)
-
-    def get_m_posts_by_boardname(self,boardname,offset,limit):
-        return self.db.query("SELECT * FROM %s WHERE flag & 2 ORDER BY pid LIMIT %%s,%%s" %\
-                                 self.__(boardname),
-                             offset,limit)
-
-    def get_topic_by_boardname(self,boardname,offset,limit):
-        return self.db.query("SELECT * FROM %s WHERE tid = 0 ORDER BY pid  LIMIT %%s,%%s" % \
-                                 self.__(boardname),
-                             offset,limit)
+    def get_posts_advan(self,boardname,offset,limit,order='pid',mark=None,reverse=None):
+        cond = ''
+        if mark:
+            buf = []
+            'g' in mark and buf.append('flag & 1')
+            'm' in mark and buf.append('flag & 2')
+            't' in mark and buf.append('tid = 0')
+            if buf:
+                cond = 'WHERE ' + ' AND '.join(buf)
+        sql = "SELECT * FROM %s ORDER BY %s %s %s LIMIT %%s,%%s" % \
+            (self.__(boardname),order,cond,'DESC' if reverse else '')
+        return self.db.query(sql,offset,limit)
 
     def get_post(self,boardname,pid):
         return self.table_get_by_key(self.__(boardname), 'pid', pid)
@@ -196,7 +190,9 @@ class Post(Model):
         pass
 
     def get_board_total(self,boardname):
-        return 0
+        res = self.db.get("SELECT count(*) as total FROM %s%s" % (self._prefix,boardname))
+        r = res.get('total')
+        return (r and int(r)) or 0
     
 class UserInfo(Model):
 
@@ -242,6 +238,7 @@ class Online(Model):
             self.ch_status = Cacher('argo:user_statue',ch=self.ch)
             self.ch_sessions = Cacher('argo:user_sessions',ch=self.ch)
             self.ch_board_online = Cacher('argo:board_online',ch=self.ch)
+            self.ch_user_ip = Cacher('argo:ip_online',ch=self.ch)
 
     def login(self,userid):
         d = self.ch_sessions.hget(userid)
@@ -249,6 +246,9 @@ class Online(Model):
             return False
         self.ch_sessions.hincrby(userid)
         return self.ch_sessions.hget(userid)
+
+    def record_ip(self,userid,sessionid,ip):
+        self.ch_user_ip.hmset({userid+sessionid:ip})
             
     def set_state(self,userid,session,value):
         return self.ch_status.hmset({
@@ -263,6 +263,7 @@ class Online(Model):
 
     def logout(self,userid,session):
         self.ch_sessions.hincrby(userid,-1)
+        print self.ch_sessions.hget(userid)
         if int(self.ch_sessions.hget(userid)) <= 0 :
             self.ch_sessions.hdel(userid)
 
@@ -356,22 +357,54 @@ class UserAuth(Model):
 
         #set_state
         seid = self.online.login(userid)
-        # if seid is False :
-        #     return error.LOGIN_MAX_LOGIN
+        if seid is False :
+            return error.LOGIN_MAX_LOGIN
         res.seid = seid
+
+        self.online.record_ip(userid,seid,host)
 
         if res['userid'] == 'argo' :
             res['is_admin'] = True
-        
+
+        print res.seid
         return res
 
-    def logout(self,userid):
-        pass
-        #set_state
-        # self.online.
-        
+    def logout(self,userid,seid):
+        self.online.logout(userid,seid)
+
+    def safe_logout(self,userid,seid):
+        self.logout(userid,seid)
+
 class ReadMark(Model):
-    pass
+
+    def is_new_for_user(self,userid,boardname,pid):
+        return True
+
+    def post_state(self,userid,posts):
+        return 'N'
+
+class Action(Model):
+
+    def __init__(self,board,online,post):
+        self.board = board
+        self.online = online
+        self.post = post
+
+    def enter_board(self,userid,sessionid,boardname):
+        self.online.enter_board(boardname)
+        self.online.set_state(userid,sessionid,mode.IN_BOARD)
+
+    def exit_board(self,userid,sessionid,boardname):
+        self.online.exit_board(userid,sessionid)
+
+    def new_post(self,boardname,userid,title,content):
+        self.post.add_post(
+            boardname,
+            bid=self.board.name2id(boardname),            
+            owner=userid,
+            title=title,
+            content=content,
+            )
 
 class Manager:
 

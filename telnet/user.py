@@ -191,3 +191,12 @@ class ChangePasswdFrame(Frame):
     def get(self,data):
         if data == ac.k_ctrl_c :
             self.goto(mark['user_space'])
+
+@mark('user_info')
+class UserInfoFrame(Frame):
+
+    def initialize(self,name):
+        print name
+        print 'z' * 20
+        self.write(name)
+        self.pause()
