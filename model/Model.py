@@ -113,8 +113,8 @@ class Section(Model):
     def update_section(self,sid,**attr):
         return self.table_update_by_key(self.__, 'sid', sid, attr)
     
-    def del_section(self,sectionname):
-        return self.table_delete_by_key(self.__, 'sectionname', sectionname)
+    def del_section(self,sid):
+        return self.table_delete_by_key(self.__, 'sid', sid)
     
     def name2id(self,sectionname):
         d = self.table_select_by_key(self.__, 'sid', 'sectionname', sectionname)
@@ -123,7 +123,8 @@ class Section(Model):
 class Board(Model):
 
     __ = 'argo_boardhead'
-
+    _r = 'argo_recommend'
+    
     def get_by_sid(self,sid):
         return self.db.query("SELECT * FROM %s WHERE sid = %%s" % self.__,
                              sid)
@@ -134,18 +135,37 @@ class Board(Model):
     def get_board(self,name):
         return self.table_get_by_key(self.__, 'boardname', name)
 
+    def get_recommend(self):
+        return self.db.query(
+            "SELECT %s.* FROM %s INNER JOIN %s ON "
+            "%s.bid = %s.bid ORDER BY %s.bid" % \
+                (self.__, self.__, self._r, self.__, self._r, self.__))
+
+    def add_recommend(self,bid):
+        return self.table_insert(self._r,  dict(bid=bid))
+
+    def del_recommend(self,bid):
+        return self.table_delete_by_key(self._r, 'bid', bid)
+
+    def get_board_by_id(self,bid):
+        return self.table_get_by_key(self.__, 'bid', bid)
+
     def add_board(self,**kwargs):
         return self.table_insert(self.__, kwargs)
     
     def update_board(self,bid,**attr):
         return self.table_update_by_key(self.__, 'bid', bid, attr)
     
-    def del_board(self,boardname):
-        return self.table_delete_by_key(self.__, 'boardname', boardname)
+    def del_board(self,bid):
+        return self.table_delete_by_key(self.__, 'bid', bid)
     
     def name2id(self,boardname):
         d = self.table_select_by_key(self.__, 'bid', 'boardname', boardname)
         return d and d['bid']
+    
+    def id2name(self,bid):
+        d = self.table_select_by_key(self.__, 'boardname', 'bid', bid)
+        return d and d['boardname']
 
 class Post(Model):
 
@@ -177,11 +197,16 @@ class Post(Model):
     def get_post(self,boardname,pid):
         return self.table_get_by_key(self.__(boardname), 'pid', pid)
 
+    def next_post_pid(self,boardname,pid):
+        res = self.db.get("SELECT pid FROM %s WHERE pid > %s ORDER BY pid LIMIT 1" %\
+                              (self.__(boardname),pid))
+        return res and res['pid']
+
     def add_post(self,boardname,**kwargs):
         return self.table_insert(self.__(boardname), kwargs)
 
-    def update_post(self,boardname,**kwargs):
-        return self.table_update_by_key(self.__(boardname), 'pid', pid, attr)
+    def update_post(self,boardname,pid,**kwargs):
+        return self.table_update_by_key(self.__(boardname), 'pid', pid, kwargs)
 
     def del_post(self,*args,**kwargs):
         '''
@@ -398,14 +423,34 @@ class Action(Model):
         self.online.exit_board(userid,sessionid)
 
     def new_post(self,boardname,userid,title,content):
-        self.post.add_post(
+        tid = self.post.add_post(
             boardname,
             bid=self.board.name2id(boardname),            
             owner=userid,
             title=title,
             content=content,
+            replyid=0,
             )
+        self.post.update_post(boardname,tid=tid)
 
+    def reply_post(self,boardname,userid,title,content,replyid):
+        tid = self.post.get_post(replyid)['tid']
+        self.post.add_post(
+            boardname,
+            bid=self.board.name2id(boardname),
+            owner=userid,
+            title=title,
+            content=content,
+            replyid=replyid,
+            tid=tid)
+
+    def update_post(self,boardname,userid,pid,title,content):
+        self.post.update_post(boardname,
+                              pid,
+                              owner = userid,
+                              title=title,
+                              content=content)
+                   
 class Manager:
 
     def __init__(self,config):
