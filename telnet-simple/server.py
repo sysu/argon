@@ -13,6 +13,7 @@ import config,traceback
 from model import manager
 from argo_frame import *
 import functools
+import string
 
 DEBUG = True
 
@@ -87,6 +88,16 @@ class ArgoFrame(Frame):
                 d[attr] = r
         return d
 
+    def show_table(self,format_str,thead,content):
+        self.writeln( zh_format_d(format_str,**thead))
+        self.writeln('-' * len(format_str))
+        if content :
+            pp = map(lambda x : zh_format_d(format_str,**x),
+                     content)
+            self.writeln('\r\n'.join(pp))
+        else:
+            self.writeln('Empty -- \r\n')
+
     @property
     def user(self):
         '''
@@ -150,7 +161,11 @@ class WelcomeFrame(ArgoFrame):
         raise ActionInterrupt(authobj.content)
 
     def debug(self):
-        self._eval('auth')
+        pass
+
+    def do_register(self):
+        d = self.read_form({},["userid","password"])
+        manager.auth.register(d['userid'],d['password'])
 
 class AuthedFrame(ArgoFrame):
 
@@ -169,6 +184,13 @@ class AuthedFrame(ArgoFrame):
     @property
     def seid(self):
         return self.session.user.seid
+
+    def do_mail(self):
+        self.goto('mail')
+
+    def do_me(self):
+        m = manager.userinfo.get_user(self.userid)
+        self.desc_dict(m)        
 
 @mark('main')
 class MenuFrame(AuthedFrame):
@@ -197,7 +219,7 @@ class MenuFrame(AuthedFrame):
             raise ActionInterrupt('No such places.')
 
     def debug(self):
-        self._eval('goto 0')
+        pass
 
 @mark('boardlist')
 class BoardListFrame(AuthedFrame):
@@ -237,10 +259,10 @@ class BoardListFrame(AuthedFrame):
             boards = self.boards[start:end]
         else:
             boards = self.boards[start:]
-        self.writeln(format_str % dict(bid='bid',boardname='boardname',
-                                       description='description',bm='bm'))
-        boards = map(lambda x: zh_format_d(format_str,**x),boards)
-        self.writeln('\r\n'.join(boards))
+        self.show_table(format_str,
+                        dict(bid='bid',boardname='boardname',
+                             description='description',bm='bm'),
+                        boards)
         self.writeln('\r\n')
 
     def do_recommend(self):
@@ -320,12 +342,10 @@ class PostFrame(AuthedFrame):
     def do_l(self,format_str='%(pid)4s | %(title)15s | %(owner)s'):
         posts = manager.post.get_posts_advan(self.boardname,self.offset,*self.cond)
         self.writeln('Offset [%s] %s\r\n' % (self.offset,self.cond))
-        self.writeln( format_str % dict(pid='pid',title='title',owner='owner'))
-        self.writeln( '-' * len(format_str))
+        self.show_table(format_str,
+                        dict(pid='pid',title='title',owner='owner'),
+                        posts)
         if posts :
-            pp = map(lambda x : zh_format_d(format_str,**x),
-                     posts)
-            self.writeln('\r\n'.join(pp))
             self.offset += 20
         else:
             self.offset = 0
@@ -384,6 +404,49 @@ class PostFrame(AuthedFrame):
 
     def do_r(self):
         self.goto('boardlist')
+
+@mark('mail')
+class MailFrame(AuthedFrame):
+
+    def initialize(self):
+        super(MailFrame,self).initialize()
+        self.offsets = 0
+        self.offsetr = 0
+
+    def do_f(self,format_str='%(mid)5s | %(fromuserid)-10s | %(content)s'):
+        mails = manager.action.get_rebox_mail(self.userid,offset=self.offsetr)
+        self.writeln('Offsetr [%s] \r\n' % self.offsetr)
+        self.show_table(format_str,
+                        dict(mid='ID',fromuserid='FROM',touserid='TO',content='content'),
+                        mails)
+        if mails :
+            self.offsetr += 20
+        else:
+            self.offsetr = 0
+
+    def do_s(self):
+        d = self.read_form({},["touserid","content"])
+        manager.action.send_mail(self.userid,**d)
+
+    def do_del(self,mid):
+        manager.action.del_mail(self.userid,mid)
+
+    mail_template = static['mail']
+    def format_mail(self,mail):
+        return self.mail_template.safe_substitute(mail)
+
+    def do_read(self,mid):
+        d = manager.action.get_mail(self.userid,mid)
+        self.writeln(self.format_mail(d))
+
+# @mark('disgest')
+# class DisgestFrame(AuthedFrame):
+
+#     def do_f(self,format_str='%(id)s %(title)s %(owner)s %(mtime)s')
+#         posts = manager.disgest.get_all_books(self.partname)
+#         self.show_table(format_str,
+#                         dict(id='id',title='title',owner='owner',mtime='mtime'),
+#                         posts)
 
 if __name__ == '__main__' :
     s = Server(mark['welcome'])

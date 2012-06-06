@@ -14,13 +14,20 @@ import config
 
 class MenuFrame(ArgoStatusFrame):
 
-    x_anim = Animation(static['active'],start_line=3)
-    x_menu = ColMenu()
-    menus = {}
+    _anim = Animation(static['active'],start_line=3)
+    _menu = ColMenu()
     key_maps = {
         ac.k_ctrl_c : "goto_back",
         "h" : "show_help",
         }
+
+    def initialize(self,menuname,default=0):
+        super(MenuFrame,self).initialize()
+        
+        self.menuname = menuname
+        menus = self.get_menu()
+        self.menu = self.load(p_menu,default=default,refresh=False)
+        self.background()
 
     def background(self):
         self.cls()
@@ -31,22 +38,13 @@ class MenuFrame(ArgoStatusFrame):
         self.write(ac.move2(11,0))
         self.menu.refresh()
 
-    def get_menu(self):
-        menuname = self.menuname
-        if menuname in self.menus :
-            return self.menus[menuname]
-        else :
-            nm = self.x_menu.copy()
-            nm.setup(config.menu[menuname],background=static['menu/%s' % menuname])
-            self.menus[menuname] = nm
-            return nm
+    cache_menus = {}
+    @load_global(cache_menus)
+    def get_menu(self,menuname):
+        nm = self._menu.copy()
+        nm.setup(config.menu[menuname],background=static['menu/%s' % menuname])
+        return nm
 
-    def initialize(self,menuname,default=0):
-        self.menuname = menuname
-        p_menu = self.get_menu()
-        self.menu = self.load(p_menu,default=default,refresh=False)
-        self.background()
-        
     def get(self,data):
         self.menu.send(data)
         if data in ac.ks_finish:

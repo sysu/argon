@@ -14,10 +14,9 @@ from datetime import datetime
 import config
 
 @mark('welcome')
-class WelcomeFrame(ArgoBaseFrame):
+class WelcomeFrame(ArgoFrame):
 
     class UseridInput(TextInput):
-
         def acceptable(self,data):
             return data in ac.printable
 
@@ -25,56 +24,45 @@ class WelcomeFrame(ArgoBaseFrame):
     timeout = 50
     prompt = static['prompt/auth']
     wrong_prompt = prompt[2]
-    
-    ix_userid = UseridInput(prompt=prompt[0])
-    ix_passwd = Password(prompt=prompt[1])
+
+    _userid = UseridInput(prompt=prompt[0])
+    _passwd = Password(prompt=prompt[1])
 
     def initialize(self):
-        self.render_background(online=manager.online.total_online())
-        i_name = self.load(self.ix_userid)
-        i_passwd = self.load(self.ix_passwd)
-        with Timeout(self.timeout,EndInterrupt):
+        super(WelcomeFrame,self).initialize()
+        
+        self.render(self.background,
+                    online=manager.online.total_online())
+        
+        self.try_login_iter(self.timeout)
+        
+    def try_login_iter(self,timeout):
+        
+        userid_ = self.load(self._userid)
+        passwd_ = self.load(self._passwd)
+        
+        with Timeout(timeout,EndInterrupt):
             while True :
-                userid = i_name.readln()
+                userid = userid_.readln()
                 if userid == 'new' :
                     self.goto('register')
                 elif userid == 'guest' :
                     passwd = None
                 else :
-                    passwd = i_passwd.readln()
+                    passwd = passwd_.readln()
                 # try login
                 self.try_login(userid,passwd)
                 
     def try_login(self,userid,passwd):
-        print userid
-        print passwd
         authobj = manager.auth.login(userid,passwd,self.session.ip)
         if authobj :
-            self.login(authobj)
+            self.session.user = authobj
+            if authobj.is_first_login :
+                self.goto('first_login')
+            else : self.goto('main')
         else:
             print authobj.content
             self.writeln(self.wrong_prompt)
-
-    def login(self,authobj):
-        # if userid.endswith('.') :
-        #     self.write(ac.clear+"Sorry, this part hasn't be done.")
-        #     self.pause()
-        #     raise EndInterrupt
-        #     self.session.charset = 'big5'
-        #     userid = userid[:-1]
-        # elif userid.endswith('#') :
-        #     self.pause()
-        #     self.write(ac.clear+"Sorry, this part hasn't be done.")
-        #     raise EndInterrupt
-        #     self.session.charset = 'utf8'
-        #     userid = userid[:-1]
-        self.session.auth = authobj # put into session
-        self.session.userid = authobj.userid  # put the userid
-        self.session.seid = authobj.seid
-        print authobj
-        if authobj.is_first_login :
-            self.goto('first_login')
-        else : self.goto('main')
 
 @mark('first_login')
 class FirstLoginFrame(ArgoBaseFrame):

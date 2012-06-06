@@ -1,0 +1,6 @@
+处理信笺 --
+
+  $ f |format|                  获取邮件
+  $ s                           发送邮件
+  $ del mid                     删除mid邮件
+  $ read mid                    读取mid邮件

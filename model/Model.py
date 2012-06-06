@@ -1,7 +1,9 @@
+
 #!/usr/bin/python2
 # -*- coding: utf-8 -*-
 
 from globaldb import global_conn,global_cache
+from MySQLdb import ProgrammingError
 import error 
 import bcrypt
 from datetime import datetime
@@ -249,9 +251,6 @@ class UserInfo(Model):
     def select_attr(self,userid,sql_what):
         return self.db.get("SELECT %s FROM %s WHERE userid = %%s" % (sql_what, self.__),
                            userid)
-class Mail(Model):
-    pass
-
 class Online(Model):
 
     def __init__(self,max_login):
@@ -400,6 +399,75 @@ class UserAuth(Model):
     def safe_logout(self,userid,seid):
         self.logout(userid,seid)
 
+class Mail(Model):
+
+    _prefix = 'argo_mailhead_'
+
+    def __(self,uid):
+        return self._prefix + str((int(uid) / 100))
+
+    def _tableid(self,uid):
+        return int(uid) / 100
+
+    def _create_table(self,tableid):
+        import config
+        from string import Template
+        with open(config.SQL_TPL_DIR + 'template/argo_mailhead.sql') as f :
+            mail_template = Template(f.read())
+            self.db.execute(mail_template.safe_substitute(tableid=tableid))
+    
+    def get_mail_to_uid(self,uid,offset,limit):
+        sql = "SELECT * FROM %s WHERE touserid = %%s ORDER BY mid LIMIT %%s,%%s" \
+            % self.__(uid)
+        try:
+            return self.db.query(sql,uid,offset,limit)
+        except ProgrammingError,e:
+            if e.args[0] == 1146 : # Table NOT EXIST
+                self._create_table(self._tableid(uid))
+                self.db.query(sql,uid,offset,limit)
+            else:
+                raise e
+    # def get_uid_mail_unread(self,uid,offset,limit):
+    #     sql = "SELECT * FROM %S OEDERY BY mid WHERE fromuserid = "\
+    #         "%s AND readmark & 1 LIMIT %%s,%%s" % (self.__(uid),uid)
+    #     return self.db.query(sql,offset,limit)
+
+    def get_mail(self,uid,mid):
+        return self.table_get_by_key(self.__(uid), 'mid', mid)
+
+    def add_mail_touid(self,touid,**kwargs):
+        kwargs["touserid"] = touid
+        return self.table_insert(self.__(touid),kwargs)
+
+    def del_mail(self,uid,mid):
+        return self.table_delete_by_key(self.__(uid),'mid',mid)
+
+class Disgest(Model):
+
+    _prefix = 'argo_annhead_'
+
+    def __(self,partition):
+        return self._prefix + partition
+
+    def _create_table(self,partition,**kwargs):
+        import config
+        from string import Template
+        with open(config.SQL_TPL_DIR + 'template/argo_annhead.sql') as f :
+            board_template = Template(f.read())
+            self.db.execute(board_template.safe_substitute(partition=partition))
+
+    def get_all_books(self,partname):
+        sql = "SELECT * FROM %s" % self.__(partname)
+        return self.db.query(sql)
+
+    def get_children(self,partname,pid):
+        sql = "SELECT * FROM %s WHERE pid = %%s" % self.__(partname)
+        return self.db.query(sql,pid)
+
+    def get_node(self,partname,id):
+        sql = "SELECT * FROM %s WHERE id = %%s" % self.__(partname)
+        return self.db.get(sql,id)
+    
 class ReadMark(Model):
 
     def is_new_for_user(self,userid,boardname,pid):
@@ -410,10 +478,12 @@ class ReadMark(Model):
 
 class Action(Model):
 
-    def __init__(self,board,online,post):
+    def __init__(self,board,online,post,mail,userinfo):
         self.board = board
         self.online = online
         self.post = post
+        self.mail = mail
+        self.userinfo = userinfo
 
     def enter_board(self,userid,sessionid,boardname):
         self.online.enter_board(boardname)
@@ -450,6 +520,23 @@ class Action(Model):
                               owner = userid,
                               title=title,
                               content=content)
+
+    def get_rebox_mail(self,userid,offset,limit=20):
+        uid = self.userinfo.name2id(userid)
+        return self.mail.get_mail_to_uid(uid,offset,limit)
+
+    def send_mail(self,fromuserid,touserid,**kwargs):
+        fromuid = self.userinfo.name2id(fromuserid)
+        touid = self.userinfo.name2id(touserid)
+        self.mail.add_mail_touid(touid,fromuserid=fromuid,**kwargs)
+
+    def del_mail(self,touserid,mid):
+        touid = self.userinfo.name2id(touserid)
+        self.mail.del_mail(touid,mid)
+
+    def get_mail(self,userid,mid):
+        uid = self.userinfo.name2id(userid)
+        return self.mail.get_mail(uid,mid)
                    
 class Manager:
 
