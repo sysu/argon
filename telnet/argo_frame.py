@@ -24,6 +24,12 @@ class ArgoBaseFrame(Frame):
         '''
         self.write(ac.clear)
 
+    def format(self,string,*args,**kwargs):
+        if args:
+            return zh_format(string,*args)
+        else:
+            return zh_format_d(string,**kwargs)
+
     def render(self,string,*args):
         '''
         Write string % dict if has any key/value arguments,
@@ -46,6 +52,9 @@ class ArgoBaseFrame(Frame):
         Goto the frame in the pack.
         '''
         self.goto(pack[0],**pack[1])
+
+    def go_back(self):
+        self.go_pack(self.history.pop())
 
 class ArgoAuthFrame(ArgoBaseFrame):
 
@@ -112,11 +121,6 @@ class ArgoAuthFrame(ArgoBaseFrame):
         '''
         self.go_pack(self.history.pop())
 
-    def initialize(self):
-        pass
-
-class ArgoStatusFrame(ArgoAuthFrame):
-    
     def get(self,data):
         if data in self.key_maps :
             getattr(self,self.key_maps[data])()
@@ -124,9 +128,8 @@ class ArgoStatusFrame(ArgoAuthFrame):
             self.handle_finish()
 
     def handle_finish(self):
-        raise NotImplementedError,"What should `%s` do at the end?" % self.__mark__
-
-class ArgoStatusFrame_(ArgoBaseFrame):
+        pass
+        # raise NotImplementedError,"What should `%s` do at the end?" % self.__mark__
 
     top_txt = static['top']
     bottom_txt = static['bottom']
@@ -145,10 +148,16 @@ class ArgoStatusFrame_(ArgoBaseFrame):
         if repos : self.write(ac.move2(24,0))
         self.write( zh_format(self.bottom_txt,
                               datetime.now().ctime(),
-                              self.session.userid))
+                              self.userid))
         if close : self.write(ac.restore)
 
-    # def callout(self,text):
+class ArgoFrame(ArgoAuthFrame):
+
+    key_maps = {}
+
+    def try_action(self,data):
+        if data in self.key_maps :
+            getattr(self,self.key_maps[data])()
 
     def send_message(self):
         pass
@@ -170,8 +179,6 @@ class ArgoStatusFrame_(ArgoBaseFrame):
 
     def goto_mail(self):
         pass
-    
-# class ArgoStatusFrame(ArgoFrame):
         
 @mark('undone')
 class UnDoneFrame(ArgoBaseFrame):
