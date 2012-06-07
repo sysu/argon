@@ -6,7 +6,7 @@ from chaofeng import ascii as ac
 from chaofeng.g import static,mark
 from chaofeng.ui import SimpleTable,HiddenInput
 from model import manager
-from argo_frame import ArgoStatusFrame,in_history
+from argo_frame import ArgoFrame
 
 import config
 
@@ -17,292 +17,181 @@ import config
 # 5 同作者
 # 6 标题关键字
 
-class PostWrapper:
+class ArgoBoardTable(ArgoFrame):
 
-    def __init__(self,boardname,total,limit=20,start=-20,mode=0):
-        self.total = total
-        self.limit = limit
-        self.start = start
-        self.boardname = boardname
-        self.setup(mode)
+    key_maps = ArgoFrame.key_maps.copy()
+    key_maps.update({
+            ###############
+            # move cursor #
+            ###############
+            # move_up,move_down,go_first,page_up,page_down,go_first,go_last,
+            # go_line, !!! go_topic_first, go_topic_last,
+            "k":"move_up",ac.k_up:"move_up",
+            "j":"move_down",ac.k_down:"move_down",
+            "P":"page_up","N":"page_down",
+            ac.k_home:"go_first",ac.k_end:"go_last","$":"go_last","#":"go_line",
 
-    def setup(self,mode):
-        self.select = lambda offset,limit : manager.\
-            post.get_posts_advan(self.boardname,offset,limit)
-        # if mode == 0:
-        #     self.select = lambda offset,limit : manager.\
-        #         post.get_posts_by_boardname(self.boardname,offset,limit)
-        # elif mode == 1:
-        #     self.select = lambda offset,limit : manager.\
-        #         post.get_g_posts_by_boardname(self.boardname,offset,limit)                
-        # elif mode == 2:
-        #     self.select = lambda offset,limit : manager.\
-        #         post.get_posts_by_boardname(self.boardname,offset,limit,order='tid')
-        # elif mode == 3:
-        #     self.select = lambda offset,limit : manager.\
-        #         post.get_m_posts_by_boardname(self.boardname,offset,limit)
-        # elif mode == 4:
-        #     self.select = lambda offset,limit : manager.\
-        #         post.get_topic_by_boardname(self.boardname,offset,limit)
-        # todo:
-        #    mode 5,and mode 6
+            ###############
+            # Read/common #
+            ###############
+            # !!! read,clearall_unread,goto_digest,read_same_topic,read_same_author,
+            # read_topic_unread_first,remove_unread, goto_note, goto_snote
+            # goto_userpage, goto_topten
+            ac.k_right:"read",
 
-    def format(self,d):
-        return "%5s  %12s %6s %s" % (d['pid'],d['owner'],
-                                     d['posttime'].strftime("%b %d %a"),
-                                     d['title'])
+            ###############
+            # Edit/Reply  #
+            ###############
+            # new_post,edit_post,edit_title,del_post,reproduced, !!!send_mail_author,
+            # send_mail_self
 
-    def get(self,limit,offset):
-        return map(self.format,self.select(limit,offset))
+            ###############
+            # Search/Mode #
+            ###############
+            # goto_board, vote??, hidden??, search_author, search_title
+            # search_content, g_mode, y_mode, select_mode, change_mode
 
-    def __len__(self):
-        return self.total
+            ###############
+            # Jump        #
+            ###############
+            # pass
+
+            ###############
+            # admin       #
+            ###############
+            # not_post, deal_author, vote??, set_readonley, goto_postinfo,
+            # set_snote_passwd, del_post[before], del_post_range,
+            # deal_topic, restore_post, restore_post_range, goto_trash
+            # save_temp??, set_g, set_m, push_digest,
+            # mark_this, put_mark_digest, 废纸篓？清空回收站？
+
+            })
+    _input = HiddenInput(text=static['board'][0],start_line=2)
+    _table = SimpleTable(start_line=4)
+    thread = static['board'][1]
+
+    def initialize(self,default=0,display=True):
+        self.input_ = self.load(self._input)
+        self.table_ = self.load(self._table,default=default)
+        self.bind(self.get_getdata(),self.get_fformat())
+        if display:
+            self.display()
+        
+    def display(self):
+        self.cls()
+        self.top_bar()
+        self.writeln(self.input_.text)
+        self.writeln(self.thread)
+        self.bottom_bar(repos=True)
+        self.table_.refresh()
+
+    def bind(self,getdata,fformat):
+        self.table_.setup(getdata=getdata,fformat=fformat,refresh=False)
+
+    def get(self,data):
+        if data in ac.ks_finish:
+            self.finish()
+        self.try_action(data)
+
+    def get_getdata(self):
+        raise NotImplementedError
+
+    def get_fformat(self):
+        raise NotImplementedError
+
+    def get_last_index(self):
+        raise NotImplementedError
 
 @mark('board')
-class BaseTableFrame(ArgoStatusFrame):
-
-    key_maps = config.TABLE_KEY_MAPS.copy()
-    key_maps.update({
-            ac.k_ctrl_p:"new_post",
-            })
-            
-    thread = static['board'][1]
-    x_table = SimpleTable(start_line=4)
-    x_input = HiddenInput(text=static['board'][0],start_line=2)
+class ArgoBoardFrame(ArgoBoardTable):
 
     help_page = 'board'
         
     def initialize(self,boardname=None,default=0,mode=0):
-        self.mode = mode
-        self.data = PostWrapper(boardname,manager.post.get_board_total(boardname))
-        self.table = self.load(self.x_table,self.data,refresh=False)
-        self.input = self.load(self.x_input)
+        self.set_mode(mode,refresh=False)
         self.boardname = boardname
-        self.set_mode(mode)
-        self.refresh()
-        
-    def refresh(self):
-        self.cls()
-        self.top_bar()
-        self.writeln(self.input.text)
-        self.writeln(self.thread)
-        self.bottom_bar(repos=True)
-        self.table.refresh()
-
-    def set_mode(self,mode):
-        self.data.setup(mode)
+        super(ArgoBoardFrame,self).initialize(default)
 
     @property
-    def state(self):
+    def status(self):
         return dict(boardname=self.boardname,
-                    default=self.table.hover,
+                    default=self.table_.hover,
                     mode=self.mode)
 
-    def handle_record(self):
-        self.record(self.state)
-        
-    def get(self,data):
-        if data in self.key_maps :
-            getattr(self,self.key_maps[data])()
-        if data in ac.ks_finish :
-            self.finish()
-  
-    def move_down(self):
-        self.table.goto_offset(1)
-    
-    def move_up(self):
-        self.table.goto_offset(-1)
+    def get_getdata(self):
+        return lambda o,l: manager.post.get_posts_advan(self.boardname,o,l)
 
-    def page_down(self):
-        self.table.goto_offset(self.table.limit)
+    def get_fformat(self):
+        return lambda d : "%5s  %12s %6s %s" % (d['pid'],d['owner'],
+                                                d['posttime'].strftime("%b %d %a"),
+                                                d['title'])
+
+    def get_last_index(self):
+        return manager.post.get_last_pid(self.boardname)
+
+    def set_mode(self,mode,refresh=True):
+        self.mode = mode
+        if refresh:
+            self.display()
+
+    ###############
+    # move cursor #
+    ###############
+
+    def move_up(self):
+        self.table_.move_up()
+
+    def move_down(self):
+        self.table_.goto_offset(1)
         
     def page_up(self):
-        self.table.goto_offset(-self.table.limit)
+        self.table_.goto_offset(-self.table_.limit)
+    
+    def page_down(self):
+        self.table_.goto_offset(self.table_.limit)
 
     def go_first(self):
-        self.table.goto(0)
+        self.table_.goto(0)
 
     def go_last(self):
-        self.table.goto(len(self.table.data))
+        self.table_.goto(self.get_last_index())
 
-#todo:2012-5-29-01:58
-
-    def try_jump(self):
-        text = self.input.read(prompt=u"跳转到哪号文章？")
-        self.table.refresh_cursor()
+    def go_line(self):
+        text = self.input_.read(prompt=u"跳转到哪篇文章？")
+        self.table_.refresh_cursor()
         try:
             g = int(text)
         except:
             return
-        self.table.goto(g)
+        self.table_.goto(g)
 
-    # def goto_with_prefix(self,data):
-    #     for index,item in enumerate(self.data.raw()) :
-    #         if item['boardname'].startswith(data):
-    #             self.write(ac.save)
-    #             self.table.goto(index)
-    #             self.write(ac.restore)
-    #             return
-            
-    # def search(self):
-    #     text = self.input.read_with_hook(hook = lambda x : self.goto_with_prefix(x) ,
-    #                                      prompt=u'搜寻讨论区：')
-    #     self.table.refresh_cursor()
+    ###############
+    # Read/common #
+    ###############
 
-    def try_jump_board(self):
-        pass
+    ###############
+    # Edit/Reply  #
+    ###############
 
-    def watch_owner(self):
-        pass
-
-    def clear_unread(self):
-        pass
-
-    def set_1_mode(self):
-        self.set_mode(1)
-
-    def set_4_mode(self):
-        self.set_mode(2)
-
-    def select_mode(self):
-        pass
-
-    def watch_note(self):
-        pass
-
-    def watch_secret_note(self):
-        pass
-
-    def lock_screen(self):
-        pass
-
-    def jump_essence(self):
-        pass
-
-    def clear_all_unread(self):
-        pass
-
-    def set_noreply(self):
-        pass
-
-    def jump_same_topic(self):
-        pass
-
-    def jump_same_owner(self):
-        pass
-
-    def jump_new_first(self):
-        pass
-
-    def jump_topic_first(self):
-        pass
-
-    def jump_topic_last(self):
-        pass
-
-    def jump_select(self):
-        pass
-
-    def change_mode(self):
-        pass
-
-    def find_author(self):
-        pass
-
-    def find_title(self):
-        pass
-
-    def goto_board(self):
-        pass
-
-    def find_content(self):
-        pass
-
-    def new_post_callback(self,data):
-        print data
-        manager.action.new_post(self.boardname,
-                                self.session.userid,
-                                data['title'],
-                                data['content'])
-        self.goto('board',boardname=self.boardname,default=self.table.hover,mode=self.mode)
-        
     def new_post(self):
-        self.goto('edit_post',self.new_post_callback,'')
-    
+        self.suspend('new_post',boardname=self.boardname)
+
     def edit_post(self):
-        pass
+        self.suspend('edit_post',boardname=boardname,pid=self.table_.fetch()['pid'])
 
     def edit_title(self):
-        pass
-    
-    def delet_post(self):
-        pass
+        text = self.input_.read(prompt=u'新标题：')
+        self.table_.refresh_cursor()
+        manager.action.update_title(self.userid,self.boardname,
+                                    self.table_.fetch()['pid'], text)
 
-    def repost(self):
-        pass
-
-    def reply_author(self):
+    def del_post(self):
         pass
 
-    def save_to_mail(self):
+    def reproduced(self):
         pass
 
-    # def
-    # 暂存区???
-
-    def set_post_g(self):
-        pass
-
-    def set_post_m(self):
-        pass
-
-    def push_to_ess(self):
-        pass
-
-    # 设置版面档案、设置备忘录密码、
-
-    def delete_posts_r(self):
-        pass
-
-    def not_post_sb(self):
-        pass
-
-    def goto_trash(self):
-        pass
-
-    def restore_posts_r(self):
-        pass
-
-    def restore_post(self):
-        pass
-
-    def hover_post(self):
-        pass
-
-    def push_hove_to_ess(self):
-        pass
-
-    def work_same_topic(self):
-        pass
-
-    def recommend(self):
-        pass
-
-    def hover_now(self):
-        return self.data.raw()[self.table.fetch()]
-
-    def watch_board(self):
-        self.goto('board_info',self.hover_now()['boardname'])
-
-    def set_readonly(self):
-        pass
-
-    def change_board_attr(self):
-        pass
-
-    @in_history
     def finish(self):
-        s = self.table.fetch()
-        c = manager.post.get_post(self.boardname,s)
-        self.goto('read_post',c and c['content'] or '',
-                  ('board',self.state))
+        self.suspend('read_post',
+                     boardname=self.boardname,
+                     pid=self.table_.fetch()['pid'])

@@ -47,14 +47,11 @@ class ArgoBaseFrame(Frame):
         '''
         return (self.__mark__,self.status)
 
-    def go_pack(self,pack):
+    def goto_pack(self,pack):
         '''
         Goto the frame in the pack.
         '''
         self.goto(pack[0],**pack[1])
-
-    def go_back(self):
-        self.go_pack(self.history.pop())
 
 class ArgoAuthFrame(ArgoBaseFrame):
 
@@ -114,12 +111,16 @@ class ArgoAuthFrame(ArgoBaseFrame):
         self.history.append(self.packup())
         self.goto(where,**kwargs)
 
-    def go_back(self):
+    def goto_back(self):
         '''
         Go back to previous frame save in
         history.
         '''
-        self.go_pack(self.history.pop())
+        if self.history:
+            self.goto_pack(self.history.pop())
+
+    def is_finish(self,data):
+        return data in ac.ks_finish
 
     def get(self,data):
         if data in self.key_maps :
@@ -153,7 +154,9 @@ class ArgoAuthFrame(ArgoBaseFrame):
 
 class ArgoFrame(ArgoAuthFrame):
 
-    key_maps = {}
+    key_maps = {
+        ac.k_ctrl_c:"goto_back",
+        }
 
     def try_action(self,data):
         if data in self.key_maps :
@@ -161,7 +164,7 @@ class ArgoFrame(ArgoAuthFrame):
 
     def send_message(self):
         pass
-
+        
     def goto_friend(self):
         pass
 
@@ -179,7 +182,7 @@ class ArgoFrame(ArgoAuthFrame):
 
     def goto_mail(self):
         pass
-        
+
 @mark('undone')
 class UnDoneFrame(ArgoBaseFrame):
 

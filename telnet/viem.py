@@ -6,7 +6,7 @@ from chaofeng import ascii as ac
 from chaofeng.g import static,mark
 from chaofeng.ui import LongTextBox
 from model import manager
-from argo_frame import ArgoBaseFrame,in_history
+from argo_frame import ArgoFrame
 
 import config
 
@@ -19,8 +19,7 @@ class ArgoTextBox(LongTextBox):
     def handle_finish(self):
         self.callback()
 
-@mark('read_post')
-class ViemFrame(ArgoBaseFrame):
+class ViemFrame(ArgoFrame):
 
     x_viem = ArgoTextBox()
     
