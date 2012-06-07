@@ -161,7 +161,7 @@ class WelcomeFrame(ArgoFrame):
         raise ActionInterrupt(authobj.content)
 
     def debug(self):
-        pass
+        self._eval('auth gcc 123')
 
     def do_register(self):
         d = self.read_form({},["userid","password"])
@@ -219,7 +219,7 @@ class MenuFrame(AuthedFrame):
             raise ActionInterrupt('No such places.')
 
     def debug(self):
-        pass
+        self._eval('goto 0')
 
 @mark('boardlist')
 class BoardListFrame(AuthedFrame):
@@ -318,7 +318,7 @@ class BoardListFrame(AuthedFrame):
         self.goto('main')
 
     def debug(self):
-        # self._eval('enter 1')
+        self._eval('enter 1')
         pass
 
 @mark('post')
@@ -380,7 +380,7 @@ class PostFrame(AuthedFrame):
         p = {}
         reader = self.load(self._reader)
         p['title'] = reader.readln(prompt='Title: ')
-        p['content'] = reader.readln()
+        p['content'] = reader.readln(termitor=[ac.k_ctrl_c])
         return p
     
     def do_new(self):

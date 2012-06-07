@@ -20,6 +20,7 @@ CREATE TABLE IF NOT EXISTS `argo_annhead_${partition}` (
     `flag` varchar(2),
     `mtime` timestamp NOT NULL default CURRENT_TIMESTAMP on update CURRENT_TIMESTAMP,
     
+    `tags` varchar(64),
     `content` text,
 
     PRIMARY KEY (`id`)

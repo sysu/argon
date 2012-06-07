@@ -2,8 +2,8 @@
     Just a template.
     Using string.Template.safe_substitute({ ... })
 */
-DROP TABLE IF EXISTS `argo_filehead_${boardname}`;
-CREATE TABLE IF NOT EXISTS `argo_filehead_${boardname}` (
+DROP TABLE IF EXISTS `argo_filehead_${bid}`;
+CREATE TABLE IF NOT EXISTS `argo_filehead_${bid}` ( 
     `pid` int(11) unsigned NOT NULL auto_increment,
     `bid` int(11) unsigned NOT NULL,
     `owner` varchar(14),
@@ -25,6 +25,8 @@ CREATE TABLE IF NOT EXISTS `argo_filehead_${boardname}` (
     `agree` int(11) unsigned NOT NULL default 0,
     `disagree` int(11) unsigned NOT NULL default 0,
     `credit`  int(11) NOT NULL default 0,
+    
+    `originalfilename` varchar(32), /* M.123456789.A */
 
     PRIMARY KEY (`pid`)
 ) ENGINE=InnoDB  DEFAULT CHARSET=UTF8;

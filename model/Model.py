@@ -196,8 +196,18 @@ class Post(Model):
             (self.__(boardname),order,cond,'DESC' if reverse else '')
         return self.db.query(sql,offset,limit)
 
+    def get_last_pid(self,boardname):
+        res = self.db.get("SELECT pid FROM %s ORDER BY pid DESC LIMIT 1" % \
+                              self.__(boardname))
+        return res and res['pid']
+
     def get_post(self,boardname,pid):
         return self.table_get_by_key(self.__(boardname), 'pid', pid)
+
+    def prev_post_pid(self,boardname,pid):
+        res = self.db.get("SELECT pid FROM %s WHERE pid < %s ORDER BY pid DESC LIMIT 1" %\
+                              (self.__(boardname),pid))
+        return res and res['pid']
 
     def next_post_pid(self,boardname,pid):
         res = self.db.get("SELECT pid FROM %s WHERE pid > %s ORDER BY pid LIMIT 1" %\
@@ -220,6 +230,9 @@ class Post(Model):
         res = self.db.get("SELECT count(*) as total FROM %s%s" % (self._prefix,boardname))
         r = res.get('total')
         return (r and int(r)) or 0
+
+    def update_title(self,boardname,pid,new_title):
+        return self.update_post(boardname,pid,title=new_title)
     
 class UserInfo(Model):
 
@@ -397,7 +410,10 @@ class UserAuth(Model):
         self.online.logout(userid,seid)
 
     def safe_logout(self,userid,seid):
-        self.logout(userid,seid)
+        try:
+            self.logout(userid,seid)
+        except:
+            pass
 
 class Mail(Model):
 
@@ -493,7 +509,7 @@ class Action(Model):
         self.online.exit_board(userid,sessionid)
 
     def new_post(self,boardname,userid,title,content):
-        tid = self.post.add_post(
+        pid = self.post.add_post(
             boardname,
             bid=self.board.name2id(boardname),            
             owner=userid,
@@ -501,7 +517,7 @@ class Action(Model):
             content=content,
             replyid=0,
             )
-        self.post.update_post(boardname,tid=tid)
+        self.post.update_post(boardname,pid,tid=pid)
 
     def reply_post(self,boardname,userid,title,content,replyid):
         tid = self.post.get_post(replyid)['tid']
@@ -537,6 +553,9 @@ class Action(Model):
     def get_mail(self,userid,mid):
         uid = self.userinfo.name2id(userid)
         return self.mail.get_mail(uid,mid)
+
+    def update_title(self,userid,boardname,pid,new_title):
+        return self.post.update_title(boardname,pid,new_title)
                    
 class Manager:
 

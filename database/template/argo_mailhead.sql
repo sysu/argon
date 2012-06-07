@@ -1,9 +1,12 @@
+/*
+    tableid = uid / 100
+*/
 DROP TABLE IF EXISTS `argo_mailhead_${tableid}`;
 CREATE TABLE IF NOT EXISTS `argo_mailhead_${tableid}` (
     `mid` int(11) unsigned NOT NULL auto_increment,
-    `fromuserid` varchar(14) NOT NULL,
-    `touserid` varchar(14) NOT NULL,
-    `attachidx` varchar(20),
+    `fromuserid` varchar(16) NOT NULL,
+    `touserid` varchar(16) NOT NULL,
+    `attachidx` varchar(128),
     
     `sendtime` int(11) unsigned NOT NULL default 0,
     `fromaddr` varchar(64),
