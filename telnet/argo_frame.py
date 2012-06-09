@@ -6,6 +6,7 @@ sys.path.append('../')
 from chaofeng import Frame,static
 from chaofeng.g import mark
 from libtelnet import zh_format,zh_format_d,zh_center
+from model import manager
 import chaofeng.ascii as ac
 import config
 
@@ -133,7 +134,7 @@ class ArgoAuthFrame(ArgoBaseFrame):
         # raise NotImplementedError,"What should `%s` do at the end?" % self.__mark__
 
     top_txt = static['top']
-    bottom_txt = static['bottom']
+    bottom_txt = static['bottom'][0]
 
     def top_bar(self,left=u'',mid=u'逸仙时空 Yat-Sen Channel',right=None):
         if right is None :
@@ -149,7 +150,8 @@ class ArgoAuthFrame(ArgoBaseFrame):
         if repos : self.write(ac.move2(24,0))
         self.write( zh_format(self.bottom_txt,
                               datetime.now().ctime(),
-                              self.userid))
+                              self.userid,
+                              manager.online.total_online()))
         if close : self.write(ac.restore)
 
 class ArgoFrame(ArgoAuthFrame):
@@ -158,6 +160,25 @@ class ArgoFrame(ArgoAuthFrame):
         ac.k_ctrl_c:"goto_back",
         }
 
+    def readline(self,acceptable=ac.is_safe_char,finish=ac.ks_finish,buf_size=20):
+        buf = []
+        while len(buf) < buf_size:
+            ds = self.read_secret()
+            for d in self.u(ds):
+                if d == ac.k_backspace :
+                    if buf :
+                        data = buf.pop()
+                        self.write(ac.backspace * ac.srcwidth(data))
+                        continue
+                elif d in finish :
+                    return ''.join(buf)
+                elif d == ac.k_ctrl_c:
+                    return False
+                elif acceptable(d):
+                    buf.append(d)
+                    self.write(d)
+        return ''.join(buf)
+                    
     def try_action(self,data):
         if data in self.key_maps :
             getattr(self,self.key_maps[data])()

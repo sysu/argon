@@ -34,7 +34,7 @@ class ArgoBoardListTable(ArgoFrame):
         'S':'send_message',     ac.k_ctrl_z:'watch_message',
         'f':'goto_friend',      '!':'goto_out',
         'H':'goto_top_ten',     'l':'goto_mail',
-        'h':'help',        'u':'goto_check_user',
+        'h':'show_help',        'u':'goto_check_user',
 
         # admin
         ac.k_ctrl_a:'watch_board',
@@ -189,3 +189,6 @@ class BoardListFrame(ArgoBoardListTable):
     def finish(self):
         r = self.table_.fetch()
         self.suspend('board',boardname=r['boardname'])
+
+    def show_help(self):
+        self.suspend('help',page='boardlist')

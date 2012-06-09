@@ -370,7 +370,7 @@ class UserAuth(Model):
 
     GUEST = AuthUser(userid='guest',is_first_login=None)
     def get_guest(self):
-        return self.GUEST        
+        return self.GUEST
 
     def login(self,userid,passwd,host):
 
@@ -403,7 +403,7 @@ class UserAuth(Model):
         if res['userid'] == 'argo' :
             res['is_admin'] = True
 
-        print res.seid
+        # print res.seid
         return res
 
     def logout(self,userid,seid):
@@ -559,15 +559,14 @@ class Action(Model):
                    
 class Manager:
 
-    def __init__(self,config):
-        
-        self.db = config.db
-        self.ch = config.ch
-        
-        for model in config.loads :
-            model.bind(db = config.db,
-                       ch = config.ch)
-            
+    @classmethod
+    def configure(cls,config):
+        cls.db = config.db
+        cls.ch = config.ch
         for name in config.use :
             model = config.use[name]
-            setattr(self,name,model)
+            setattr(cls,name,model)
+
+    def bind(self,**kwargs):
+        for k in kwargs:
+            setattr(self,k,kwargs[k])

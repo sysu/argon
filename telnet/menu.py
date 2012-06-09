@@ -61,7 +61,7 @@ class MenuFrame(ArgoFrame):
         self.suspend(self.menu_.fetch())
 
     def show_help(self):
-        self.suspend('help','menu_'+self.name)
+        self.suspend('help',page='menu_'+self.name)
 
 @mark('main')
 class MainMenuFrame(MenuFrame):
@@ -76,7 +76,7 @@ class MainMenuFrame(MenuFrame):
     def status(self):
         return dict(default=self.menu_.hover)
 
-@mark('section_menu')
+@mark('sections')
 class SectionMenuFrame(MenuFrame):
 
     key_maps = MenuFrame.key_maps.copy()
@@ -88,7 +88,7 @@ class SectionMenuFrame(MenuFrame):
                                         str(x[0])))
     
     def initialize(self,default=0):
-        super(SectionMenuFrame,self).initialize('section',default)
+        super(SectionMenuFrame,self).initialize('sections',default)
 
     @property
     def status(self):

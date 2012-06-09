@@ -9,7 +9,7 @@ root = 'welcome'
 
 menu = {
     "main":(
-        ( u'(E)Group       分类讨论区','section_menu','e',(12,5)),
+        ( u'(E)Group       分类讨论区','sections','e',(12,5)),
         # ( u'(D)igest       本站精华区',"undone",'d' ),
         # ( u'(F)avourite    个人收藏夹',"undone",'f' ),
         # ( u'(R)ecommend    推荐版面区',"undone",'r' ),
@@ -19,16 +19,16 @@ menu = {
         # ( u'(S)ervice      特别服务区',"undone",'s' ),
         # ( u'(C)onfig       系统信息区',"undone",'c' ),
         # ( u'(P)ersonal     个人文集区',"undone",'p' ),
-        ( u'(G)oodbye    离开逸仙时空',"bye",'g' )
+        ( u'(G)oodbye    离开逸仙时空',"finish",'g' )
         ),
     "main_guest":(
-        ( u'(E)Group       分类讨论区','section_menu','e',(12,5)),
+        ( u'(E)Group       分类讨论区','sections','e',(12,5)),
         # ( u'(D)igest       本站精华区',"undone",'d' ),
         # ( u'(R)ecommend    推荐版面区',"undone",'r' ),
         # ( u'(T)alk         谈天说地区',"undone",'t' ),
         # ( u'(C)onfig       系统信息区',"undone",'c' ),
         # ( u'(P)ersonal     个人文集区',"undone",'p' ),
-        ( u'(G)oodbye    离开逸仙时空 ',"bye",'g' )
+        ( u'(G)oodbye    离开逸仙时空 ',"finish",'g' )
         ),
     "userspace":(
         ( u'I) 设定个人资料','user_edit_data','i',(12,4)),

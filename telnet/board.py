@@ -42,6 +42,7 @@ class ArgoBoardTable(ArgoFrame):
             ###############
             # Edit/Reply  #
             ###############
+            ac.k_ctrl_p:"new_post",
             # new_post,edit_post,edit_title,del_post,reproduced, !!!send_mail_author,
             # send_mail_self
 
@@ -54,6 +55,7 @@ class ArgoBoardTable(ArgoFrame):
             ###############
             # Jump        #
             ###############
+            "h":"show_help",
             # pass
 
             ###############
@@ -66,6 +68,7 @@ class ArgoBoardTable(ArgoFrame):
             # mark_this, put_mark_digest, 废纸篓？清空回收站？
 
             })
+
     _input = HiddenInput(text=static['board'][0],start_line=2)
     _table = SimpleTable(start_line=4)
     thread = static['board'][1]
@@ -192,6 +195,9 @@ class ArgoBoardFrame(ArgoBoardTable):
         pass
 
     def finish(self):
-        self.suspend('read_post',
+        self.suspend('post',
                      boardname=self.boardname,
                      pid=self.table_.fetch()['pid'])
+        
+    def show_help(self):
+        self.suspend('help',page='board')

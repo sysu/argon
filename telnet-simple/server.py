@@ -161,7 +161,18 @@ class WelcomeFrame(ArgoFrame):
         raise ActionInterrupt(authobj.content)
 
     def debug(self):
-        self._eval('auth gcc 123')
+        # self._eval('auth gcc 123')
+        self.write( '\r\n'.join(
+                map(lambda s : ''.join(
+                        map(str,
+                            range(s, s+20))),
+                    range(1,20))))
+        self.write(ac.move2(10,20))
+        while True:
+            print '>>',
+            d = self.read()
+            print '[%r]' % d
+            self.write_raw("NEWLINE\241\276 \241\277\312")
 
     def do_register(self):
         d = self.read_form({},["userid","password"])

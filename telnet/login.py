@@ -62,17 +62,21 @@ class WelcomeFrame(WelcomeViem):
                     passwd = self.read_passwd()
                 # try login
                 self.try_login(userid,passwd)
-                
-    def try_login(self,userid,passwd):
+
+    def auth(self,userid,passwd):
         authobj = manager.auth.login(userid,passwd,self.session.ip)
         if authobj :
             self.session.user = authobj
             self.session.history = []
+        return authobj
+                
+    def try_login(self,userid,passwd):
+        authobj = self.auth(userid,passwd)
+        if authobj :
             if authobj.is_first_login :
                 self.goto('first_login')
             else : self.goto('main')
         else:
-            print authobj.content
             self.writeln(self.wrong_prompt)
 
 @mark('first_login')

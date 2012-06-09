@@ -47,4 +47,11 @@ class CF:
         "readmark":readmark,
         }
 
-manager = Manager(CF)
+    @classmethod
+    def load(cls):
+        for model in cls.loads :
+            model.bind(db = cls.db, ch = cls.ch)
+
+CF.load()
+manager = Manager()
+Manager.configure(CF)

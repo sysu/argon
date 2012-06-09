@@ -5,34 +5,20 @@ from chaofeng import ascii as ac
 from argo_frame import ArgoFrame
 from model import manager
 
-@mark('help')
-class TutorialFrame(ArgoFrame):
-
-    x_anim = Animation()
-    key_maps = {
-        ac.k_ctrl_c : "goto_back"
-        }
-    
-    def initialize(self,page):
-        self.cls()
-        self.write(ac.move2(24,40))
-        self.anim = self.load(self.x_anim,static['help/'+page],
-                              auto_play=True,playone=True)
-
-    def get(self,data):
-        self.anim.send(data)
-        super(TutorialFrame,self).get(data)
-
-    def play_done(self):
-        self.pause()
-        self.goto_back()
-
 class ArgoTextBox(ArgoFrame):
+
+    '''
+    Inherit this class and call the `set_text` method
+    to display the text.
+    It's useful to copy the `key_maps` and `textbox_cmd`
+    and add new key/value into them.
+    '''
 
     _textbox = LongTextBox()
     key_maps = {
         "Q":"goto_back",
         ac.k_left:"goto_back",
+        ac.k_ctrl_u:"go_link",
         }
     
     textbox_cmd = {
@@ -49,27 +35,62 @@ class ArgoTextBox(ArgoFrame):
         ac.k_end:"go_last",
         "$":"go_last",
         }
+
+    jump_marks = set(("post","help"))
     
     def initialize(self):
         super(ArgoTextBox,self).initialize()
         self.textbox_ = self.load(self._textbox)
-        self.textbox_.bind(self.bottom_bar,self.finish)
+        self.textbox_.bind(self.finish)
 
     def set_text(self,text):
         self.textbox_.set_text(text)
-        self.textbox_.display()
-
+        self.textbox_.refresh_all()
+        self.bottom_bar()
+        
     def get(self,data):
         if data in self.textbox_cmd:
             getattr(self.textbox_,self.textbox_cmd[data])()
+            self.bottom_bar()
         self.try_action(data)
 
-@mark('read_post')
+    def bottom_bar(self,fixed=True):
+        super(ArgoTextBox,self).bottom_bar(repos=True)
+
+    def _go_link(self,line):
+        s = line.split()
+        if (len(s) > 0) and (s[0] in self.jump_marks) :
+            m = s[0]
+            status = mark[m].try_jump(s)
+            if status :
+                self.suspend(m,**status)            
+
+    def go_link(self):
+        self.write(ac.move2(24,1) + ac.kill_line)
+        d = self.readline()
+        self._go_link(d)
+        self.bottom_bar(fixed=True)
+
+@mark('post')
 class ArgoReadPostFrame(ArgoTextBox):
+
+    @classmethod
+    def try_jump(self,args):
+        try:
+            if manager.post.get_post(args[1],args[2]) :
+                return dict(boardname=args[1],
+                            pid=args[2])
+        except:
+            return False            
 
     def initialize(self,boardname,pid):
         super(ArgoReadPostFrame,self).initialize()
         self.set_post(boardname,pid)
+
+    @property
+    def status(self):
+        return dict(boardname=self.boardname,
+                    pid=self.pid)
 
     def get_post(self,boardname,pid):
         return manager.post.get_post(boardname,pid)
@@ -99,5 +120,21 @@ class ArgoReadPostFrame(ArgoTextBox):
         if args is None:
             self.goto_back()
 
-    def bottom_bar(self,fixed=True):
-        super(ArgoReadPostFrame,self).bottom_bar(repos=True)
+@mark('help')
+class TutorialFrame(ArgoTextBox):
+
+    @classmethod
+    def try_jump(cls,args):
+        if static.get('help/%s' % args[1]) :
+            return dict(page=args[1])
+
+    @property
+    def status(self):
+        return dict(page=page)
+    
+    def initialize(self,page):
+        super(TutorialFrame,self).initialize()
+        self.set_text(static['help/%s' % page])
+
+    def finish(self,args=None):
+        self.goto_back()

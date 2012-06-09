@@ -10,27 +10,7 @@ from argo_frame import ArgoFrame
 
 import config
 
-class ArgoTextBox(LongTextBox):
+@mark('help')
+class TutorialFrame(ArgoFrame):
 
-    def init(self,text,callback):
-        super(ArgoTextBox,self).init(text)
-        self.callback = callback
-
-    def handle_finish(self):
-        self.callback()
-
-class ViemFrame(ArgoFrame):
-
-    x_viem = ArgoTextBox()
-    
-    def initialize(self,text,next_f):
-        self.viem = self.load(self.x_viem,text,self.finish)
-        self.next_f = next_f
-        
-    def get(self,char):
-        if char == ac.k_ctrl_c :
-            self.finish()
-        self.viem.send(char)
-
-    def finish(self):
-        self.goto(self.next_f[0],**self.next_f[1])
+    _textbox = 
