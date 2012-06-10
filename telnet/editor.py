@@ -9,6 +9,7 @@ from model import manager
 from argo_frame import ArgoFrame
 from libtelnet import zh_format
 from datetime import datetime
+import config
 
 class ArgoEditor(TextEditor):
 
@@ -85,6 +86,9 @@ class EditFrame(ArgoFrame):
     def finish(self):
         print self.e.getall()
 
+    def message(self,content):
+        self.e.bottom_bar(content[:40])
+
 @mark('new_post')
 class NewPostFrame(EditFrame):
 
@@ -97,6 +101,9 @@ class NewPostFrame(EditFrame):
     @property
     def status(self):
         return dict(boardname=self.boardname)
+
+    def describe(self,s):
+        return '发表文章 -- %s' % s.boardname
 
     def _read_title(self):
         self.write(ac.move2(24,1) + ac.kill_line + u'文章标题：')
@@ -114,10 +121,63 @@ class NewPostFrame(EditFrame):
         manager.action.new_post(self.boardname,
                                 self.userid,
                                 self.title,
-                                self.e.getall())
+                                self.e.getall(),
+                                self.session.ip,
+                                config.BBS_HOST_FULLNAME)
         self.message(u'发表文章成功！')
         self.pause()
         self.goto_back()
 
-    def message(self,content):
-        self.e.bottom_bar(content[:40])
+@mark('reply_post')
+class ReplyPostFrame(NewPostFrame):
+
+    def initialize(self,boardname,replyid):
+        super(ReplyPostFrame,self).initialize(boardname)
+        self.replyid = replyid
+
+    @property
+    def status(self):
+        return dict(boardname=self.boardname,
+                    replyid=self.replyid)
+    
+    def describe(self,s):
+        return '回复文章 -- %s -- %s' % (s.boardname,s.replyid)
+
+    def finish(self):
+        manager.action.reply_post(
+            self.boardname,
+            self.userid,
+            self.title,
+            self.e.getall(),
+            self.session.ip,
+            config.BBS_HOST_FULLNAME,
+            self.replyid)
+        self.message(u'回复文章成功！')
+        self.pause()
+        self.goto_back()
+
+@mark('edit_post')
+class EditPostFrame(EditFrame):
+
+    def initialize(self,boardname,pid):
+        super(EditPostFrame,self).initialize()
+        self.boardname = boardname
+        self.pid = pid
+        self.message(u'开始编辑文章')
+
+    @property
+    def status(self):
+        return dict(boardname=self.boardname,
+                    pid=pid)
+
+    def describe(self,s):
+        return '编辑文章 -- %s -- %s' % (s.boardname,
+                                         s.pid)   
+
+    def finish(self):
+        manager.action.update_post(self.boardname,
+                                   self.userid,
+                                   self.pid,
+                                   self.e.getall())
+        self.goto_back()
+

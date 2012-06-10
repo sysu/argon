@@ -11,6 +11,9 @@ def ascii_format(source,background=None,font=None):
     return '%s%s%s%s' % (ac.background[background],
                        ac.font[font],source,ac.reset)
 
+def ascii_width(source,width):
+    return '%*s' % (width,source)
+
 def ascii_wrapper(source,*wrapper):
     return '\x1b[%sm%s\x1b[0m' % (';'.join(wrapper),source)
 
@@ -37,6 +40,7 @@ RENDER_FILTERS = {
     "art":ascii_format,
     "bid2boardname":bid2boardname,
     "ctime":ctime,
+    "width":ascii_width,
     }
 
 RENDER_TESTS = {}
@@ -46,12 +50,12 @@ RENDER_GLOBALS = {
     "ac":ac,
     "BBS_HOST_FULLNAME":u"逸仙时空 Yat-Sen Channel argo.sysu.edu.cn",
     "o_o":ac.outlook,
+    "delay":ac.delay,
     }
 
 def load_jinjatxt(f):
     raw = f.read()
     t = render.from_string(raw).render()
-    print t
     return t
 
 def load_jinjatpl(f):

@@ -68,7 +68,8 @@ class WelcomeFrame(WelcomeViem):
         authobj = manager.auth.login(userid,passwd,self.session.ip)
         if authobj :
             self.session.user = authobj
-            self.session.history = deque(maxlen=20)  #!!!!
+            self.session.stack = deque(maxlen=5)  #!!!!
+            self.session.history = deque(maxlen=20)
         return authobj
                 
     def try_login(self,userid,passwd):

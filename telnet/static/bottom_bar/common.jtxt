@@ -1,0 +1,1 @@
+{{ o_o(bg_blue,yellow,bold) }}[{{ o_o(cyan) }}%s{{ o_o(yellow) }}] [{{ o_o(cyan) }}%4s {{ o_o(yellow) }}/在线]  {{ o_o(white) }}欢迎来到逸仙时空bbs  {{ o_o(yellow) }}帐号 [{{ o_o(white) }}%10s{{ o_o(yellow) }}] {{ ac.reset }}

@@ -42,7 +42,7 @@ class ArgoBoardTable(ArgoFrame):
             ###############
             # Edit/Reply  #
             ###############
-            ac.k_ctrl_p:"new_post",
+            ac.k_ctrl_p:"new_post",ac.k_ctrl_r:"reply_post","E":"edit_post",
             # new_post,edit_post,edit_title,del_post,reproduced, !!!send_mail_author,
             # send_mail_self
 
@@ -75,6 +75,7 @@ class ArgoBoardTable(ArgoFrame):
 
     def initialize(self,default=0,display=True):
         self.input_ = self.load(self._input)
+        print default
         self.table_ = self.load(self._table,default=default)
         self.bind(self.get_getdata(),self.get_fformat())
         if display:
@@ -85,11 +86,11 @@ class ArgoBoardTable(ArgoFrame):
         self.top_bar()
         self.writeln(self.input_.text)
         self.writeln(self.thread)
-        self.bottom_bar(repos=True)
+        self.bottom_bar()
         self.table_.refresh()
 
     def bind(self,getdata,fformat):
-        self.table_.setup(getdata=getdata,fformat=fformat,refresh=False)
+        self.table_.set_fun(getdata=getdata,fformat=fformat)
 
     def get(self,data):
         if data in ac.ks_finish:
@@ -111,9 +112,14 @@ class ArgoBoardFrame(ArgoBoardTable):
     help_page = 'board'
         
     def initialize(self,boardname=None,default=0,mode=0):
+        manager.action.enter_board(self.userid,self.seid,boardname)
+        self.lastboard = boardname
         self.set_mode(mode,refresh=False)
         self.boardname = boardname
         super(ArgoBoardFrame,self).initialize(default)
+
+    def clear(self):
+        manager.action.exit_board(self.userid,self.seid,self.boardname)
 
     @property
     def status(self):
@@ -123,7 +129,7 @@ class ArgoBoardFrame(ArgoBoardTable):
 
     @classmethod
     def describe(self,s):
-        return u'讨论区[%s]' % s['boardname']
+        return u'讨论区              -- %s' % s['boardname']
 
     def get_getdata(self):
         return lambda o,l: manager.post.get_posts_advan(self.boardname,o,l)
@@ -181,10 +187,20 @@ class ArgoBoardFrame(ArgoBoardTable):
     ###############
 
     def new_post(self):
-        self.suspend('new_post',boardname=self.boardname)
+        if manager.perm.has_new_post_perm(self.userid,self.boardname):
+            self.suspend('new_post',boardname=self.boardname)
+
+    def reply_post(self):
+        pid = self.table_.fetch()['pid']
+        if manager.perm.has_reply_perm(self.userid,self.boardname,pid):
+            self.suspend('reply_post',boardname=self.boardname,replyid=pid)
 
     def edit_post(self):
-        self.suspend('edit_post',boardname=boardname,pid=self.table_.fetch()['pid'])
+        pid = self.table_.fetch()['pid']
+        if manager.perm.has_edit_perm(self.userid,self.boardname,pid):
+            self.suspend('edit_post',boardname=self.boardname,pid=pid)
+        else:
+            self.message(u'你没有编辑此文章的权限！')
 
     def edit_title(self):
         text = self.input_.read(prompt=u'新标题：')

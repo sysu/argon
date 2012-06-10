@@ -61,11 +61,11 @@ class ArgoBoardListTable(ArgoFrame):
         self.top_bar()
         self.writeln(self.input_.text)
         self.writeln(self.thread)
-        self.bottom_bar(repos=True)
+        self.bottom_bar()
         self.table_.refresh()
 
     def bind(self,getdata,fformat):
-        self.table_.setup(getdata=getdata,fformat=fformat,refresh=False)
+        self.table_.set_fun(getdata=getdata,fformat=fformat)
 
     def get(self,data):
         if data in ac.ks_finish:
@@ -188,7 +188,7 @@ class BoardListFrame(ArgoBoardListTable):
 
     @classmethod
     def describe(cls,s):
-        return u'讨论区列表 -- 分类 -- %s' % s['sid']
+        return u'讨论区列表          -- 分类 %s' % s['sid']
   
     def finish(self):
         r = self.table_.fetch()

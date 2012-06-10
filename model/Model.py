@@ -131,7 +131,7 @@ class Board(Model):
         return self.db.query("SELECT * FROM %s WHERE sid = %%s" % self.__,
                              sid)
 
-    def get_all_board(self):
+    def get_all_boards(self):
         return self.table_select_all(self.__)
 
     def get_board(self,name):
@@ -233,6 +233,16 @@ class Post(Model):
 
     def update_title(self,boardname,pid,new_title):
         return self.update_post(boardname,pid,title=new_title)
+
+    def pid2tid(self,boardname,pid):
+        res = self.table_select_by_key(self.__(boardname),
+                                       'tid','pid',pid)
+        return res and res['tid']
+
+    def pid2title(self,boardname,pid):
+        res = self.table_select_by_key(self.__(boardname),
+                                       'title','pid',pid)
+        return res and res['title']
     
 class UserInfo(Model):
 
@@ -492,6 +502,17 @@ class ReadMark(Model):
     def post_state(self,userid,posts):
         return 'N'
 
+class Permissions(Model):
+
+    def has_new_post_perm(self,userid,boardname):
+        return True
+
+    def has_reply_perm(self,userid,boardname,pid):
+        return True
+
+    def has_edit_perm(self,userid,boardname,pid):
+        return False
+
 class Action(Model):
 
     def __init__(self,board,online,post,mail,userinfo):
@@ -506,9 +527,9 @@ class Action(Model):
         self.online.set_state(userid,sessionid,mode.IN_BOARD)
 
     def exit_board(self,userid,sessionid,boardname):
-        self.online.exit_board(userid,sessionid)
+        self.online.exit_board(boardname)
 
-    def new_post(self,boardname,userid,title,content):
+    def new_post(self,boardname,userid,title,content,addr,host):
         pid = self.post.add_post(
             boardname,
             bid=self.board.name2id(boardname),            
@@ -516,19 +537,24 @@ class Action(Model):
             title=title,
             content=content,
             replyid=0,
+            fromaddr=addr,
+            fromhost=host,
             )
         self.post.update_post(boardname,pid,tid=pid)
 
-    def reply_post(self,boardname,userid,title,content,replyid):
-        tid = self.post.get_post(replyid)['tid']
-        self.post.add_post(
+    def reply_post(self,boardname,userid,title,content,addr,host,replyid):
+        tid = self.post.pid2tid(boardname,replyid)
+        pid = self.post.add_post(
             boardname,
-            bid=self.board.name2id(boardname),
+            bid=self.board.name2id(boardname),            
             owner=userid,
             title=title,
             content=content,
             replyid=replyid,
-            tid=tid)
+            fromaddr=addr,
+            fromhost=host,
+            tid=tid,
+            )
 
     def update_post(self,boardname,userid,pid,title,content):
         self.post.update_post(boardname,

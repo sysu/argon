@@ -16,12 +16,13 @@ class MenuFrame(ArgoFrame):
 
     _anim = Animation(static['active'],start_line=3)
     _menu = ColMenu()
-    key_maps = {
-        ac.k_ctrl_c : "goto_back",
-        "h" : "show_help",
-        ac.k_right:"finish",
-        ac.k_left:"goto_back",
-        }
+    key_maps = ArgoFrame.key_maps.copy()
+    key_maps.update({
+            ac.k_ctrl_c : "goto_back",
+            "h" : "show_help",
+            ac.k_right:"finish",
+            ac.k_left:"goto_back",
+            })
 
     def initialize(self,name,default=0):
         super(MenuFrame,self).initialize()
@@ -43,7 +44,7 @@ class MenuFrame(ArgoFrame):
         self.cls()
         self.top_bar()
         self.anim_.lanuch()
-        self.bottom_bar(repos=True)
+        self.bottom_bar()
         self.write(ac.move2(11,0))
         self.menu_.display()
 
@@ -54,6 +55,7 @@ class MenuFrame(ArgoFrame):
         return self._menu.tidy_data(config.menu[self.name])
 
     def get(self,data):
+        print repr(data)
         self.menu_.send(data)
         if data in ac.ks_finish:
             self.finish()
@@ -73,6 +75,7 @@ class MainMenuFrame(MenuFrame):
     def initialize(self,default=0):
         menuname = 'main_guest' if self.userid == 'guest' else 'main'
         super(MainMenuFrame,self).initialize(name=menuname, default=default)
+        # self.message(u'Test OK')
 
     @property
     def status(self):

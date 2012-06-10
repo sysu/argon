@@ -7,6 +7,7 @@ from chaofeng import EndInterrupt
 from chaofeng.g import mark,static
 import chaofeng.ascii as ac
 from model import manager
+from view import ArgoTextBoxFrame
 
 @mark('bad_ending')
 class BadEndingFrame(ArgoFrame):
@@ -20,6 +21,28 @@ class BadEndingFrame(ArgoFrame):
         self.pause()
         self.close()
 
+@mark('history')
+class ArgoHistoryFrame(ArgoTextBoxFrame):
+
+    @property
+    def status(self):
+        return dict()
+
+    @classmethod
+    def describe(self,s):
+        return u'浏览历史记录'
+
+    def initialize(self):
+        super(ArgoHistoryFrame,self).initialize()
+        self.show_history()
+
+    def show_history(self):
+        items = map(lambda x : self.getdesc(x),self.history)
+        self.set_text(static['template/history'].render(items=items))
+
+    def finish(self):
+        self.goto_back_nh()
+    
 @mark('finish')
 class Finish(ArgoFrame):
 

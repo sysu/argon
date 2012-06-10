@@ -3,6 +3,10 @@ from chaofeng import ascii as ac
 from chaofeng.g import static
 from template import load_jinjatxt,load_jinjatpl
 
+BBS_HOST_FULLNAME = u"逸仙时空 Yat-Sen Channel"
+BBS_HOST_DOMAIN = u"argo.sysu.edu.cn"
+
+
 class Config(dict):
     def __getattr__(self,key):
         try:
@@ -56,7 +60,7 @@ menu = {
         ( u'E) 回到主选单','main','e'),),
     "section":(
         # dy + append
-        ( u"[1;32mA[0m) 所有讨论区 -- [ALL]",("boardlist",{"section_name":True}),'a',(11,41)),
+        ( u"[1;32mA[0m) 所有讨论区 -- [ALL]",("boardlist",dict(sid=None)),'a',(11,41)),
         ( u"[1;36mN[0m) 阅读新文章 -- [NEW]","undone",'n'),
         ( u"[1;36mE[0m) 回到主选单 -- [EXIT]","main",'e'),
         )

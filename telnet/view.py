@@ -14,7 +14,7 @@ class ArgoTextBox(LongTextBox):
     bottom_txt = ac.move2(24,1) + static['bottom_bar/text_view'] + ac.reset
     
     def bottom_bar(self,msg):
-        self.write(zh_format(self.bottom_txt,self.s,self.maxs,
+        self.write(zh_format(self.bottom_txt,self.s,self.max,
                              datetime.now().ctime(),msg))
 
 class ArgoTextBoxFrame(ArgoFrame):
@@ -27,20 +27,22 @@ class ArgoTextBoxFrame(ArgoFrame):
     '''
 
     _textbox = ArgoTextBox()
-    key_maps = {
-        "Q":"goto_back",
-        ac.k_left:"goto_back",
-        ac.k_ctrl_c:"goto_back",
-        ac.k_ctrl_u:"go_link",
-        "a":"jump_from_screen",
-        ac.k_ctrl_a:"jump_man",
-        ac.k_ctrl_r:"jump_history",
-        }
+    key_maps = ArgoFrame.key_maps.copy()
+    key_maps.update({
+            "Q":"goto_back",
+            ac.k_left:"goto_back",
+            ac.k_ctrl_c:"goto_back",
+            ac.k_ctrl_u:"go_link",
+            "a":"jump_from_screen",
+            ac.k_ctrl_a:"jump_man",
+            ac.k_ctrl_r:"jump_history",
+            })
     
     textbox_cmd = {
         ac.k_up : "move_up",
         "k":"move_up",
         ac.k_down : "move_down",
+        ac.k_right:"move_down",
         "j":"move_down",
         ac.k_ctrl_b:"page_up",
         ac.k_page_up:"page_up",
@@ -161,7 +163,8 @@ class ArgoReadPostFrame(ArgoTextBoxFrame):
 
     @classmethod
     def describe(self,s):
-        return u'阅读文章[%s/%s]' % (s['boardname'],s['pid'])
+        return u'阅读文章            -- [%s](/p/%s/%s)' % (manager.post.pid2title(**s),
+                                                           s['boardname'],s['pid'])
                                      
     def get_post(self,boardname,pid):
         return manager.post.get_post(boardname,pid)
@@ -205,12 +208,11 @@ class TutorialFrame(ArgoTextBoxFrame):
 
     @classmethod
     def describe(self,s):
-        return u'查看帮助[%s]' % s['page']
+        return u'查看帮助            -- [](/h/%s)' % s['page']
     
     def initialize(self,page):
         super(TutorialFrame,self).initialize()
         self.page = page
-        print 'help/%s' % page
         self.set_text(static['help/%s' % page])
 
     def finish(self,args=None):
