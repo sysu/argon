@@ -25,7 +25,7 @@ class CF:
     ch = global_cache
 
     section   = Section()
-    online    = Online(max_login=999)
+    online    = Online(max_login=9999)
     userinfo  = UserInfo()
     auth      = UserAuth(userinfo,online)
     board     = Board()

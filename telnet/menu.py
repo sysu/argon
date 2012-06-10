@@ -19,6 +19,8 @@ class MenuFrame(ArgoFrame):
     key_maps = {
         ac.k_ctrl_c : "goto_back",
         "h" : "show_help",
+        ac.k_right:"finish",
+        ac.k_left:"goto_back",
         }
 
     def initialize(self,name,default=0):
@@ -76,6 +78,10 @@ class MainMenuFrame(MenuFrame):
     def status(self):
         return dict(default=self.menu_.hover)
 
+    @classmethod
+    def describe(cls,status):
+        return u'主菜单'
+
 @mark('sections')
 class SectionMenuFrame(MenuFrame):
 
@@ -95,10 +101,13 @@ class SectionMenuFrame(MenuFrame):
         return dict(default=self.menu_.hover)
 
     @classmethod
+    def describe(cls,status):
+        return u'讨论区分类选单'
+
+    @classmethod
     def menu_wrapper(cls,src):
         cls.sections = src
         sections_d = map(cls.wrapper,enumerate(src))
-        print sections_d
         if sections_d :
             sections_d[0] += ((11,7),)
         cls.section_menu = cls._menu.tidy_data(tuple(sections_d) + config.menu['section'])

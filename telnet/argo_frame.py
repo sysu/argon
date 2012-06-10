@@ -54,6 +54,12 @@ class ArgoBaseFrame(Frame):
         '''
         self.goto(pack[0],**pack[1])
 
+    def describe(self,status):
+        return u"一个普通的画面"
+
+    def getdesc(self,status):
+        return mark[status[0]].describe(status[1])
+
 class ArgoAuthFrame(ArgoBaseFrame):
 
     @property
@@ -93,14 +99,6 @@ class ArgoAuthFrame(ArgoBaseFrame):
         restore.
         '''
         return self.session.history
-
-    @property
-    def previous(self):
-        '''
-        The previous frame's status.
-        Alias for self.session.history[1]
-        '''
-        return self.session.history[1]
 
     # do something common
 
@@ -178,6 +176,23 @@ class ArgoFrame(ArgoAuthFrame):
                     buf.append(d)
                     self.write(d)
         return ''.join(buf)
+
+    def select(self,msg,options,finish=ac.ks_finish):
+        if options :
+            s = 0
+            l = len(options) -1
+            while True:
+                msg(options[s])
+                d = self.read_secret()
+                if d == ac.k_up and s :
+                    s -= 1
+                elif d == ac.k_down and s<l :
+                    s += 1
+                elif d in finish :
+                    return s
+                else:
+                    return False
+        return False        
                     
     def try_action(self,data):
         if data in self.key_maps :

@@ -1,5 +1,24 @@
 # -*- coding: utf-8 -*-
 from chaofeng import ascii as ac
+from chaofeng.g import static
+from template import load_jinjatxt,load_jinjatpl
+
+class Config(dict):
+    def __getattr__(self,key):
+        try:
+            return self[key]
+        except KeyError:
+            return dict()
+
+chaofeng = Config(
+    static={
+        "loader":{
+            '.jtxt':load_jinjatxt,
+            '.jtpl':load_jinjatpl,
+            }
+        }
+    )
+static.config(**chaofeng.static)
 
 root = 'welcome'
 

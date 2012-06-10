@@ -185,6 +185,10 @@ class BoardListFrame(ArgoBoardListTable):
     @property
     def status(self):
         return dict(sid=self.sid,default=self.table_.hover,mode=self.mode)
+
+    @classmethod
+    def describe(cls,s):
+        return u'讨论区列表 -- 分类 -- %s' % s['sid']
   
     def finish(self):
         r = self.table_.fetch()

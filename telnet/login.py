@@ -12,6 +12,7 @@ from model import manager
 # from model import UserState
 from datetime import datetime
 import config
+from collections import deque
 
 class WelcomeViem(ArgoBaseFrame):
 
@@ -67,7 +68,7 @@ class WelcomeFrame(WelcomeViem):
         authobj = manager.auth.login(userid,passwd,self.session.ip)
         if authobj :
             self.session.user = authobj
-            self.session.history = []
+            self.session.history = deque(maxlen=20)  #!!!!
         return authobj
                 
     def try_login(self,userid,passwd):

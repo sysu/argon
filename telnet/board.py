@@ -55,7 +55,7 @@ class ArgoBoardTable(ArgoFrame):
             ###############
             # Jump        #
             ###############
-            "h":"show_help",
+            "h":"show_help",ac.k_left:"goto_back",
             # pass
 
             ###############
@@ -120,6 +120,10 @@ class ArgoBoardFrame(ArgoBoardTable):
         return dict(boardname=self.boardname,
                     default=self.table_.hover,
                     mode=self.mode)
+
+    @classmethod
+    def describe(self,s):
+        return u'讨论区[%s]' % s['boardname']
 
     def get_getdata(self):
         return lambda o,l: manager.post.get_posts_advan(self.boardname,o,l)
