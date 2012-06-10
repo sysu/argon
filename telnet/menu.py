@@ -55,7 +55,6 @@ class MenuFrame(ArgoFrame):
         return self._menu.tidy_data(config.menu[self.name])
 
     def get(self,data):
-        print repr(data)
         self.menu_.send(data)
         if data in ac.ks_finish:
             self.finish()

@@ -57,7 +57,7 @@ class RegisterFrame(ArgoBaseFrame):
             self.goto('welcome')
     
     def initialize(self):
-        self.render_background()
+        self.write(self.background)
         i_name = self.load(self.ix_name)
         i_passwd = self.load(self.ix_passwd)
         with Timeout(self.timeout,EndInterrupt) :

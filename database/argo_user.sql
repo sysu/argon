@@ -11,7 +11,7 @@ CREATE TABLE IF NOT EXISTS `argo_user` (
     `netid`  varchar(20),
     `iconidx` varchar(20),
 
-    `register` datetime NOT NULL default CURRENT_TIMESTAMP,
+    -- `register` datetime NOT NULL default CURRENT_TIMESTAMP,
     `registerhost` varchar(20),
     `firstlogin` datetime NOT NULL default '1970-01-01 00:00:00',
     `firsthost` varchar(20),

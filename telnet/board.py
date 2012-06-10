@@ -7,6 +7,7 @@ from chaofeng.g import static,mark
 from chaofeng.ui import SimpleTable,HiddenInput
 from model import manager
 from argo_frame import ArgoFrame
+from libtelnet import zh_format
 
 import config
 
@@ -135,9 +136,9 @@ class ArgoBoardFrame(ArgoBoardTable):
         return lambda o,l: manager.post.get_posts_advan(self.boardname,o,l)
 
     def get_fformat(self):
-        return lambda d : "%5s  %12s %6s %s" % (d['pid'],d['owner'],
-                                                d['posttime'].strftime("%b %d %a"),
-                                                d['title'])
+        return lambda d : zh_format("%5s  %-12s %6s %s",d['pid'],d['owner'],
+                                    d['posttime'].strftime("%b %d %a"),
+                                    d['title'])
 
     def get_last_index(self):
         return manager.post.get_last_pid(self.boardname)

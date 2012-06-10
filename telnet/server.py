@@ -19,5 +19,5 @@ class LoginDebugFrame(login.WelcomeFrame):
         # self.goto('post','Test1','3')
 
 if __name__ == '__main__' :
-    s = Server(mark['debug'])
+    s = Server(mark[config.root])
     s.run()

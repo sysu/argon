@@ -8,7 +8,7 @@ from argo_conf import ConfigTestDate as t
 
 manager = model.manager
         
-def init_database(self):
+def init_database():
     u'''
     初始化数据库。
     '''
