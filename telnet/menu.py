@@ -20,10 +20,19 @@ class MenuFrame(ArgoFrame):
     key_maps.update({
             ac.k_ctrl_c : "goto_back",
             "h" : "show_help",
-            ac.k_right:"finish",
-            ac.k_left:"goto_back",
+            ac.k_right:"right_or_finish",
+            ac.k_left:"left_or_finish",
             })
 
+    menu_keys = {
+        ac.k_down : "move_down",
+        ac.k_up : "move_up",
+        # ac.k_left : "move_left",
+        # ac.k_right : "move_right",
+        }
+
+    menu_height = None
+    
     def initialize(self,name,default=0):
         super(MenuFrame,self).initialize()
         self.menu_ = self.load(self._menu)
@@ -31,8 +40,9 @@ class MenuFrame(ArgoFrame):
         # setup
         self.name = name
         self.menu_.setup(hover=default,
-                        data=self.get_menu(),
-                        background=self.get_menu_background())
+                         data=self.get_menu(),
+                         height=self.menu_height,
+                         background=self.get_menu_background())
         self.display()
 
     @property
@@ -55,9 +65,11 @@ class MenuFrame(ArgoFrame):
         return self._menu.tidy_data(config.menu[self.name])
 
     def get(self,data):
-        self.menu_.send(data)
         if data in ac.ks_finish:
             self.finish()
+        if data in self.menu_keys:
+            getattr(self.menu_, self.menu_keys[data])()
+        self.menu_.send_shortcuts(data)
         self.try_action(data)
 
     def finish(self):
@@ -65,6 +77,14 @@ class MenuFrame(ArgoFrame):
 
     def show_help(self):
         self.suspend('help',page='menu_'+self.name)
+
+    def right_or_finish(self):
+        if not self.menu_.move_right():
+            self.finish()
+
+    def left_or_finish(self):
+        if not self.menu_.move_left():
+            self.goto_back()
 
 @mark('main')
 class MainMenuFrame(MenuFrame):
@@ -83,6 +103,9 @@ class MainMenuFrame(MenuFrame):
     @classmethod
     def describe(cls,status):
         return u'主菜单'
+
+    def show_help(self):
+        self.suspend('help',page='index')
 
 @mark('sections')
 class SectionMenuFrame(MenuFrame):
@@ -120,6 +143,7 @@ class SectionMenuFrame(MenuFrame):
     def get_menu(cls): 
         sections = manager.section.get_all_section()
         if sections != cls.sections :
+            cls.menu_height = len(sections)
             return cls.menu_wrapper(sections)
         return cls.section_menu
 

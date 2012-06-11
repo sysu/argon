@@ -36,6 +36,7 @@ class ArgoTextBoxFrame(ArgoFrame):
             "a":"jump_from_screen",
             ac.k_ctrl_a:"jump_man",
             ac.k_ctrl_r:"jump_history",
+            "h":"show_help",
             })
     
     textbox_cmd = {
@@ -89,6 +90,7 @@ class ArgoTextBoxFrame(ArgoFrame):
 
     links_re = re.compile(r'\[[^\]]*\]\(/(p)/(.+)/(\d+)\)|'
                           r'\[[^\]]*\]\(/(h)/(.+)\)')
+
     jump_marks = {
         'p':'post',
         'h':'help',
@@ -103,7 +105,7 @@ class ArgoTextBoxFrame(ArgoFrame):
             return u'去看 %s 的帮助页面？' % (t[4])
         return u'错误的跳转标记'
 
-    def try_jump(self):
+    def check_jump(self):
         n = self.jump_marks[self.links_args[0]]
         r = mark[n].try_jump(self.links_args[1])
         if r :
@@ -112,28 +114,39 @@ class ArgoTextBoxFrame(ArgoFrame):
             self.bottom_bar(u'不是一个有效的跳转标志')
             return
 
+    def find_options(self, opstring):
+        for row in range(0, self.limit):
+            col = self.lines.find( opstring )
+            if col != - 1:
+                return row,col
+        return None
+
+    def re2str(self, reop):
+        return
+
     def select_and_jump(self,text):
         options = re.findall(self.links_re,text)
         if not options :
             self.bottom_bar(u'没有可用的跳转标志')
             return
+        self.select_start = 0
         res = self.select(lambda x :
                               self.bottom_bar(self.hint_link(x)),
                           options)
         if res is False :
             self.bottom_bar(u'放弃跳转')
         else:
-            self.try_jump()
+            self.check_jump()
 
     def jump_from_screen(self):
-        text = self.textbox_.getscreen()
+        text,self.lines = self.textbox_.getscreen_with_raw()
         self.select_and_jump(text)
 
-    def jump_man(self):
-        self.bottom_bar(u'前往：')
-        self.write(ac.bg_blue)
-        text = self.readline()
-        self.select_and_jump('[](%s)' % text)
+    # def jump_man(self):
+    #     self.bottom_bar(u'前往：')
+    #     self.write(ac.bg_blue)
+    #     text = self.readline()
+    #     self.select_and_jump('[](%s)' % text)
 
     def jump_history(self):
         self.select(lambda x:
@@ -194,12 +207,20 @@ class ArgoReadPostFrame(ArgoTextBoxFrame):
         if args is None:
             self.goto_back()
 
+    def show_help(self):
+        self.suspend('help',page='view')
+
 @mark('help')
 class TutorialFrame(ArgoTextBoxFrame):
 
+    key_maps = ArgoTextBoxFrame.key_maps.copy()
+    key_maps.update({
+            ac.k_ctrl_h:"show_help",
+            })
+
     @classmethod
     def try_jump(cls,args):
-        if static.get('help/%s' % args[0]) :
+        if static.dict.get('help/%s' % args[0]) :
             return dict(page=args[0])
 
     @property
@@ -217,3 +238,6 @@ class TutorialFrame(ArgoTextBoxFrame):
 
     def finish(self,args=None):
         self.goto_back()
+
+    def show_help(self):
+        self.suspend('help',page='help')

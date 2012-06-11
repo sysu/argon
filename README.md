@@ -139,6 +139,7 @@ $ telnet localhost 5000
 >>> manager.section.add_section(sectionname="BBS 系统",description="[站务] [意见]")
 >>> manager.section.get_all_section() # 记住sid，一般是1
 >>> manager.board.add_board(boardname="Test",description="系统测试",sid=1)
+>>> manager.post._create_table(boardname="Test")
 >>> manager.board.get_all_boards()
 >>> manager.board.get_by_sid(1)
 >>> manager.board.get_board("Test")

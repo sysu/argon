@@ -3,6 +3,9 @@
 
 __metaclass__ = type
 
+import sys
+sys.path.append('../')
+
 import model
 from datetime import datetime
 
@@ -16,9 +19,25 @@ from model import manager
 class Holder:
 
     ### TODO
-
-    def nothing(self):
-        print 'DONE'
+        
+    def init_database(self):
+        u'''
+        初始化数据库。
+        '''
+        print
+        print 'Init Database will kill all data. Are you sure?'
+        print
+        print 'Type INIT_YES to clear all data in mysql.',
+        if raw_input() == 'INIT_YES' :
+            print 'Init mysql start ...'
+            model.init_database()
+            print 'Init mysql DONE.'
+        print 'Type INIT_YES to clear all data in redis.'
+        if raw_input() == 'INIT_YES' :
+            print 'Init redis start ...'
+            manager.ch.flushdb()
+            print 'Init redis DONE.'
+        print 'All DONE.'
 
     def get_all_section(self):
         u'''
@@ -48,19 +67,15 @@ class Holder:
             s.delete()
             print 'All DONE.'
 
-    def add_board(self,boardname,sectionname,description):
+    def add_board(self,sid,boardname,description):
         u'''
         增加一个讨论区。
         '''
-        sid = model.Section.get_sid_by_name(sectionname)
-        if sid is None:
-            print 'No such section [%s] ' % sectionname
-        else:
-            b = model.Board(boardname=boardname,
-                            sid=sid,
-                            description=description)
-            b.save()
-            print 'Add board %s to %s DONE. ' % (boardname,sectionname)
+        manager.board.add_board(sid=sid,
+                                boardname=boardname,
+                                description=description)
+        manager.post._create_table(boardname)
+        print 'Add board %s DONE. ' % boardname
 
     def get_section_board(self,sectionname):
         sid = model.Section.get_sid_by_name(sectionname)

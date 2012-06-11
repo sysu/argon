@@ -2,7 +2,7 @@
 import sys
 sys.path.append('../')
 
-from chaofeng import Frame,static,EndInterrupt,Timeout,BindFrame
+from chaofeng import Frame,static,EndInterrupt,Timeout
 from chaofeng.g import mark,is_chchar
 from chaofeng.ui import TextInput,Password,DatePicker
 from chaofeng import ascii as ac

@@ -40,8 +40,11 @@ class ArgoHistoryFrame(ArgoTextBoxFrame):
         items = map(lambda x : self.getdesc(x),self.history)
         self.set_text(static['template/history'].render(items=items))
 
-    def finish(self):
+    def finish(self,args):
         self.goto_back_nh()
+
+    def show_help(self):
+        self.suspend('help',page='history')
     
 @mark('finish')
 class Finish(ArgoFrame):

@@ -24,6 +24,10 @@ chaofeng = Config(
     )
 static.config(**chaofeng.static)
 
+for key in ['board','help','menu_sections','menu_board','view',
+             'boardlist','index','menu_main','testjump','edit'] :
+    static.load('help/%s' % key)
+
 root = 'welcome'
 
 # 菜单的设定

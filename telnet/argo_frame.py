@@ -171,10 +171,15 @@ class ArgoFrame(ArgoAuthFrame):
         ac.k_ctrl_be:"goto_history",
         }
 
+    def is_gbk_zh(self,data):
+        return '\x80' < data < '\xff'
+
     def readline(self,acceptable=ac.is_safe_char,finish=ac.ks_finish,buf_size=20):
         buf = []
         while len(buf) < buf_size:
             ds = self.read_secret()
+            if len(ds) == 1 and self.is_gbk_zh(ds):  ## fix_bug for sterm
+                ds += self.read_secret()
             for d in self.u(ds):
                 if d == ac.k_backspace :
                     if buf :
@@ -185,9 +190,10 @@ class ArgoFrame(ArgoAuthFrame):
                     return ''.join(buf)
                 elif d == ac.k_ctrl_c:
                     return False
-                elif acceptable(d):
-                    buf.append(d)
-                    self.write(d)
+                else:
+                    if acceptable(d):
+                        buf.append(d)
+                        self.write(d)
         return ''.join(buf)
 
     def select(self,msg,options,finish=ac.ks_finish):
@@ -240,6 +246,10 @@ class UnDoneFrame(ArgoFrame):
 
     background = static['undone']
     
+    @property
+    def status(self):
+        return dict()
+
     def initialize(self,*args,**kwargs):
         self.write(self.background)
         self.pause()

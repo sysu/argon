@@ -169,6 +169,11 @@ class Board(Model):
         d = self.table_select_by_key(self.__, 'boardname', 'bid', bid)
         return d and d['boardname']
 
+    def update_attr_plus1(self,bid,key):
+        return self.db.execute("UPDATE %s SET %s = %s +1 WHERE bid = %%s" % \
+                                   (self.__, key, key),
+                               bid)                               
+
 class Post(Model):
 
     _prefix = 'argo_filehead_'
@@ -317,14 +322,16 @@ class Online(Model):
     def total_online(self):
         return self.ch_sessions.hlen() or 0
 
-    def enter_board(self,boardname):
-        return self.ch_board_online.hincrby(boardname)
+    def enter_board(self,boardname,userid,sessionid):
+        return self.ch.sadd('argo:board_online:%s'%boardname,
+                            userid+':'+sessionid)
 
-    def exit_board(self,boardname):
-        return self.ch_board_online.hincrby(boardname,-1)
+    def exit_board(self,boardname,userid,sessionid):
+        return self.ch.srem('argo:board_online:%s'%boardname,
+                            userid+':'+sessionid)
 
     def board_online(self,boardname):
-        return self.ch_board_online.hget(boardname)
+        return self.ch.scard('argo:board_online:%s'%boardname)
 
 class AuthUser(dict):
     def __getattr__(self, name):
@@ -382,10 +389,13 @@ class UserAuth(Model):
     def get_guest(self):
         return self.GUEST
 
+    def msg(self,string):
+        print string
+
     def login(self,userid,passwd,host):
 
         if userid == 'guest':
-            return self.get_guest()
+            return error.LOGIN_NO_SUCH_USER # Not such user self.get_guest()
 
         # user_exist
         code = self.table.select_attr(userid,"passwd")
@@ -412,6 +422,8 @@ class UserAuth(Model):
 
         if res['userid'] == 'argo' :
             res['is_admin'] = True
+
+        self.msg('Coming :: %s,%s,%s' % (userid,passwd,host))
 
         # print res.seid
         return res
@@ -523,16 +535,17 @@ class Action(Model):
         self.userinfo = userinfo
 
     def enter_board(self,userid,sessionid,boardname):
-        self.online.enter_board(boardname)
+        self.online.enter_board(boardname,userid,sessionid)
         self.online.set_state(userid,sessionid,mode.IN_BOARD)
 
     def exit_board(self,userid,sessionid,boardname):
-        self.online.exit_board(boardname)
+        self.online.exit_board(boardname,userid,sessionid)
 
     def new_post(self,boardname,userid,title,content,addr,host):
+        bid = self.board.name2id(boardname)
         pid = self.post.add_post(
             boardname,
-            bid=self.board.name2id(boardname),            
+            bid=bid,
             owner=userid,
             title=title,
             content=content,
@@ -541,20 +554,24 @@ class Action(Model):
             fromhost=host,
             )
         self.post.update_post(boardname,pid,tid=pid)
+        self.board.update_attr_plus1(bid,'total')
+        self.board.update_attr_plus1(bid,'topic_total')
 
     def reply_post(self,boardname,userid,title,content,addr,host,replyid):
         tid = self.post.pid2tid(boardname,replyid)
+        bid=self.board.name2id(boardname)
         pid = self.post.add_post(
             boardname,
-            bid=self.board.name2id(boardname),            
             owner=userid,
             title=title,
+            bid=bid,
             content=content,
             replyid=replyid,
             fromaddr=addr,
             fromhost=host,
             tid=tid,
             )
+        self.board.update_attr_plus1(bid,'total')
 
     def update_post(self,boardname,userid,pid,title,content):
         self.post.update_post(boardname,

@@ -38,7 +38,7 @@ class ArgoBoardTable(ArgoFrame):
             # !!! read,clearall_unread,goto_digest,read_same_topic,read_same_author,
             # read_topic_unread_first,remove_unread, goto_note, goto_snote
             # goto_userpage, goto_topten
-            ac.k_right:"read",
+            ac.k_right:"finish",
 
             ###############
             # Edit/Reply  #
@@ -76,9 +76,8 @@ class ArgoBoardTable(ArgoFrame):
 
     def initialize(self,default=0,display=True):
         self.input_ = self.load(self._input)
-        print default
         self.table_ = self.load(self._table,default=default)
-        self.bind(self.get_getdata(),self.get_fformat())
+        self.table_.set_fun(self.get_getdata(),self.get_fformat(),refresh=False)
         if display:
             self.display()
         
@@ -89,9 +88,6 @@ class ArgoBoardTable(ArgoFrame):
         self.writeln(self.thread)
         self.bottom_bar()
         self.table_.refresh()
-
-    def bind(self,getdata,fformat):
-        self.table_.set_fun(getdata=getdata,fformat=fformat)
 
     def get(self,data):
         if data in ac.ks_finish:
@@ -136,8 +132,8 @@ class ArgoBoardFrame(ArgoBoardTable):
         return lambda o,l: manager.post.get_posts_advan(self.boardname,o,l)
 
     def get_fformat(self):
-        return lambda d : zh_format("%5s  %-12s %6s %s",d['pid'],d['owner'],
-                                    d['posttime'].strftime("%b %d %a"),
+        return lambda d : zh_format("%5s   %-12s %-10s %s",d['pid'],d['owner'],
+                                    d['posttime'].strftime("%b %d"),
                                     d['title'])
 
     def get_last_index(self):
@@ -216,9 +212,11 @@ class ArgoBoardFrame(ArgoBoardTable):
         pass
 
     def finish(self):
-        self.suspend('post',
-                     boardname=self.boardname,
-                     pid=self.table_.fetch()['pid'])
+        res = self.table_.fetch()
+        if res:
+            self.suspend('post',
+                         boardname=self.boardname,
+                         pid=res['pid'])
         
     def show_help(self):
         self.suspend('help',page='board')

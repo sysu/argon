@@ -60,6 +60,8 @@ class EditFrame(ArgoFrame):
 
     key_maps = {
         ac.k_ctrl_w:"finish",
+        ac.k_ctrl_q:"show_help",
+        ac.k_ctrl_c:"quit_iter",
         }
 
     REG_CMD_START = ac.k_ctrl_u
@@ -70,8 +72,17 @@ class EditFrame(ArgoFrame):
         self.e = self.load(self._e)
         self.e.refresh_all()
         self.cls()
+        self.ugly = ''  # 修复单字节发送的bug （sterm）
         
     def get(self,char):
+        
+        if self.ugly :
+            char = self.ugly + char
+            self.ugly = ''
+        elif len(char) == 1 and self.is_gbk_zh(char):
+            self.ugly = char
+            return
+            
         if char in self.key_editor:
             self.e.do_command(self.key_editor[char])
         elif char == self.REG_CMD_START:
@@ -89,6 +100,15 @@ class EditFrame(ArgoFrame):
     def message(self,content):
         self.e.bottom_bar(content[:40])
 
+    def quit_iter(self):
+        self.message(u'放弃本次编辑操作？')
+        d = self.readline()
+        if not d :
+            self.goto_back()
+
+    def show_help(self):
+        self.suspend('help',page='edit')
+
 @mark('new_post')
 class NewPostFrame(EditFrame):
 
@@ -102,6 +122,7 @@ class NewPostFrame(EditFrame):
     def status(self):
         return dict(boardname=self.boardname)
 
+    @classmethod
     def describe(self,s):
         return '发表文章 -- %s' % s.boardname
 
@@ -139,7 +160,8 @@ class ReplyPostFrame(NewPostFrame):
     def status(self):
         return dict(boardname=self.boardname,
                     replyid=self.replyid)
-    
+
+    @classmethod
     def describe(self,s):
         return '回复文章 -- %s -- %s' % (s.boardname,s.replyid)
 
@@ -170,6 +192,7 @@ class EditPostFrame(EditFrame):
         return dict(boardname=self.boardname,
                     pid=pid)
 
+    @classmethod
     def describe(self,s):
         return '编辑文章 -- %s -- %s' % (s.boardname,
                                          s.pid)   
@@ -179,5 +202,6 @@ class EditPostFrame(EditFrame):
                                    self.userid,
                                    self.pid,
                                    self.e.getall())
+        self.message(u'编辑文章成功！')
         self.goto_back()
 

@@ -7,11 +7,9 @@ from chaofeng.g import static,mark
 from chaofeng.ui import SimpleTable,HiddenInput
 from model import manager
 from argo_frame import ArgoFrame
+from libtelnet import zh_format_d
 
 import config
-
-static['boardlist'][4] = u'%(total)5s%(read)3s %(boardname)-18s [%(tp)4s]    %(description)-20s%(online)4s %(mark)2s %(bm)-13s'
-static['boardlist'][2] = u'[1;44m 全部  未 讨论区名称          类别  转 中  文  叙  述       在线 S 版  主       '
 
 class ArgoBoardListTable(ArgoFrame):
 
@@ -49,10 +47,10 @@ class ArgoBoardListTable(ArgoFrame):
     def initialize(self,default=0,mode=None,display=True):
         self.input_ = self.load(self._input)
         self.table_ = self.load(self._table,default=default)
-        self.bind(self.get_getdata(),self.fformat)
         self.mode = 0
-        if mode is not None:
-            self.sort(mode)
+        # if mode is not None:
+        #     self.sort(mode)
+        self.table_.set_fun(self.get_getdata(),self.fformat,refresh=False)
         if display:
             self.display()
         
@@ -64,8 +62,8 @@ class ArgoBoardListTable(ArgoFrame):
         self.bottom_bar()
         self.table_.refresh()
 
-    def bind(self,getdata,fformat):
-        self.table_.set_fun(getdata=getdata,fformat=fformat)
+    def refresh(self):
+        self.table_.refresh()
 
     def get(self,data):
         if data in ac.ks_finish:
@@ -113,9 +111,10 @@ class ArgoBoardListTable(ArgoFrame):
     # search/sort   #
     #################
 
-    def goto_with_prefix(self,data):
-        for index,item in enumerate(self.data.raw()) :
-            if item['boardname'].startswith(data):
+    def goto_with_prefix(self,prefix):
+        data = self.table_.data
+        for index,item in enumerate(data):
+            if item['boardname'].startswith(prefix):
                 self.write(ac.save)
                 self.table.goto(index)
                 self.write(ac.restore)
@@ -124,7 +123,7 @@ class ArgoBoardListTable(ArgoFrame):
     def search(self):
         text = self.input_.read_with_hook(hook = lambda x : self.goto_with_prefix(x) ,
                                          prompt=u'搜寻讨论区：')
-        self.table.refresh_cursor()
+        self.table_.refresh_cursor()
 
     def sort(self,mode):
         if mode == 1 :
@@ -166,11 +165,10 @@ class BoardListFrame(ArgoBoardListTable):
         super(BoardListFrame,self).initialize(default=default,mode=mode)
 
     def fformat(self,x):
-        return self.format_str % dict(read=u'◆',
-                                      online=manager.online.board_online(x['boardname']) \
-                                          or 0,
-                                      mark='',
-                                      **x)
+        return zh_format_d(self.format_str,
+                           online=manager.online.board_online(x['boardname']) or 0,
+                           attr='',
+                           **x)
         
     def get_getdata(self):
         if self.sid is None:
@@ -192,7 +190,8 @@ class BoardListFrame(ArgoBoardListTable):
   
     def finish(self):
         r = self.table_.fetch()
-        self.suspend('board',boardname=r['boardname'])
+        if r :
+            self.suspend('board',boardname=r['boardname'])
 
     def show_help(self):
         self.suspend('help',page='boardlist')

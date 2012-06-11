@@ -2,13 +2,6 @@
 
 欢迎你！
 
-[test](/p/Test1/1)
-[test](/p/Test1/2)
-[test](/p/Test1/3)
-[test](/p/Test1/4)
-[test](/p/Test1/5)
-[test](/h/section)
-
 欢迎来到新版argo！  这个是{{ "内部测试版本"|wrapper(cyan) }}！
 
 这里是{{ "【主菜单】"|wrapper(yellow) }}，相信你已经发现新旧版本的差异了~ 别担心，原有的功能我们都会

@@ -31,6 +31,7 @@ class WelcomeViem(ArgoBaseFrame):
 
     def initialize(self):
         super(WelcomeViem,self).initialize()
+        # self.write_raw(ac.CMD_CHAR_PER)
         self.write(self.background)
         self.userid_ = self.load(self._userid)
         self.passwd_ = self.load(self._passwd)
@@ -58,7 +59,8 @@ class WelcomeFrame(WelcomeViem):
                 if userid == 'new' :
                     self.goto('register')
                 elif userid == 'guest' :
-                    passwd = None
+                    self.write(u'guest用户不可用，请注册！')
+                    continue
                 else :
                     passwd = self.read_passwd()
                 # try login
@@ -75,9 +77,7 @@ class WelcomeFrame(WelcomeViem):
     def try_login(self,userid,passwd):
         authobj = self.auth(userid,passwd)
         if authobj :
-            if authobj.is_first_login :
-                self.goto('first_login')
-            else : self.goto('main')
+            self.goto('main')
         else:
             self.writeln(self.wrong_prompt)
 
@@ -85,6 +85,4 @@ class WelcomeFrame(WelcomeViem):
 class FirstLoginFrame(ArgoFrame):
 
     def initialize(self):
-        self.write(static['first_login'] % self.session['_user']['firstlogin'])
-        self.goto('main')
-
+        self.goto('help','index')
