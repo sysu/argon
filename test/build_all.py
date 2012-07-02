@@ -5,6 +5,7 @@ import sys
 sys.path.append('../')
 
 from model import manager
+import traceback
 
 def main(data):
 
@@ -18,9 +19,12 @@ def main(data):
             print e
         sid = raw_input() or sid
         for boardattr in boards:
-            manager.board.add_board(sid=sid,
-                                    boardname=boardattr[0],
-                                    description=boardattr[1])
+            try:
+                manager.board.add_board(sid=sid,
+                                        boardname=boardattr[0],
+                                        description=boardattr[1])
+            except Exception as e:
+                traceback.print_exc()                
             manager.post._create_table(boardattr[0])
 
 if __name__ == '__main__' :
