@@ -15,7 +15,7 @@ def init_table(table_name):
         print sql
         try:
             db.execute(sql)
-        except ProgrammingError as e:
+        except Exception as e:
             print e
             raw_input('>> ')
 
