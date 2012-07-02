@@ -13,9 +13,10 @@ def main(data):
         try:
             sid = manager.section.add_section(sectionname=attr[0],
                                               description=attr[1])
+            print sid
         except Exception,e:
             print e
-        sid = raw_input()
+        sid = raw_input() or sid
         for boardattr in boards:
             manager.board.add_board(sid=sid,
                                     boardname=boardattr[0],
