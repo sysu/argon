@@ -60,6 +60,10 @@ class ArgoTextBoxFrame(ArgoFrame):
         self.textbox_ = self.load(self._textbox)
         self.textbox_.bind(self.finish)
 
+    def restore(self):
+        self.textbox_.refresh_all()
+        self.bottom_bar()
+
     def set_text(self,text):
         self.textbox_.set_text(text)
         self.textbox_.refresh_all()
@@ -147,11 +151,6 @@ class ArgoTextBoxFrame(ArgoFrame):
     #     self.write(ac.bg_blue)
     #     text = self.readline()
     #     self.select_and_jump('[](%s)' % text)
-
-    def jump_history(self):
-        self.select(lambda x:
-                        self.bottom_bar(self.getdesc(x)),
-                    self.history)
         
 @mark('post')
 class ArgoReadPostFrame(ArgoTextBoxFrame):

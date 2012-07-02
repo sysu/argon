@@ -30,6 +30,7 @@ class WelcomeViem(ArgoBaseFrame):
     _passwd = Password(prompt=prompt[1])
 
     def initialize(self):
+        print 'Connect :: %s : %s' % (self.session.ip, self.session.port)
         super(WelcomeViem,self).initialize()
         # self.write_raw(ac.CMD_CHAR_PER)
         self.write(self.background)

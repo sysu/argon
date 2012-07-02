@@ -73,9 +73,12 @@ class EditFrame(ArgoFrame):
         self.e.refresh_all()
         self.cls()
         self.ugly = ''  # 修复单字节发送的bug （sterm）
+
+    def restore(self):
+        self.e.do_command("refresh")
         
     def get(self,char):
-        
+
         if self.ugly :
             char = self.ugly + char
             self.ugly = ''
@@ -113,9 +116,9 @@ class EditFrame(ArgoFrame):
 class NewPostFrame(EditFrame):
 
     def initialize(self,boardname):
+        self.boardname = boardname
         self.read_title()
         super(NewPostFrame,self).initialize()
-        self.boardname = boardname
         self.message(u'文章标题设置为 %s' % self.title)
         
     @property

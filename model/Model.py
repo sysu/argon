@@ -188,6 +188,11 @@ class Post(Model):
             board_template = Template(f.read())
             self.db.execute(board_template.safe_substitute(boardname=boardname))
 
+    def get_topic(self,boardname,tid):
+        sql = "SELECT * FROM %s WHERE tid = %%s" % self.__(boardname)
+        print sql
+        return self.db.query(sql,tid)
+
     def get_posts_advan(self,boardname,offset,limit,order='pid',mark=None,reverse=None):
         cond = ''
         if mark:
@@ -392,7 +397,7 @@ class UserAuth(Model):
     def msg(self,string):
         print string
 
-    def login(self,userid,passwd,host):
+    def login(self,userid,passwd,host,session=True):
 
         if userid == 'guest':
             return error.LOGIN_NO_SUCH_USER # Not such user self.get_guest()
@@ -412,18 +417,19 @@ class UserAuth(Model):
         res = self.table.get_user(userid)
         res.is_first_login = res['firstlogin'] == 0
 
-        #set_state
-        seid = self.online.login(userid)
-        if seid is False :
-            return error.LOGIN_MAX_LOGIN
-        res.seid = seid
-
-        self.online.record_ip(userid,seid,host)
+        if session:
+            #set_state
+            seid = self.online.login(userid)
+            if seid is False :
+                return error.LOGIN_MAX_LOGIN
+            res.seid = seid
+            self.online.record_ip(userid,seid,host)
 
         if res['userid'] == 'argo' :
             res['is_admin'] = True
 
         self.msg('Coming :: %s,%s,%s' % (userid,passwd,host))
+        self.msg(datetime.now().ctime())
 
         # print res.seid
         return res
@@ -508,11 +514,26 @@ class Disgest(Model):
     
 class ReadMark(Model):
 
-    def is_new_for_user(self,userid,boardname,pid):
-        return True
+    keyf = "argo:readmark:%s:%s"
 
-    def post_state(self,userid,posts):
-        return 'N'
+    limit_max = 200
+    limit_clear = -50
+
+    def is_read(self,userid,boardname,pid):
+        return self.ch.zcount(self.keyf%(userid,boardname),
+                              pid,pid)
+
+    def set_read(self,userid,boardname,pid):
+        key = self.keyf%(userid,boardname)
+        if self.ch.zcard(key) >= self.limit_max:
+            self.ch.zremrangebyrank(key,self.limit_clear,-1)
+        return self.ch.zadd(key,pid,pid)
+
+    def clear_unread(self,userid,boardname,last):
+        key = self.keyf%(userid,boardname)
+        self.ch.delete(key)
+        for i in range(last+limit_clear,last):
+            self.ch.zadd(key,i,i)
 
 class Permissions(Model):
 
@@ -559,7 +580,7 @@ class Action(Model):
 
     def reply_post(self,boardname,userid,title,content,addr,host,replyid):
         tid = self.post.pid2tid(boardname,replyid)
-        bid=self.board.name2id(boardname)
+        bid = self.board.name2id(boardname)
         pid = self.post.add_post(
             boardname,
             owner=userid,

@@ -13,7 +13,11 @@ def init_table(table_name):
     with open(config.SQL_TPL_DIR+'argo_'+table_name+'.sql') as f:
         sql = f.read()
         print sql
-        db.execute(sql)
+        try:
+            db.execute(sql)
+        except ProgrammingError as e:
+            print e
+            raw_input('>> ')
 
 class CF:
 

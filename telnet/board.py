@@ -80,6 +80,9 @@ class ArgoBoardTable(ArgoFrame):
         self.table_.set_fun(self.get_getdata(),self.get_fformat(),refresh=False)
         if display:
             self.display()
+
+    def restore(self):
+        self.display()
         
     def display(self):
         self.cls()

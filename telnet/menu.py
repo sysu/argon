@@ -45,6 +45,9 @@ class MenuFrame(ArgoFrame):
                          background=self.get_menu_background())
         self.display()
 
+    def restore(self):
+        self.display()
+
     @property
     def status(self):
         return dict(name=self.name,

@@ -57,8 +57,8 @@ class ArgoBaseFrame(Frame):
     def describe(self,status):
         return u"一个普通的画面"
 
-    def getdesc(self,status):
-        return mark[status[0]].describe(status[1])
+    def getdesc(self,frame):
+        return frame.describe(frame.status)
 
 class ArgoAuthFrame(ArgoBaseFrame):
 
@@ -111,9 +111,8 @@ class ArgoAuthFrame(ArgoBaseFrame):
         Push current frame's status to history
         and goto a new frame.
         '''
-        p = self.packup()
-        self.stack.append(p)
-        self.history.append(self.packup())
+        self.stack.append(self)
+        self.history.append(self)
         self.goto(where,**kwargs)
 
     def goto_back(self):
@@ -121,13 +120,13 @@ class ArgoAuthFrame(ArgoBaseFrame):
         Go back to previous frame save in
         history.
         '''
-        self.history.append(self.packup())
+        self.history.append(self)
         if self.stack:
-            self.goto_pack(self.stack.pop())
+            self.wakeup(self.stack.pop())
 
     def goto_back_nh(self):
         if self.stack:
-            self.goto_pack(self.stack.pop())
+            self.wakeup(self.stack.pop())
 
     def is_finish(self,data):
         return data in ac.ks_finish
@@ -137,6 +136,12 @@ class ArgoAuthFrame(ArgoBaseFrame):
             getattr(self,self.key_maps[data])()
         if self.is_finish(data):
             self.handle_finish()
+
+    def restore(self):
+        '''
+        Handle for come back. Implemented by subclass.
+        '''
+        pass
 
     def handle_finish(self):
         pass

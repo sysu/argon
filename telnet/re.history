@@ -1,0 +1,342 @@
+Welcome to the Emacs shell
+
+~/telnet-argo $ ./server.py 
+Coming :: test,testtest,172.18.42.164
+0
+-1
+End [172.18.42.164]
+Coming :: LTaoist,bbs5524ll,127.0.0.1
+Coming :: test,testtest,172.18.42.164
+0
+-1
+End [172.18.42.164]
+End [172.18.42.164]
+End [172.18.42.164]
+End [172.18.42.164]
+Bad Ending [127.0.0.1]
+Traceback (most recent call last):
+  File "/home/mo/argon/telnet/chaofeng/bbs.py", line 199, in new_connect
+    now.loop()
+  File "/home/mo/argon/telnet/chaofeng/bbs.py", line 93, in loop
+    self.read()
+  File "/home/mo/argon/telnet/chaofeng/bbs.py", line 106, in read
+    raise BadEndInterrupt
+BadEndInterrupt
+2
+Traceback (most recent call last):
+  File "/home/mo/argon/telnet/chaofeng/bbs.py", line 217, in new_connect
+    t.bad_ending(e)
+  File "/home/mo/argon/telnet/special_frame.py", line 67, in bad_ending
+    self.pause()
+  File "/home/mo/argon/telnet/chaofeng/bbs.py", line 124, in pause
+    self.read_secret()
+  File "/home/mo/argon/telnet/chaofeng/bbs.py", line 117, in read_secret
+    raise BadEndInterrupt
+BadEndInterrupt
+End [127.0.0.1]
+[Errno 9] Bad file descriptor
+Traceback (most recent call last):
+  File "/home/mo/argon/telnet/chaofeng/bbs.py", line 135, in write
+    self.sock.send(self.s(data))
+  File "/usr/lib/python2.7/site-packages/eventlet/greenio.py", line 269, in send
+    total_sent += fd.send(data[total_sent:], flags)
+  File "/usr/lib/python2.7/socket.py", line 170, in _dummy
+    raise error(EBADF, 'Bad file descriptor')
+error: [Errno 9] Bad file descriptor
+Bad Ending [172.18.157.157]
+Traceback (most recent call last):
+  File "/home/mo/argon/telnet/chaofeng/bbs.py", line 198, in new_connect
+    now.initialize(*args,**kwargs)
+  File "/home/mo/argon/telnet/login.py", line 53, in initialize
+    self.try_login_iter()
+  File "/home/mo/argon/telnet/login.py", line 58, in try_login_iter
+    userid = self.read_userid()
+  File "/home/mo/argon/telnet/login.py", line 40, in read_userid
+    return self.userid_.readln()
+  File "/home/mo/argon/telnet/chaofeng/ui/inputs.py", line 60, in readln
+    res = self.read(prompt,termitor)
+  File "/home/mo/argon/telnet/chaofeng/ui/inputs.py", line 53, in read
+    data = self.frame.read()
+  File "/home/mo/argon/telnet/chaofeng/bbs.py", line 106, in read
+    raise BadEndInterrupt
+BadEndInterrupt
+Traceback (most recent call last):
+  File "/home/mo/argon/telnet/chaofeng/bbs.py", line 217, in new_connect
+    t.bad_ending(e)
+  File "/home/mo/argon/telnet/special_frame.py", line 67, in bad_ending
+    self.pause()
+  File "/home/mo/argon/telnet/chaofeng/bbs.py", line 124, in pause
+    self.read_secret()
+  File "/home/mo/argon/telnet/chaofeng/bbs.py", line 117, in read_secret
+    raise BadEndInterrupt
+BadEndInterrupt
+End [172.18.157.157]
+Bad Ending [172.18.146.162]
+Traceback (most recent call last):
+  File "/home/mo/argon/telnet/chaofeng/bbs.py", line 198, in new_connect
+    now.initialize(*args,**kwargs)
+  File "/home/mo/argon/telnet/login.py", line 53, in initialize
+    self.try_login_iter()
+  File "/home/mo/argon/telnet/login.py", line 58, in try_login_iter
+    userid = self.read_userid()
+  File "/home/mo/argon/telnet/login.py", line 40, in read_userid
+    return self.userid_.readln()
+  File "/home/mo/argon/telnet/chaofeng/ui/inputs.py", line 60, in readln
+    res = self.read(prompt,termitor)
+  File "/home/mo/argon/telnet/chaofeng/ui/inputs.py", line 53, in read
+    data = self.frame.read()
+  File "/home/mo/argon/telnet/chaofeng/bbs.py", line 106, in read
+    raise BadEndInterrupt
+BadEndInterrupt
+Traceback (most recent call last):
+  File "/home/mo/argon/telnet/chaofeng/bbs.py", line 217, in new_connect
+    t.bad_ending(e)
+  File "/home/mo/argon/telnet/special_frame.py", line 67, in bad_ending
+    self.pause()
+  File "/home/mo/argon/telnet/chaofeng/bbs.py", line 124, in pause
+    self.read_secret()
+  File "/home/mo/argon/telnet/chaofeng/bbs.py", line 117, in read_secret
+    raise BadEndInterrupt
+BadEndInterrupt
+End [172.18.146.162
+Coming :: LTaoist,bbs5524ll,172.18.157.157
+2
+1
+End [172.18.157.157]
+Bad Ending [192.168.2.112]
+Traceback (most recent call last):
+  File "/home/mo/argon/telnet/chaofeng/bbs.py", line 198, in new_connect
+    now.initialize(*args,**kwargs)
+  File "/home/mo/argon/telnet/login.py", line 53, in initialize
+    self.try_login_iter()
+  File "/home/mo/argon/telnet/login.py", line 58, in try_login_iter
+    userid = self.read_userid()
+  File "/home/mo/argon/telnet/login.py", line 40, in read_userid
+    return self.userid_.readln()
+  File "/home/mo/argon/telnet/chaofeng/ui/inputs.py", line 60, in readln
+    res = self.read(prompt,termitor)
+  File "/home/mo/argon/telnet/chaofeng/ui/inputs.py", line 53, in read
+    data = self.frame.read()
+  File "/home/mo/argon/telnet/chaofeng/bbs.py", line 106, in read
+    raise BadEndInterrupt
+BadEndInterrupt
+[Errno 32] Broken pipe
+Traceback (most recent call last):
+  File "/home/mo/argon/telnet/chaofeng/bbs.py", line 135, in write
+    self.sock.send(self.s(data))
+  File "/usr/lib/python2.7/site-packages/eventlet/greenio.py", line 269, in send
+    total_sent += fd.send(data[total_sent:], flags)
+error: [Errno 32] Broken pipe
+Traceback (most recent call last):
+  File "/home/mo/argon/telnet/chaofeng/bbs.py", line 217, in new_connect
+    t.bad_ending(e)
+  File "/home/mo/argon/telnet/special_frame.py", line 66, in bad_ending
+    self.write(ac.clear + u'崩溃啦~ T.T 麻烦请报告管理员~\r\n'+ac.reset)
+  File "/home/mo/argon/telnet/chaofeng/bbs.py", line 139, in write
+    self.close()
+  File "/home/mo/argon/telnet/chaofeng/bbs.py", line 157, in close
+    raise EndInterrupt
+EndInterrupt
+End [192.168.2.112]
+End [222.200.186.133]
+Coming :: supermuzi,lijie0421,222.200.186.133
+Bad Ending [222.200.186.133]
+Traceback (most recent call last):
+  File "/home/mo/argon/telnet/chaofeng/bbs.py", line 198, in new_connect
+    now.initialize(*args,**kwargs)
+  File "/home/mo/argon/telnet/editor.py", line 116, in initialize
+    self.read_title()
+  File "/home/mo/argon/telnet/editor.py", line 137, in read_title
+    self.goto_back()
+  File "/home/mo/argon/telnet/argo_frame.py", line 124, in goto_back
+    self.history.append(self.packup())
+  File "/home/mo/argon/telnet/argo_frame.py", line 49, in packup
+    return (self.__mark__,self.status)
+  File "/home/mo/argon/telnet/editor.py", line 123, in status
+    return dict(boardname=self.boardname)
+AttributeError: 'NewPostFrame' object has no attribute 'boardname'
+0
+Traceback (most recent call last):
+  File "/home/mo/argon/telnet/chaofeng/bbs.py", line 217, in new_connect
+    t.bad_ending(e)
+  File "/home/mo/argon/telnet/special_frame.py", line 68, in bad_ending
+    self.close()
+  File "/home/mo/argon/telnet/chaofeng/bbs.py", line 157, in close
+    raise EndInterrupt
+EndInterrupt
+End [222.200.186.133]
+Coming :: supermuzi,lijie0421,222.200.186.133
+Bad Ending [222.200.186.133]
+Traceback (most recent call last):
+  File "/home/mo/argon/telnet/chaofeng/bbs.py", line 198, in new_connect
+    now.initialize(*args,**kwargs)
+  File "/home/mo/argon/telnet/editor.py", line 116, in initialize
+    self.read_title()
+  File "/home/mo/argon/telnet/editor.py", line 137, in read_title
+    self.goto_back()
+  File "/home/mo/argon/telnet/argo_frame.py", line 124, in goto_back
+    self.history.append(self.packup())
+  File "/home/mo/argon/telnet/argo_frame.py", line 49, in packup
+    return (self.__mark__,self.status)
+  File "/home/mo/argon/telnet/editor.py", line 123, in status
+    return dict(boardname=self.boardname)
+AttributeError: 'NewPostFrame' object has no attribute 'boardname'
+0
+Traceback (most recent call last):
+  File "/home/mo/argon/telnet/chaofeng/bbs.py", line 217, in new_connect
+    t.bad_ending(e)
+  File "/home/mo/argon/telnet/special_frame.py", line 68, in bad_ending
+    self.close()
+  File "/home/mo/argon/telnet/chaofeng/bbs.py", line 157, in close
+    raise EndInterrupt
+EndInterrupt
+End [222.200.186.133]
+Coming :: supermuzi,lijie0421,222.200.186.133
+Bad Ending [222.200.186.133]
+Traceback (most recent call last):
+  File "/home/mo/argon/telnet/chaofeng/bbs.py", line 198, in new_connect
+    now.initialize(*args,**kwargs)
+  File "/home/mo/argon/telnet/editor.py", line 116, in initialize
+    self.read_title()
+  File "/home/mo/argon/telnet/editor.py", line 137, in read_title
+    self.goto_back()
+  File "/home/mo/argon/telnet/argo_frame.py", line 124, in goto_back
+    self.history.append(self.packup())
+  File "/home/mo/argon/telnet/argo_frame.py", line 49, in packup
+    return (self.__mark__,self.status)
+  File "/home/mo/argon/telnet/editor.py", line 123, in status
+    return dict(boardname=self.boardname)
+AttributeError: 'NewPostFrame' object has no attribute 'boardname'
+0
+Traceback (most recent call last):
+  File "/home/mo/argon/telnet/chaofeng/bbs.py", line 217, in new_connect
+    t.bad_ending(e)
+  File "/home/mo/argon/telnet/special_frame.py", line 68, in bad_ending
+    self.close()
+  File "/home/mo/argon/telnet/chaofeng/bbs.py", line 157, in close
+    raise EndInterrupt
+EndInterrupt
+End [222.200.186.133]
+Bad Ending [222.200.186.133]
+Traceback (most recent call last):
+  File "/home/mo/argon/telnet/chaofeng/bbs.py", line 198, in new_connect
+    now.initialize(*args,**kwargs)
+  File "/home/mo/argon/telnet/login.py", line 53, in initialize
+    self.try_login_iter()
+  File "/home/mo/argon/telnet/login.py", line 58, in try_login_iter
+    userid = self.read_userid()
+  File "/home/mo/argon/telnet/login.py", line 40, in read_userid
+    return self.userid_.readln()
+  File "/home/mo/argon/telnet/chaofeng/ui/inputs.py", line 60, in readln
+    res = self.read(prompt,termitor)
+  File "/home/mo/argon/telnet/chaofeng/ui/inputs.py", line 53, in read
+    data = self.frame.read()
+  File "/home/mo/argon/telnet/chaofeng/bbs.py", line 106, in read
+    raise BadEndInterrupt
+BadEndInterrupt
+Traceback (most recent call last):
+  File "/home/mo/argon/telnet/chaofeng/bbs.py", line 217, in new_connect
+    t.bad_ending(e)
+  File "/home/mo/argon/telnet/special_frame.py", line 67, in bad_ending
+    self.pause()
+  File "/home/mo/argon/telnet/chaofeng/bbs.py", line 124, in pause
+    self.read_secret()
+  File "/home/mo/argon/telnet/chaofeng/bbs.py", line 117, in read_secret
+    raise BadEndInterrupt
+BadEndInterrupt
+End [222.200.186.133]
+
+Coming :: LTaoist,bbs5524ll,172.18.157.157
+Bad Ending [172.18.157.157]
+Traceback (most recent call last):
+  File "/home/mo/argon/telnet/chaofeng/bbs.py", line 198, in new_connect
+    now.initialize(*args,**kwargs)
+  File "/home/mo/argon/telnet/editor.py", line 156, in initialize
+    super(ReplyPostFrame,self).initialize(boardname)
+  File "/home/mo/argon/telnet/editor.py", line 116, in initialize
+    self.read_title()
+  File "/home/mo/argon/telnet/editor.py", line 137, in read_title
+    self.goto_back()
+  File "/home/mo/argon/telnet/argo_frame.py", line 124, in goto_back
+    self.history.append(self.packup())
+  File "/home/mo/argon/telnet/argo_frame.py", line 49, in packup
+    return (self.__mark__,self.status)
+  File "/home/mo/argon/telnet/editor.py", line 161, in status
+    return dict(boardname=self.boardname,
+AttributeError: 'ReplyPostFrame' object has no attribute 'boardname'
+1
+Traceback (most recent call last):
+  File "/home/mo/argon/telnet/chaofeng/bbs.py", line 217, in new_connect
+    t.bad_ending(e)
+  File "/home/mo/argon/telnet/special_frame.py", line 68, in bad_ending
+    self.close()
+  File "/home/mo/argon/telnet/chaofeng/bbs.py", line 157, in close
+    raise EndInterrupt
+EndInterrupt
+End [172.18.157.157]
+Coming :: LTaoist,bbs5524ll,172.18.157.157
+1
+0
+End [172.18.157.157]
+~/telnet-argo $ ./server.py 
+~/telnet-argo $ ./server.py 
+Connect :: 172.18.157.157 : 60104
+Coming :: LTaoist,bbs5524ll,172.18.157.157
+Tue Jun 12 13:52:35 2012
+0
+-1
+End [172.18.157.157]
+Connect :: 172.18.157.157 : 60708
+Coming :: LTaoist,bbs5524ll,172.18.157.157
+Tue Jun 12 14:11:36 2012
+0
+-1
+End [172.18.157.157]
+Connect :: 202.116.84.219 : 22788
+Connect :: 202.116.84.219 : 22788
+Coming :: amberkaka,123123,202.116.84.219
+Tue Jun 12 16:02:49 2012
+Bad Ending [202.116.84.219]
+Traceback (most recent call last):
+  File "/home/mo/argon/telnet/chaofeng/bbs.py", line 199, in new_connect
+    now.loop()
+  File "/home/mo/argon/telnet/chaofeng/bbs.py", line 93, in loop
+    self.read()
+  File "/home/mo/argon/telnet/chaofeng/bbs.py", line 108, in read
+    if self.get : self.get(data)
+  File "/home/mo/argon/telnet/board.py", line 95, in get
+    self.try_action(data)
+  File "/home/mo/argon/telnet/argo_frame.py", line 218, in try_action
+    getattr(self,self.key_maps[data])()
+  File "/home/mo/argon/telnet/board.py", line 191, in reply_post
+    pid = self.table_.fetch()['pid']
+TypeError: list indices must be integers, not str
+0
+Traceback (most recent call last):
+  File "/home/mo/argon/telnet/chaofeng/bbs.py", line 217, in new_connect
+    t.bad_ending(e)
+  File "/home/mo/argon/telnet/special_frame.py", line 68, in bad_ending
+    self.close()
+  File "/home/mo/argon/telnet/chaofeng/bbs.py", line 157, in close
+    raise EndInterrupt
+EndInterrupt
+End [202.116.84.219]
+Connect :: 202.116.84.219 : 23132
+Coming :: amberkaka,123123,202.116.84.219
+Tue Jun 12 16:03:20 2012
+0
+-1
+End [202.116.84.219]
+Connect :: 202.116.84.219 : 27921
+Coming :: amberkaka,123123,202.116.84.219
+Tue Jun 12 16:41:51 2012
+0
+-1
+End [202.116.84.219]
+
+Connect :: 172.18.157.157 : 40381
+Coming :: LTaoist,bbs5524ll,172.18.157.157
+Wed Jun 13 22:39:05 2012
+0
+-1
+End [172.18.157.157]
