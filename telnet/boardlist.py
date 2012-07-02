@@ -63,7 +63,7 @@ class ArgoBoardListTable(ArgoFrame):
         self.writeln(self.input_.text)
         self.writeln(self.thread)
         self.bottom_bar()
-        self.table_.refresh()
+        self.table_.goto(0)
 
     def refresh(self):
         self.table_.refresh()

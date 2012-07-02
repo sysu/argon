@@ -90,7 +90,7 @@ class ArgoBoardTable(ArgoFrame):
         self.writeln(self.input_.text)
         self.writeln(self.thread)
         self.bottom_bar()
-        self.table_.refresh()
+        self.table_.goto(0)
 
     def get(self,data):
         if data in ac.ks_finish:
