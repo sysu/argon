@@ -23,9 +23,9 @@ def main(data):
                 manager.board.add_board(sid=sid,
                                         boardname=boardattr[0],
                                         description=boardattr[1])
+                manager.post._create_table(boardattr[0])
             except Exception as e:
                 traceback.print_exc()                
-            manager.post._create_table(boardattr[0])
 
 if __name__ == '__main__' :
 
