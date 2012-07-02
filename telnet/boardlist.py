@@ -55,14 +55,18 @@ class ArgoBoardListTable(ArgoFrame):
             self.display()
 
     def restore(self):
-        self.display()
-        
-    def display(self):
+        self._display()
+        self.table_.refresh()
+
+    def _display(self):
         self.cls()
         self.top_bar()
         self.writeln(self.input_.text)
         self.writeln(self.thread)
         self.bottom_bar()
+
+    def display(self):
+        self._display()
         self.table_.goto(0)
 
     def refresh(self):
