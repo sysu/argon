@@ -190,26 +190,29 @@ class Post(Model):
 
     def get_topic(self,boardname,tid):
         sql = "SELECT * FROM %s WHERE tid = %%s" % self.__(boardname)
+        print sql
         return self.db.query(sql,tid)
 
     def get_posts_advan(self,boardname,offset,limit,order='pid',mark=None):
         cond = ''
+        buf = []
         if mark:
-            buf = []
             'g' in mark and buf.append('flag & 1')
             'm' in mark and buf.append('flag & 2')
             't' in mark and buf.append('tid = 0')
-            if buf:
-                cond = 'WHERE ' + ' AND '.join(buf)
+        if offset is not None:
+            buf.append('pid > %s' % offset)
+        if buf:
+            cond = 'WHERE ' + ' AND '.join(buf)
         # if offset is None :
         #     sql = "SELECT * FROM %s ORDER BY %s %s %s LIMIT %%S" %\
         #         (self.__(boardname),order,cond,'DESC' if limit < 0 else '')
         #     return self.db.query(sql,abs(limit))
         # else:
-        sql = "SELECT * FROM %s %s ORDER BY %s LIMIT %%s,%%s" % \
-            (self.__(boardname),cond,order)
-        res = self.db.query(sql,offset,limit)
-        return res
+        if limit < 0 :
+            sql = "SELECT * FROM %s ORDER BY %s %s DESC LIMIT %%s" % \
+                (self.__(boardname),order,cond)
+            return self.db.query(sql,abs(limit)).reversed
 
     def get_last_pid(self,boardname):
         res = self.db.get("SELECT pid FROM %s ORDER BY pid DESC LIMIT 1" % \

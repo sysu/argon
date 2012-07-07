@@ -15,8 +15,10 @@ class LoginDebugFrame(login.WelcomeFrame):
 
     def initialize(self):
         # self.auth('333','123456')
-        self.try_login('gcc','123456')
+        self.try_login('555','123456')
         # self.goto('post','Test1','3')
+
+config.root = 'debug'
 
 if __name__ == '__main__' :
     s = Server(mark[config.root])

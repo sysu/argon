@@ -3,7 +3,7 @@
 import sys
 sys.path.append('../')
 
-from chaofeng import EndInterrupt,Timeout
+from chaofeng import EndInterrupt,Timeout,asynchronous
 from chaofeng.g import mark,static
 from chaofeng.ui import TextInput,Password,DatePicker
 import chaofeng.ascii as ac
@@ -67,6 +67,7 @@ class WelcomeFrame(WelcomeViem):
                 # try login
                 self.try_login(userid,passwd)
 
+    @asynchronous
     def auth(self,userid,passwd):
         authobj = manager.auth.login(userid,passwd,self.session.ip)
         if authobj :
@@ -81,6 +82,11 @@ class WelcomeFrame(WelcomeViem):
             self.goto('main')
         else:
             self.writeln(self.wrong_prompt)
+
+    def read(self):
+        res = super(WelcomeFrame, self).read()
+        print repr(res)
+        return res
 
 @mark('first_login')
 class FirstLoginFrame(ArgoFrame):

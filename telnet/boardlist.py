@@ -4,7 +4,7 @@ sys.path.append('../')
 
 from chaofeng import ascii as ac
 from chaofeng.g import static,mark
-from chaofeng.ui import SimpleTable,HiddenInput
+from chaofeng.ui import SimpleTable,HiddenInput,DataLoader
 from model import manager
 from argo_frame import ArgoFrame
 from libtelnet import zh_format_d
@@ -43,34 +43,21 @@ class ArgoBoardListTable(ArgoFrame):
     _input = HiddenInput(text=static['boardlist'][0],start_line=2)
     _table = SimpleTable(start_line=4)
     thread = static['boardlist'][2]
-    
-    def initialize(self,default=0,mode=None,display=True):
+
+    def initialize(self, default, display=True):
         self.input_ = self.load(self._input)
-        self.table_ = self.load(self._table,default=default)
-        self.mode = 0
-        # if mode is not None:
-        #     self.sort(mode)
-        self.table_.set_fun(self.get_getdata(),self.fformat,refresh=False)
+        self.table_ = self.load(self._table, default=default,
+                                data_loader=self.data_loader)
         if display:
-            self.display()
+            self.restore()
 
     def restore(self):
-        self._display()
-        self.table_.refresh()
-
-    def _display(self):
         self.cls()
         self.top_bar()
         self.writeln(self.input_.text)
         self.writeln(self.thread)
         self.bottom_bar()
-
-    def display(self):
-        self._display()
-        self.table_.goto(0)
-
-    def refresh(self):
-        self.table_.refresh()
+        self.table_.restore()
 
     def get(self,data):
         if data in ac.ks_finish:
@@ -167,16 +154,19 @@ class BoardListFrame(ArgoBoardListTable):
     help_page = 'boardlist'
     format_str = static['boardlist'][4]
 
-    def initialize(self,sid=None,default=0,mode=None):
+    def initialize(self,sid=None):
         self.sid = sid
-        super(BoardListFrame,self).initialize(default=default,mode=mode)
+        self.data_loader = DataLoader(self.get_getdata(),
+                                      lambda x :self.format(x),
+                                      self.get_last_index)
+        super(BoardListFrame,self).initialize(default=0)
 
-    def fformat(self,x):
+    def format(self,x):
         return zh_format_d(self.format_str,
                            online=manager.online.board_online(x['boardname']) or 0,
                            attr='',
                            **x)
-        
+
     def get_getdata(self):
         if self.sid is None:
             self.boards = manager.board.get_all_boards()

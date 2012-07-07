@@ -2,9 +2,11 @@
 import sys
 sys.path.append('../')
 
+__metaclass__ = type
+
 from chaofeng import ascii as ac
 from chaofeng.g import static,mark
-from chaofeng.ui import SimpleTable,HiddenInput
+from chaofeng.ui import SimpleTable,HiddenInput,DataLoader
 from model import manager
 from argo_frame import ArgoFrame
 from libtelnet import zh_format
@@ -17,6 +19,14 @@ import config
 # 4 原作
 # 5 同作者
 # 6 标题关键字
+
+class MixDataLoader(DataLoader):
+
+    def __init__(self, funs):
+        self.funs = funs
+
+    def set_mode(self, index):
+        super(MixDataLoader,self).__init__(*self.funs[index])
 
 class ArgoBoardTable(ArgoFrame):
 
@@ -73,28 +83,28 @@ class ArgoBoardTable(ArgoFrame):
     _input = HiddenInput(text=static['board'][0],start_line=2)
     _table = SimpleTable(start_line=4)
     thread = static['board'][1]
-
+        
     def initialize(self,default=0,display=True):
         self.input_ = self.load(self._input)
-        self.table_ = self.load(self._table,default=default)
-        self.table_.set_fun(self.get_getdata(),self.get_fformat(),refresh=False)
+        self.data_loader = MixDataLoader([
+                (lambda l,f : manager.post.get_posts_advan(self.boardname,
+                                                           l, f),
+                 self.get_fformat(),
+                 lambda : manager.post.get_board_total(self.boardname)),
+                ])
+        self.data_loader.set_mode(0)
+        self.table_ = self.load(self._table,default=default,
+                                data_loader=self.data_loader)
         if display:
-            self.display()
+            self.restore()
 
     def restore(self):
-        self._display()
-        self.table_.refresh()
-        
-    def _display(self):
         self.cls()
         self.top_bar()
         self.writeln(self.input_.text)
         self.writeln(self.thread)
         self.bottom_bar()
-
-    def display(self):
-        self._display()
-        self.table_.goto(0)
+        self.table_.restore()
 
     def get(self,data):
         if data in ac.ks_finish:
@@ -139,9 +149,10 @@ class ArgoBoardFrame(ArgoBoardTable):
         return lambda o,l: manager.post.get_posts_advan(self.boardname,o,l)
 
     def get_fformat(self):
-        return lambda d : zh_format("%5s   %-12s %-10s %s",d['pid'],d['owner'],
-                                    d['posttime'].strftime("%b %d"),
-                                    d['title'])
+        return lambda d : self.fm("%5s   %-12s %-10s %s",
+                                  (d['pid'],d['owner'],
+                                   d['posttime'].strftime("%b %d"),
+                                   d['title']))
 
     def get_last_index(self):
         return manager.post.get_last_pid(self.boardname)
