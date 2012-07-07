@@ -193,18 +193,35 @@ class Post(Model):
         print sql
         return self.db.query(sql,tid)
 
-    def get_posts_advan(self,boardname,offset,limit,order='pid',mark=None,reverse=None):
+    def get_posts_advan(self,boardname,offset,limit,order='pid',mark=None):
         cond = ''
+        buf = []
         if mark:
-            buf = []
             'g' in mark and buf.append('flag & 1')
             'm' in mark and buf.append('flag & 2')
             't' in mark and buf.append('tid = 0')
-            if buf:
-                cond = 'WHERE ' + ' AND '.join(buf)
-        sql = "SELECT * FROM %s ORDER BY %s %s %s LIMIT %%s,%%s" % \
-            (self.__(boardname),order,cond,'DESC' if reverse else '')
-        return self.db.query(sql,offset,limit)
+        if offset is not None:
+            buf.append('pid%slimit' % ('>' if limit else '<'))
+        if buf:
+            cond = 'WHERE ' + ' AND '.join(buf)
+        # if offset is None :
+        #     sql = "SELECT * FROM %s ORDER BY %s %s %s LIMIT %%S" %\
+        #         (self.__(boardname),order,cond,'DESC' if limit < 0 else '')
+        #     return self.db.query(sql,abs(limit))
+        # else:
+        if limit < 0 :
+            sql = "SELECT * FROM %s ORDER BY %s %s DESC LIMIT %%s" % \
+                (self.__(boardname),order,cond)
+            print sql
+            res = self.db.query(sql,abs(limit))
+            res.reverse()
+            return res
+        else:
+            sql = "SELECT * FROM %s ORDER BY %s %s LIMIT %%s" %\
+                (self.__(boardname),order,cond)
+            print sql
+            res = self.db.query(sql,limit)
+            return res
 
     def get_last_pid(self,boardname):
         res = self.db.get("SELECT pid FROM %s ORDER BY pid DESC LIMIT 1" % \
