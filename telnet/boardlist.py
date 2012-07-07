@@ -179,7 +179,7 @@ class BoardListFrame(ArgoBoardListTable):
 
     @property
     def status(self):
-        return dict(sid=self.sid,default=self.table_.hover,mode=self.mode)
+        return dict(sid=self.sid,default=self.table_.hover)
 
     @classmethod
     def describe(cls,s):
