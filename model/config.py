@@ -2,7 +2,7 @@
 import sys
 sys.path.append('../')
 
-from argo_conf import ConfigDB,ConfigCache
+from argo_conf import ConfigDB,ConfigCache,ConfigBase
 
 '''  MySQL setting '''
 
@@ -20,7 +20,7 @@ CPORT = ConfigCache.port
 
 ''' Other setting '''
 
-SQL_TPL_DIR = '/home/mo/argon/database/'
+SQL_TPL_DIR = ConfigBase.base_dir + '/argon/database/'
 BASE_TABLE = [ 'attachead','boardhead','mailhead',
                'sectionhead','user','userattr']
 

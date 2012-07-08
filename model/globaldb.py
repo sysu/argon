@@ -5,12 +5,13 @@ import  dbapi
 from config import *
 import redis
 
-global_conn = dbapi.Connection(host=HOST+':'+str(PORT), user=USER, password=PASSWD, database=DBNAME)
+class GlobalDB(object):
+    
+    conn = dbapi.Connection(host=HOST+':'+str(PORT), user=USER, password=PASSWD, database=DBNAME)
+    cache = redis.Redis(host=CHOST, port=CPORT)
 
-'''
-    采用redis做cache及全局通信,替代原来的shm功能
-'''
 
-global_cache = redis.Redis(host=CHOST, port=CPORT)
+global_conn = GlobalDB.conn
+global_cache = GlobalDB.cache
 
 
