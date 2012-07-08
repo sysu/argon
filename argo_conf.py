@@ -13,6 +13,7 @@ class ConfigBase:
     data_dir = ''
 
 
+
 class ConfigDB:
     '''
         Database config
