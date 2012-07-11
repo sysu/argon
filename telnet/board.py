@@ -31,7 +31,8 @@ class ArgoBoardTable(ArgoFrame):
         self.lastboard = boardname
         self.set_mode(mode,refresh=False)
         self.boardname = boardname
-        super(ArgoBoardFrame,self).initialize(default)
+        self.set_up(((lambda s,l : manager.post.get_posts(self.boardname,s,l),
+                    self.get_fformat())), default)
         
     def set_up(self, get_posts, format_posts, default=0,display=True):
         self.input_ = self.load(self._input)
