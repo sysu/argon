@@ -558,20 +558,31 @@ class ReadMark(Model):
     limit_clear = -50
 
     def is_read(self,userid,boardname,pid):
-        return self.ch.zcount(self.keyf%(userid,boardname),
-                              pid,pid)
+        key = self.keyf % (userid, boardname)
+        # Empty record, not read
+        # And play a trick here, add -1 into read mark
+        if self.ch.zcard(key) == 0: 
+            self.ch.zaddr(key, -1, -1)
+            return 0
+
+        res = self.ch.zcount(key, pid,pid)
+        if res: return res
+        # If pid is smaller the oldest one in read record, mark as read
+        first_pid = self.ch.zrange(self.key%(userid, boardname), 0, 0)[0]
+        return pid < int(first_pid)
 
     def set_read(self,userid,boardname,pid):
         key = self.keyf%(userid,boardname)
-        if self.ch.zcard(key) >= self.limit_max:
-            self.ch.zremrangebyrank(key,self.limit_clear,-1)
+        read_num = self.ch.zcard(key)
+        if read_num >= self.limit_max:
+            # Flush the oldest
+            self.ch.zremrangebyrank(key, 0, self.limit_max - read_num )
         return self.ch.zadd(key,pid,pid)
 
     def clear_unread(self,userid,boardname,last):
         key = self.keyf%(userid,boardname)
         self.ch.delete(key)
-        for i in range(last+limit_clear,last):
-            self.ch.zadd(key,i,i)
+        self.ch.zadd(key, last, last)
 
 class Permissions(Model):
 

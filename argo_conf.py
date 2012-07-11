@@ -5,11 +5,19 @@
     argo 的全局配置文件
 '''
 
+class ConfigBase:
+    '''
+        Basic config
+    '''
+    base_dir = '~/source'
+    data_dir = ''
+
+
+
 class ConfigDB:
     '''
         Database config
     '''
-    # host= "10.42.43.1"
     host = "localhost"
     port= 3306
     user= "bbs"
@@ -20,7 +28,6 @@ class ConfigCache:
     '''
         Cache config
     '''
-    # host = '10.42.43.1'
     host = "localhost"
     port = 6379
 
