@@ -4,7 +4,7 @@ sys.path.append('../')
 
 from chaofeng import ascii as ac
 from chaofeng.g import static,mark
-from chaofeng.ui import SimpleTable,HiddenInput,DataLoader
+from chaofeng.ui import SimpleTable,HiddenInput,AppendTable
 from model import manager
 from argo_frame import ArgoFrame
 from libtelnet import zh_format_d
@@ -42,12 +42,17 @@ class ArgoBoardListTable(ArgoFrame):
 
     _input = HiddenInput(text=static['boardlist'][0],start_line=2)
     _table = SimpleTable(start_line=4)
+    # _table = AppendTable(start_line=4,key='bid')
+    
     thread = static['boardlist'][2]
 
     def initialize(self, default, display=True):
         self.input_ = self.load(self._input)
-        self.table_ = self.load(self._table, default=default,
-                                data_loader=self.data_loader)
+        # self.table_ = self.load(self._table, default=default,
+                                # data_loader=self.data_loader)
+        self.table_ = self.load(self._table,
+                                self.get_data(),
+                                self.format)
         if display:
             self.restore()
 
@@ -75,19 +80,19 @@ class ArgoBoardListTable(ArgoFrame):
     ##################
         
     def move_up(self):
-        self.table_.goto_offset(-1)
+        self.table_.move_up()
 
     def move_down(self):
-        self.table_.goto_offset(1)
+        self.table_.move_down()
         
     def page_up(self):
-        self.table_.goto_offset(-self.table_.limit)
+        self.table_.page_up()
     
     def page_down(self):
-        self.table_.goto_offset(self.table_.limit)
+        self.table_.page_down()
 
     def go_first(self):
-        self.table_.goto(0)
+        self.table_.goto_first()
 
     def go_last(self):
         self.table_.goto(self.get_last_index())
@@ -99,7 +104,12 @@ class ArgoBoardListTable(ArgoFrame):
             g = int(text)
         except:
             return
-        self.table_.goto(g)
+        for i,d in enumerate(self.boards):
+            if d['bid'] == g :
+                break
+        else:
+            return
+        self.table_.goto(i)
 
     #################
     # search/sort   #
@@ -156,9 +166,6 @@ class BoardListFrame(ArgoBoardListTable):
 
     def initialize(self,sid=None):
         self.sid = sid
-        self.data_loader = DataLoader(self.get_getdata(),
-                                      lambda x :self.format(x),
-                                      self.get_last_index)
         super(BoardListFrame,self).initialize(default=0)
 
     def format(self,x):
@@ -167,12 +174,21 @@ class BoardListFrame(ArgoBoardListTable):
                            attr='',
                            **x)
 
-    def get_getdata(self):
+    def get_data(self):
         if self.sid is None:
             self.boards = manager.board.get_all_boards()
         else:
             self.boards = manager.board.get_by_sid(self.sid)
-        return lambda l,f: self.boards[l:l+f]
+        return self.boards
+
+    # def get_data(self, num, limit):
+    #     if limit > 0 :
+    #         return self.boards[num:num+limit]
+    #     else:
+    #         if num is True:
+    #             return self.boards[-limit:]
+    #         else:
+    #             return self.boards[num-limit:num]         
 
     def get_last_index(self):
         return len(self.boards)

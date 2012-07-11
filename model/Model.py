@@ -192,24 +192,57 @@ class Post(Model):
         sql = "SELECT * FROM %s WHERE tid = %%s" % self.__(boardname)
         return self.db.query(sql,tid)
 
-    def get_posts_advan(self,boardname,offset,limit,order='pid',mark=None):
-        cond = ''
-        if mark:
-            buf = []
-            'g' in mark and buf.append('flag & 1')
-            'm' in mark and buf.append('flag & 2')
-            't' in mark and buf.append('tid = 0')
-            if buf:
-                cond = 'WHERE ' + ' AND '.join(buf)
-        # if offset is None :
-        #     sql = "SELECT * FROM %s ORDER BY %s %s %s LIMIT %%S" %\
-        #         (self.__(boardname),order,cond,'DESC' if limit < 0 else '')
-        #     return self.db.query(sql,abs(limit))
-        # else:
-        sql = "SELECT * FROM %s %s ORDER BY %s LIMIT %%s,%%s" % \
-            (self.__(boardname),cond,order)
-        res = self.db.query(sql,offset,limit)
-        return res
+    # def _get_posts_advan(self,boardname,order='pid',mark=None,sel='*'):
+    #     cond = ''
+    #     if mark:
+    #         buf = []
+    #         'g' in mark and buf.append('flag & 1')
+    #         'm' in mark and buf.append('flag & 2')
+    #         't' in mark and buf.append('tid = 0')
+    #         if buf:
+    #             cond = 'WHERE ' + ' AND '.join(buf)
+    #     # if offset is None :
+    #     #     sql = "SELECT * FROM %s ORDER BY %s %s %s LIMIT %%S" %\
+    #     #         (self.__(boardname),order,cond,'DESC' if limit < 0 else '')
+    #     #     return self.db.query(sql,abs(limit))
+    #     # else:
+    #     sql = "SELECT %s FROM %s WHERE %s ORDER BY %s LIMIT %%s,%%s" % \
+    #         (sel,self.__(boardname),cond,order)
+    #     return sql
+
+    def _query_posts_filter(self,boardname,num,limit,cond=None,order='pid',sel='*'):
+        if cond is None:
+            cond = []
+        if num is not None:
+            cond.insert(0,"pid%s%s" % (
+                    '>=' if limit > 0 else '<=',
+                    num,
+                    ))
+        if cond :
+            cond = 'WHERE %s' % ' AND '.join(cond)
+        else : cond = ''
+        if limit<0:
+            sql = "SELECT %s FROM %s %s ORDER BY %s DESC LIMIT %%s"%\
+                (sel,self.__(boardname),cond,order)
+            res = self.db.query(sql, -limit)
+            res.reverse()
+            return res
+        else:
+            sql = "SELECT %s FROM %s %s ORDER BY %s LIMIT %%s"%\
+                (sel,self.__(boardname),cond,order)
+            return self.db.query(sql, limit)
+
+    def get_posts(self,boardname,num,limit):
+        return self._query_posts_filter(boardname,num,limit)
+
+    def get_posts_g(self,boardname,num,limit):
+        return self._query_posts_filter(boardname,num,limit,cond=['flag & 1'])
+
+    def get_posts_g(self,boardname,num,limit):
+        return self._query_posts_filter(boardname,num,limit,cond=['flag & 2'])
+
+    def get_posts_topic(self,boardname,num,limit):
+        return self._query_posts_filter(boardname,num,limit,cond=['tid=0'])
 
     def get_last_pid(self,boardname):
         res = self.db.get("SELECT pid FROM %s ORDER BY pid DESC LIMIT 1" % \

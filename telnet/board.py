@@ -6,7 +6,7 @@ __metaclass__ = type
 
 from chaofeng import ascii as ac
 from chaofeng.g import static,mark
-from chaofeng.ui import SimpleTable,HiddenInput,DataLoader
+from chaofeng.ui import HiddenInput,ModeAppendTable
 from model import manager
 from argo_frame import ArgoFrame
 from libtelnet import zh_format
@@ -20,15 +20,55 @@ import config
 # 5 同作者
 # 6 标题关键字
 
-class MixDataLoader(DataLoader):
-
-    def __init__(self, funs):
-        self.funs = funs
-
-    def set_mode(self, index):
-        super(MixDataLoader,self).__init__(*self.funs[index])
-
 class ArgoBoardTable(ArgoFrame):
+
+    _input = HiddenInput(text=static['board'][0],start_line=2)
+    _table = ModeAppendTable('pid', start_line=4)
+    thead = static['board'][1]
+
+    def initialize(self,boardname=None,default=0,mode=0):
+        manager.action.enter_board(self.userid,self.seid,boardname)
+        self.lastboard = boardname
+        self.set_mode(mode,refresh=False)
+        self.boardname = boardname
+        super(ArgoBoardFrame,self).initialize(default)
+        
+    def set_up(self, get_posts, format_posts, default=0,display=True):
+        self.input_ = self.load(self._input)
+        self.table_ = self.load(self._table, get_posts, format_posts)
+        self.table_.set_mode(0)
+        self.table_.load_with_upper(self.get_last_index())
+        if display:
+            self.restore()
+        # (lambda s,l : manager.post.get_posts(self.boardname,s,l),
+        # self.get_fformat())
+
+    def restore(self):
+        self.cls()
+        self.top_bar()
+        self.writeln(self.input_.text)
+        self.writeln(self.thead)
+        self.bottom_bar()
+        self.table_.restore()
+
+    def get(self,data):
+        if data in ac.ks_finish:
+            self.finish()
+        self.try_action(data)
+
+    def get_getdata(self):
+        raise NotImplementedError
+
+    def get_fformat(self):
+        raise NotImplementedError
+
+    def get_last_index(self):
+        raise NotImplementedError
+
+@mark('board')
+class ArgoBoardFrame(ArgoBoardTable):
+
+    help_page = 'board'
 
     key_maps = ArgoFrame.key_maps.copy()
     key_maps.update({
@@ -79,59 +119,7 @@ class ArgoBoardTable(ArgoFrame):
             # mark_this, put_mark_digest, 废纸篓？清空回收站？
 
             })
-
-    _input = HiddenInput(text=static['board'][0],start_line=2)
-    _table = SimpleTable(start_line=4)
-    thread = static['board'][1]
-        
-    def initialize(self,default=0,display=True):
-        self.input_ = self.load(self._input)
-        self.data_loader = MixDataLoader([
-                (lambda l,f : manager.post.get_posts_advan(self.boardname,
-                                                           l, f),
-                 self.get_fformat(),
-                 lambda : manager.post.get_board_total(self.boardname)),
-                ])
-        self.data_loader.set_mode(0)
-        self.table_ = self.load(self._table,default=default,
-                                data_loader=self.data_loader)
-        if display:
-            self.restore()
-
-    def restore(self):
-        self.cls()
-        self.top_bar()
-        self.writeln(self.input_.text)
-        self.writeln(self.thread)
-        self.bottom_bar()
-        self.table_.restore()
-
-    def get(self,data):
-        if data in ac.ks_finish:
-            self.finish()
-        self.try_action(data)
-
-    def get_getdata(self):
-        raise NotImplementedError
-
-    def get_fformat(self):
-        raise NotImplementedError
-
-    def get_last_index(self):
-        raise NotImplementedError
-
-@mark('board')
-class ArgoBoardFrame(ArgoBoardTable):
-
-    help_page = 'board'
-        
-    def initialize(self,boardname=None,default=0,mode=0):
-        manager.action.enter_board(self.userid,self.seid,boardname)
-        self.lastboard = boardname
-        self.set_mode(mode,refresh=False)
-        self.boardname = boardname
-        super(ArgoBoardFrame,self).initialize(default)
-
+    
     def clear(self):
         manager.action.exit_board(self.userid,self.seid,self.boardname)
 
@@ -170,7 +158,7 @@ class ArgoBoardFrame(ArgoBoardTable):
         self.table_.move_up()
 
     def move_down(self):
-        self.table_.goto_offset(1)
+        self.table_.move_down()
         
     def page_up(self):
         self.table_.goto_offset(-self.table_.limit)
