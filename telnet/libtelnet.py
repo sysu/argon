@@ -1,6 +1,30 @@
 # -*- coding: utf-8 -*-
-from chaofeng.g import static
+# from chaofeng.g import static
 from datetime import datetime
+from functools import wraps
+
+class SimpleCache:
+
+    def __init__(self):
+        self._dict = {}
+
+    def __call__(self, key):
+        def deco(self, f):
+            @wraps(f)
+            def wrapper(*args,**kwargs):
+                if key not in self._dict:
+                    self._dict[key] = f(*args,**kwargs)
+                return self._dict[key]
+            return wrapper
+        return deco
+
+    def clear(self):
+        self._dict = {}
+
+    def delete(self, key):
+        del self._dict[key]
+    
+simple_cache = SimpleCache()
 
 zh_center = lambda s,w : s.encode('gbk').center(w).decode('gbk')
 

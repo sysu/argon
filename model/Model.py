@@ -492,6 +492,7 @@ class Mail(Model):
         return int(uid) / 100
 
     def _create_table(self,tableid):
+        return
         import config
         from string import Template
         with open(config.SQL_TPL_DIR + 'template/argo_mailhead.sql') as f :

@@ -3,7 +3,7 @@ import sys
 sys.path.append('../')
 
 from chaofeng import ascii as ac
-from chaofeng.g import static,mark
+from chaofeng.g import mark
 from chaofeng.ui import SimpleTable,HiddenInput,AppendTable
 from model import manager
 from argo_frame import ArgoFrame
@@ -11,95 +11,57 @@ from libtelnet import zh_format_d
 
 import config
 
-class ArgoBoardListTable(ArgoFrame):
+class ArgoTableFrame(ArgoFrame):
 
-    key_maps = ArgoFrame.key_maps.copy()
-    key_maps.update({
-        # cursor
-        ac.k_up:"move_up",      'k':'move_up',
-        ac.k_down:"move_down",  'j':'move_down',
-        'P':'page_up',          ac.k_ctrl_b:'page_up',        'b':'page_up',
-        'N':'page_down',        ac.k_ctrl_f:'page_down',      ' ':'page_down',
-        ac.k_home:'go_first',   ac.k_end:"go_last",           '$':'go_last',
-        '#':'go_line',
-
-        # mode/serach
-        '/':'search',         ac.k_right:'finish',
-        'q':'goto_back',      'e':'goto_back',        ac.k_left:'goto_back',
-        's':'change_sort',
-
-        # jump
-        'S':'send_message',     ac.k_ctrl_z:'watch_message',
-        'f':'goto_friend',      '!':'goto_out',
-        'H':'goto_top_ten',     'l':'goto_mail',
-        'h':'show_help',        'u':'goto_check_user',
-
-        # admin
-        ac.k_ctrl_a:'watch_board',
-        'X':'set_readonly',
-        ac.k_ctrl_e:'change_board_attr',
-        })
-
-    _input = HiddenInput(text=static['boardlist'][0],start_line=2)
-    _table = SimpleTable(start_line=4)
-    # _table = AppendTable(start_line=4,key='bid')
-    
-    thread = static['boardlist'][2]
-
-    def initialize(self, default, display=True):
-        self.input_ = self.load(self._input)
-        # self.table_ = self.load(self._table, default=default,
-                                # data_loader=self.data_loader)
-        self.table_ = self.load(self._table,
-                                self.get_data(),
-                                self.format)
-        if display:
-            self.restore()
+    def setup(self, table, help_text, thread, data, fformat):
+        self.thread = thread
+        self.input = self.load(HiddenInput, text=help_text, start_line=2)
+        self.table = self.load(table, start_line=4)
+        self.table.reset(data, fformat)
+        self.restore()
 
     def restore(self):
         self.cls()
         self.top_bar()
-        self.writeln(self.input_.text)
+        self.writeln(ac.move2(2,0)+self.input.text)
         self.writeln(self.thread)
         self.bottom_bar()
-        self.table_.restore()
+        self.table.restore()
 
-    def get(self,data):
+    def get(self, data):
         if data in ac.ks_finish:
             self.finish()
-        self.try_action(data)
+        self.table.try_action(config.hotkeys['table_table'].get(data))
+        self.try_action(config.hotkeys['table'].get(data))
+        self.try_action(config.hotkeys['g'].get(data))
 
-    def get_getdata(self):
-        raise NotImplementedError
+class ArgoBoardListTableFrame(ArgoTableFrame):
 
-    def get_last_index(self):
-        raise NotImplementedError
+    def setup(self, data):
+        self.boards = data
+        self.max_index = len(data)
+        super(ArgoBoardListTableFrame, self).setup(SimpleTable,
+                                                   config.str['BOARDLIST_QUICK_HELP'],
+                                                   config.str['BOARDLIST_THEAD'],
+                                                   data, self.fformat)
 
-    ##################
-    # Move cursor    #
-    ##################
-        
-    def move_up(self):
-        self.table_.move_up()
+    def fformat(self, li):
+        return self.render_str('boardlist-li', **li)
 
-    def move_down(self):
-        self.table_.move_down()
-        
-    def page_up(self):
-        self.table_.page_up()
-    
-    def page_down(self):
-        self.table_.page_down()
+    def get(self, data):
+        super(ArgoBoardListTableFrame,self).get(data)
+        self.try_action(config.hotkeys['boardlist'].get(data))
+        self.try_action(config.hotkeys['boardlist_table'].get(data))
 
     def go_first(self):
-        self.table_.goto_first()
+        self.table.goto_first()
 
     def go_last(self):
-        self.table_.goto(self.get_last_index())
+        self.table.goto(self.max_index)
 
     def go_line(self):
-        text = self.input_.read(prompt=u"跳转到哪个讨论区？")
-        self.table_.refresh_cursor()
+        text = self.input.read(prompt=u"跳转到哪个讨论区？")
+        self.table.refresh_cursor()
         try:
             g = int(text)
         except:
@@ -109,14 +71,10 @@ class ArgoBoardListTable(ArgoFrame):
                 break
         else:
             return
-        self.table_.goto(i)
-
-    #################
-    # search/sort   #
-    #################
+        self.table.goto(i)
 
     def goto_with_prefix(self,prefix):
-        data = self.table_.data
+        data = self.table.data
         for index,item in enumerate(data):
             if item['boardname'].startswith(prefix):
                 self.write(ac.save)
@@ -125,19 +83,19 @@ class ArgoBoardListTable(ArgoFrame):
                 return
             
     def search(self):
-        text = self.input_.read_with_hook(hook = lambda x : self.goto_with_prefix(x) ,
+        text = self.input.read_with_hook(hook = lambda x : self.goto_with_prefix(x) ,
                                          prompt=u'搜寻讨论区：')
-        self.table_.refresh_cursor()
+        self.table.refresh_cursor()
 
     def sort(self,mode):
         if mode == 1 :
-            self.table_.data.sort(key = lambda x: \
+            self.table.data.sort(key = lambda x: \
                                 manager.online.board_online(x['boardname'] or 0),
                             reverse=True)
         elif mode == 2:
-            self.table_.data.sort(key = lambda x: x['boardname'])
+            self.table.data.sort(key = lambda x: x['boardname'])
         elif mode == 3:
-            self.table_.data.sort(key = lambda x: x['description'])
+            self.table.data.sort(key = lambda x: x['description'])
 
     def change_sort(self):
         self.mode += 1
@@ -146,65 +104,31 @@ class ArgoBoardListTable(ArgoFrame):
         self.data.setup(mode=self.mode)
         self.refresh()
 
-    ###########
-    # Jump    #
-    ###########
-
-    # todo
-
-    ###########
-    # admin   #
-    ###########
-
-    # todo
-
 @mark('boardlist')
-class BoardListFrame(ArgoBoardListTable):
+class ArgoBoardListFrame(ArgoBoardListTableFrame):
     
-    help_page = 'boardlist'
-    format_str = static['boardlist'][4]
-
     def initialize(self,sid=None):
-        self.sid = sid
-        super(BoardListFrame,self).initialize(default=0)
-
-    def format(self,x):
-        return zh_format_d(self.format_str,
-                           online=manager.online.board_online(x['boardname']) or 0,
-                           attr='',
-                           **x)
-
-    def get_data(self):
-        if self.sid is None:
-            self.boards = manager.board.get_all_boards()
+        super(ArgoBoardListFrame, self).initialize()
+        if sid is None:
+            data = manager.board.get_all_books()
         else:
-            self.boards = manager.board.get_by_sid(self.sid)
-        return self.boards
-
-    # def get_data(self, num, limit):
-    #     if limit > 0 :
-    #         return self.boards[num:num+limit]
-    #     else:
-    #         if num is True:
-    #             return self.boards[-limit:]
-    #         else:
-    #             return self.boards[num-limit:num]         
-
-    def get_last_index(self):
-        return len(self.boards)
+            data = manager.board.get_by_sid(sid)
+        self.setup(data)
 
     @property
     def status(self):
-        return dict(sid=self.sid,default=self.table_.hover)
+        return dict(sid=self.sid)
 
     @classmethod
     def describe(cls,s):
         return u'讨论区列表          -- 分类 %s' % s['sid']
   
     def finish(self):
-        r = self.table_.fetch()
+        r = self.table.fetch()
         if r :
             self.suspend('board',boardname=r['boardname'])
 
     def show_help(self):
         self.suspend('help',page='boardlist')
+
+

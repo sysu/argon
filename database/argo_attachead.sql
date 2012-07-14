@@ -1,4 +1,3 @@
-
 DROP TABLE IF EXISTS `argo_attachead`;
 CREATE TABLE IF NOT EXISTS `argo_attachead` (
     `aid` int(11) unsigned NOT NULL auto_increment,

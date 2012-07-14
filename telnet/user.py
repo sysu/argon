@@ -2,7 +2,7 @@
 import sys
 sys.path.append('../')
 
-from chaofeng import Frame,static,EndInterrupt,Timeout
+from chaofeng import Frame,EndInterrupt,Timeout
 from chaofeng.g import mark,is_chchar
 from chaofeng.ui import TextInput,Password,DatePicker
 from chaofeng import ascii as ac
@@ -18,62 +18,6 @@ class UsernameInput(TextInput):
             return c.isalnum() or is_chchar(c.decode('gbk')) or c == '+'
         except:
             return False
-
-@mark('register')
-class RegisterFrame(ArgoBaseFrame):
-
-    background = ac.clear + static['page/register_notice']
-    ix_name = TextInput(prompt= u'请输入帐号名称 (Enter User ID, leave blank to abort): ')
-    ix_passwd = Password(prompt= u'请设定您的密码 (Setup Password): ')
-    timeout = 150
-
-    code_zh = {
-        0:u"成功",
-        1:u"抱歉，您不能使用该id。请再拟。",
-        2:u"抱歉，您的id太短撩。 请再拟。",
-        3:u"抱歉，您的id已经被注册了。 请再拟。",
-        4:u"密码太短了，请大于6位。",
-        }
-
-    def check_userid(self,userid):
-        s = manager.auth.is_unvail_userid(userid)
-        if not s :
-            self.writeln(self.code_zh[s.key])
-            return False
-        return True
-    
-    def check_passwd(self,passwd):
-        s = manager.auth.is_unvail_passwd(passwd)
-        if not s :
-            self.writeln(self.code_zh[s.key])
-            return False
-        return True
-        
-    def register(self,userid,passwd):
-        s = manager.auth.register(userid,passwd,firsthost=self.session.ip)
-        if s :
-            self.write(ac.clear+static['page/register_succ'] % userid)
-            self.pause()
-            self.goto('welcome')
-    
-    def initialize(self):
-        self.write(self.background)
-        i_name = self.load(self.ix_name)
-        i_passwd = self.load(self.ix_passwd)
-        with Timeout(self.timeout,EndInterrupt) :
-            while True :
-                userid = i_name.readln()
-                if self.check_userid(userid) : break
-            while True :
-                passwd = i_passwd.readln()
-                if self.check_passwd(passwd) : break
-        self.register(userid,passwd)
-
-    def get(self,data):
-        if data == ac.k_ctrl_c :
-            self.write(u'\r\n你按下了Ctrl+C ，将会取消本次的活动。\r\n :-) 别害怕，你可以再来一次。')
-            self.pause()
-            self.goto('welcome')
 
 # @mark('user_space')
 # class UserSpaceFrame(BaseMenuFrame):

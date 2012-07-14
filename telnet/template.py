@@ -2,17 +2,18 @@
 import sys
 sys.path.append('../')
 
-from jinja2 import Environment
+from jinja2 import Environment,FileSystemLoader
 from chaofeng import ascii as ac
 from model import manager
-from chaofeng.g import static
+from datetime import datetime
+# from chaofeng.g import static
 
 def ascii_format(source,background=None,font=None):
     return '%s%s%s%s' % (ac.background[background],
                        ac.font[font],source,ac.reset)
 
 def ascii_width(source,width):
-    return '%*s' % (width,source)
+    return ('%*s' % (width, str(source).encode('gbk'))).decode('gbk')
 
 def ascii_wrapper(source,*wrapper):
     return '\x1b[%sm%s\x1b[0m' % (';'.join(wrapper),source)
@@ -30,8 +31,8 @@ def userid2info(userid,attr):
 def bid2boardname(bid):
     return manager.board.id2name(bid)
 
-def ctime(source):
-    pass
+def current_ctime():
+    return datetime.now().ctime()
 
 RENDER_FILTERS = {
     "uid":userid2uid,
@@ -39,7 +40,6 @@ RENDER_FILTERS = {
     "wrapper":ascii_wrapper,
     "art":ascii_format,
     "bid2boardname":bid2boardname,
-    "ctime":ctime,
     "width":ascii_width,
     }
 
@@ -51,22 +51,15 @@ RENDER_GLOBALS = {
     "BBS_HOST_FULLNAME":u"逸仙时空 Yat-Sen Channel argo.sysu.edu.cn",
     "o_o":ac.outlook,
     "delay":ac.delay,
+    "current":current_ctime,
     }
 
-def load_jinjatxt(f):
-    raw = f.read()
-    t = render.from_string(raw).render()
-    return t
-
-def load_jinjatpl(f):
-    raw = f.read()
-    return render.from_string(raw)
-
-render = Environment(newline_sequence="\r\n",
+env = Environment(loader=FileSystemLoader('./static'),
+                  newline_sequence="\r\n",
                   autoescape=False)
 
-render.filters.update(RENDER_FILTERS)
-render.tests.update(RENDER_TESTS)
-render.globals.update(RENDER_GLOBALS)
-render.globals.update(ac.art_code)
+env.filters.update(RENDER_FILTERS)
+env.tests.update(RENDER_TESTS)
+env.globals.update(RENDER_GLOBALS)
+env.globals.update(ac.art_code)
 

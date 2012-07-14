@@ -3,12 +3,14 @@
 import sys
 sys.path.append('../')
 
-from chaofeng import Frame,static
+from chaofeng import Frame
 from chaofeng.g import mark
 from libtelnet import zh_format,zh_format_d,zh_center
 from model import manager
 import chaofeng.ascii as ac
 import config
+
+from template import env
 
 from datetime import datetime
 import functools
@@ -31,15 +33,49 @@ class ArgoBaseFrame(Frame):
         else:
             return zh_format_d(string,**kwargs)
 
-    def render(self,string,*args):
-        '''
-        Write string % dict if has any key/value arguments,
-        Or just print write to remote.
-        '''
-        if args :
-            self.write( zh_format(string,*args) )
-        else:
-            self.write(string)
+    def readline(self, buf_size=20):
+        buf = []
+        while len(buf) < buf_size:
+            ds = self.read_secret()
+            for d in ds :
+                if d == ac.k_backspace:
+                    if buf:
+                        buf.pop()
+                        self.write(ac.backspace)
+                        continue
+                elif d in ac.ks_finish :
+                    return ''.join(buf)
+                elif d == ac.k_ctrl_c:
+                    return False
+                elif d.isalnum():
+                    buf.append(d)
+                    self.write(d)
+        return u''.join(buf)                        
+
+    # def render(self,string,*args):
+    #     '''
+    #     Write string % dict if has any key/value arguments,
+    #     Or just print write to remote.
+    #     '''
+    #     if args :
+    #         self.write( zh_format(string,*args) )
+    #     else:
+    #         self.write(string)
+
+    _jinja_env = env
+    def render_str(self, filename, **kwargs):
+        t = self._jinja_env.get_template(filename)
+        s = t.render(session=self.session,
+                     uwidth=self.format_width,
+                     **kwargs)
+        return s
+
+    def format_width(self,source,width):
+        s = self.s(source)
+        return self.u('%*s' % (width, s))
+
+    def render(self, filename, **kwargs):
+        self.write(self.render_str(filename, **kwargs))
 
     def packup(self):
         '''
@@ -147,27 +183,14 @@ class ArgoAuthFrame(ArgoBaseFrame):
         pass
         # raise NotImplementedError,"What should `%s` do at the end?" % self.__mark__
 
-    top_txt = static['top']
-    def top_bar(self,left=u'',mid=u'逸仙时空 Yat-Sen Channel',right=None):
-        if right is None :
-            try:
-                right = self.session.lastboard
-            except AttributeError:
-                right = ''
-        self.write( zh_format(self.top_txt,
-                              left, zh_center(mid,40), right) )
+    def top_bar(self):
+        self.render('top')
 
-    bottom_txt = ac.move2(24,1) + static['bottom_bar/common'] + ac.reset
     def bottom_bar(self):
-        self.write(zh_format(self.bottom_txt,
-                             datetime.now().ctime(),
-                             manager.online.total_online(),
-                             self.userid))
+        self.render('bottom')
 
-    message_txt = ac.move2(24,1) + static['bottom_bar/common_msg'] + ac.reset
     def message(self,msg):
-        self.write(zh_format(self.message_txt, datetime.now().ctime(),
-                             manager.online.total_online(), self.userid, msg[:20]))
+        self.render('bottom',messages=msg)
 
 class ArgoFrame(ArgoAuthFrame):
 
@@ -218,9 +241,9 @@ class ArgoFrame(ArgoAuthFrame):
                     return False
         return False        
                     
-    def try_action(self,data):
-        if data in self.key_maps :
-            getattr(self,self.key_maps[data])()
+    def try_action(self, action):
+        if action:
+            getattr(self, action)()
 
     def goto_history(self):
         self.suspend('history')
@@ -249,14 +272,12 @@ class ArgoFrame(ArgoAuthFrame):
 @mark('undone')
 class UnDoneFrame(ArgoFrame):
 
-    background = static['undone']
-    
     @property
     def status(self):
         return dict()
 
     def initialize(self,*args,**kwargs):
-        self.write(self.background)
+        self.render('undone')
         self.pause()
         self.goto_back()
 

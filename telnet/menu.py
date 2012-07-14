@@ -4,7 +4,7 @@ import sys
 sys.path.append('../')
 
 from chaofeng import EndInterrupt,Timeout
-from chaofeng.g import mark,static
+from chaofeng.g import mark
 from chaofeng.ui import Animation,ColMenu
 import chaofeng.ascii as ac
 from argo_frame import ArgoFrame
@@ -14,144 +14,114 @@ import config
 
 class MenuFrame(ArgoFrame):
 
-    _anim = Animation(static['active'],start_line=3)
-    _menu = ColMenu()
-    key_maps = ArgoFrame.key_maps.copy()
-    key_maps.update({
-            ac.k_ctrl_c : "goto_back",
-            "h" : "show_help",
-            ac.k_right:"right_or_finish",
-            ac.k_left:"left_or_finish",
-            })
-
-    menu_keys = {
-        ac.k_down : "move_down",
-        ac.k_up : "move_up",
-        # ac.k_left : "move_left",
-        # ac.k_right : "move_right",
-        }
-
-    menu_height = None
-    
-    def initialize(self,name,default=0):
+    def setup(self, menu_data, menu_height, menu_start_line,
+                   background, hover, anim_data):
         super(MenuFrame,self).initialize()
-        self.menu_ = self.load(self._menu)
-        self.anim_ = self.load(self._anim)
-        # setup
-        self.name = name
-        self.menu_.setup(hover=default,
-                         data=self.get_menu(),
-                         height=self.menu_height,
-                         background=self.get_menu_background())
-        self.display()
+        self.menu = self.load(ColMenu)
+        self.menu.setup(menu_data, menu_height, ac.move2(menu_start_line,0)+background, hover)
+        self.anim = self.load(Animation, self.get_anim_data(), start_line=2)
+        self.anim.setup()
+        self.restore()
 
     def restore(self):
-        self.display()
-
-    @property
-    def status(self):
-        return dict(name=self.name,
-                    default=self.menu_.hover)
-
-    def display(self):
         self.cls()
         self.top_bar()
-        self.anim_.lanuch()
         self.bottom_bar()
-        self.write(ac.move2(11,0))
-        self.menu_.display()
+        self.anim.launch()
+        self.menu.restore()
 
-    def get_menu_background(self):
-        return static['menu/%s' % self.name]
-
-    def get_menu(self):
-        return self._menu.tidy_data(config.menu[self.name])
+    def get_anim_data(self):
+        return [("1",2),("2",3)]
 
     def get(self,data):
         if data in ac.ks_finish:
             self.finish()
-        if data in self.menu_keys:
-            getattr(self.menu_, self.menu_keys[data])()
-        self.menu_.send_shortcuts(data)
-        self.try_action(data)
+        self.menu.send_shortcuts(data)
+        self.menu.try_action(config.hotkeys['menu_menu'].get(data))
+        self.try_action(config.hotkeys['menu'].get(data))
+        self.try_action(config.hotkeys['g'].get(data))
 
     def finish(self):
-        self.suspend(self.menu_.fetch())
-
-    def show_help(self):
-        self.suspend('help',page='menu_'+self.name)
+        raise NotImplementedError
 
     def right_or_finish(self):
-        if not self.menu_.move_right():
+        if not self.menu.move_right():
             self.finish()
 
     def left_or_finish(self):
-        if not self.menu_.move_left():
+        if not self.menu.move_left():
             self.goto_back()
 
 @mark('main')
 class MainMenuFrame(MenuFrame):
 
-    key_maps = MenuFrame.key_maps.copy()
-
-    def initialize(self,default=0):
-        menuname = 'main_guest' if self.userid == 'guest' else 'main'
-        super(MainMenuFrame,self).initialize(name=menuname, default=default)
-        # self.message(u'Test OK')
+    def initialize(self):
+        super(MainMenuFrame, self).initialize()
+        menu_data = self.get_tidy_data()
+        background = self.render_str('menu_main')
+        anim_data = self.get_anim_data()
+        self.setup(menu_data, None, 11, background, 0, anim_data)
 
     @property
     def status(self):
-        return dict(default=self.menu_.hover)
+        return dict(default=self.menu.hover)
 
     @classmethod
     def describe(cls,status):
         return u'主菜单'
 
     def show_help(self):
-        self.suspend('help',page='index')
+        self.suspend('help',page='menu_index')
+
+    # @simple_cache('main_menu_data')
+    def get_tidy_data(self):
+        return ColMenu.tidy_data(config.menu['main'])
+
+    def finish(self):
+        self.suspend(self.menu.fetch())
 
 @mark('sections')
 class SectionMenuFrame(MenuFrame):
 
-    key_maps = MenuFrame.key_maps.copy()
-    wrapper = staticmethod(lambda x : ( zh_format('%d) %8s -- %s',
-                                                  x[0],
-                                                  x[1]['sectionname'],
-                                                  x[1]['description']),
-                                        ('boardlist',dict(sid=x[1]['sid'])),
-                                        str(x[0])))
-    
-    def initialize(self,default=0):
-        super(SectionMenuFrame,self).initialize('sections',default)
+    def initialize(self):
+        super(SectionMenuFrame, self).initialize()
+        menu_data, menu_height = self.get_tidy_data()
+        background = self.render_str('menu_section')
+        anim_data = self.get_anim_data()
+        self.setup(menu_data, menu_height, 11, background, 0, anim_data)
 
     @property
     def status(self):
-        return dict(default=self.menu_.hover)
+        return dict(default=self.menu.hover)
 
     @classmethod
     def describe(cls,status):
         return u'讨论区分类选单'
 
+    def show_help(self):
+        self.suspend('help',page='menu_section')
+
     @classmethod
-    def menu_wrapper(cls,src):
-        cls.sections = src
-        sections_d = map(cls.wrapper,enumerate(src))
+    def wrapper_li(self, x):
+        return (zh_format('%d) %8s -- %s',
+                          x[0],
+                          x[1]['sectionname'],
+                          x[1]['description']),
+                ('boardlist',dict(sid=x[1]['sid'])),
+                str(x[0]))
+
+    @classmethod
+    def get_tidy_data(cls):
+        sections = manager.section.get_all_section()
+        menu_height = len(sections)
+        sections_d = map(cls.wrapper_li, enumerate(sections))
         if sections_d :
             sections_d[0] += ((11,7),)
-        cls.section_menu = cls._menu.tidy_data(tuple(sections_d) + config.menu['section'])
-        return cls.section_menu
-
-    sections = None
-    @classmethod
-    def get_menu(cls): 
-        sections = manager.section.get_all_section()
-        if sections != cls.sections :
-            cls.menu_height = len(sections)
-            return cls.menu_wrapper(sections)
-        return cls.section_menu
+        li = ColMenu.tidy_data(tuple(sections_d) + config.menu['section'])
+        return (li, menu_height)
 
     def finish(self):
-        args = self.menu_.fetch()
+        args = self.menu.fetch()
         if isinstance(args,str):
             self.suspend(args)
         else:

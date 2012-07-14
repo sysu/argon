@@ -1,0 +1,1 @@
+{{ ac.move2(24,1) }}[{{ current() }}] [{{ manager.online.total_online()|width(4) }}/在线]  {{ messages|default('欢迎来到逸仙时空bbs') }} 帐号 [{{ session.userid|width(10) }}]

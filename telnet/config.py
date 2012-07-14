@@ -1,7 +1,7 @@
 # -*- coding: utf-8 -*-
 from chaofeng import ascii as ac
-from chaofeng.g import static
-from template import load_jinjatxt,load_jinjatpl
+# from chaofeng.g import static
+# from template import load_jinjatxt,load_jinjatpl
 
 BBS_HOST_FULLNAME = u"逸仙时空 Yat-Sen Channel"
 BBS_HOST_DOMAIN = u"argo.sysu.edu.cn"
@@ -17,16 +17,17 @@ class Config(dict):
 chaofeng = Config(
     static={
         "loader":{
-            '.jtxt':load_jinjatxt,
-            '.jtpl':load_jinjatpl,
+            # '.jtxt':load_jinjatxt,
+            # '.jtpl':load_jinjatpl,
             }
         }
     )
-static.config(**chaofeng.static)
+# static.config(**chaofeng.static)
 
 for key in ['board','help','menu_sections','menu_board','view',
              'boardlist','index','menu_main','testjump','edit'] :
-    static.load('help/%s' % key)
+    # static.load('help/%s' % key)
+    pass
 
 root = 'welcome'
 
@@ -101,4 +102,65 @@ TABLE_KEY_MAPS = {
     ac.k_right:"finish",
     }
 
-# userid_char = 
+# userid_char =
+
+max_try_login_time = 50
+max_try_register_time = 150
+max_stack_deep = 5
+max_history_deep = 20
+
+str = {
+    "PROMPT_INPUT_PASSWD":u"请输入密码：",
+    "PROMPT_INPUT_USERID":u"请输入帐号：",
+    "PROMPT_GUEST_UNABLE_TO_USER":u"用户名不可用",
+    "PROMPT_AUTH_FAILED":u"认证失败，帐号或密码错误。",
+    "PROMPT_INPUT_USERID_REG":u'请输入帐号名称 (Enter User ID, leave blank to abort): ',
+    "PROMPT_INPUT_PASSWD_REG":u'请设定您的密码 (Setup Password): ',
+    "PROMPT_REG_SUCC":u"成功",
+    "PROMPT_REG_CANNOT_USE":u"抱歉，您不能使用该id。请再拟。",
+    "PROMPT_REG_USERID_TOO_SHORT":u"抱歉，您的id太短撩。 请再拟。",
+    "PROMPT_REG_REGISTERED":u"抱歉，您的id已经被注册了。 请再拟。",
+    "PROMPT_REG_PASSWD_TOO_SHORT":u"密码太短了，请大于6位。",
+    "PROMPT_CANCEL":u'\r\n你按下了Ctrl+C ，将会取消本次的活动。\r\n :-) 别害怕，你可以再来一次。',
+    "BOARDLIST_QUICK_HELP":u"[0m[I 主选单[[1;32m←[0m,[1;32mq[0m] 阅读[[1;32m→[0m,[1;32mRtn[0m] 选择[[1;32m↑[0m,[1;32m↓[0m]  求助[[1;32mh][m",
+    "BOARDLIST_THEAD":u"[0;1;44m[I 编号  讨论区名称           中 文 叙 述         在线  全部  属性  版主          [m"
+   }
+
+hotkeys = {
+    "g":{
+        ac.k_ctrl_c:"goto_back",
+        "h":"show_help",
+        },
+    "menu":{
+        ac.k_right:"right_or_finish",
+        ac.k_left:"left_or_finish",
+        },
+    "menu_menu":{
+        ac.k_down:"move_down",
+        ac.k_up:"move_up",
+        },
+    "table":{
+        },
+    "table_table":{
+        ac.k_up:"move_up",
+        ac.k_down:"move_down",
+        ac.k_page_up:"page_up",
+        ac.k_page_down:"page_down",
+        },
+    "boardlist":{
+        '/':'search',         ac.k_right:'finish',
+        'q':'goto_back',      'e':'goto_back',        ac.k_left:'goto_back',
+        's':'change_sort',
+        # admin
+        ac.k_ctrl_a:'watch_board',
+        'X':'set_readonly',
+        ac.k_ctrl_e:'change_board_attr',
+        },
+    "boardlist_table":{
+        "k":"move_uo",        "j":"move_down",
+        'P':'page_up',          ac.k_ctrl_b:'page_up',        'b':'page_up',
+        'N':'page_down',        ac.k_ctrl_f:'page_down',      ' ':'page_down',
+        ac.k_home:'go_first',   ac.k_end:"go_last",           '$':'go_last',
+        '#':'go_line',
+        },
+    }
