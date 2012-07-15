@@ -57,7 +57,7 @@ class Model:
     __metaclass__ = MetaModel
 
     def __init__(self):
-        pass
+        self.dict = {}
     
     def bind(self,db=None,ch=None):
         if db : self.db = db
@@ -98,7 +98,7 @@ class Model:
         return self.db.get("SELECT %s FROM %s WHERE %s = %%s" %\
                                (what, tablename, key),
                            value)
-        
+
 class Section(Model):
 
     __ = 'argo_sectionhead'

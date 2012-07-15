@@ -1,0 +1,17 @@
+{% extends 'm_base.html' %}
+{% block content %}
+<section id="fav">
+  <ul class="section">
+    {% for brd in boards %}
+    <li class="fav-row">
+      <div {% if brd.unread %} class="unread" {% endif %} onclick="window.location = '/m/{{ brd.filename }}';">
+	{{ brd.title }}<span class="board-ename">[{{ brd.filename }}]</span>
+	<div class="lastpost">
+	  <small>鏇存柊:{{  brd.lastpost }}</small>
+	</div>
+      </div>
+    </li>
+    {% endfor %}
+  </ul>
+</section>
+{% endblock %}

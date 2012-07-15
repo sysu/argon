@@ -1,0 +1,21 @@
+{% extends 'm_base.html' %}
+{% block content %}
+<section id="login">
+  <form method="POST" id="login_form" action="">
+    <div class="login_row">
+      <label for="id_username">帐号：</label> <input class="login_text" type="text" name="username" id="id_username" />
+    </div>
+    <div class="login_row">
+      <label for="id_password">密码：</label> <input class="login_text" type="password" name="password" id="id_password" />
+    </div>
+    <div class="login_row">
+      <input class="button login_button" type="submit" value="登陆" />
+      {% if ref %}
+      <input type="hidden" name="ref" value="{{ref}}" />
+      {% end %}
+      <!-- <input type="checkbox" name="auto" value="true" /> -->
+      <!-- <span>记住我</span> -->
+    </div>
+  </form>
+</section>
+{% end %}

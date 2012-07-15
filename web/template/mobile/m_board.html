@@ -1,0 +1,30 @@
+{% extends 'm_base.html' %}
+{% block script %}
+<script type="text/javascript">
+  page_init_code = 'init_brds()';
+</script>
+{% end %}
+{% block content %}
+<section id="secs">
+  <div id="section-container">
+    <ul>
+      {% for sec in sections %}
+      <li class="section" id="sec_{{ sec.sid }}">
+	<div class="sec_title sec_status_close">
+	  {{ sec.sid }}区 {{ sec.sectionname}}
+	  <div class="triangle"> </div>
+	</div>
+	<div class="boards_hidden">
+	  {% for brd in sec.boards %}
+	  <div onclick="window.location = '/m/{{ brd.boardname }}/';">
+	    {{ brd.description }}<span class="board-ename">[{{ brd.boardname }}]</span>
+        <span class="lastpost">更新:{{  brd.lastpost }}</span> 
+	  </div>
+	  {% end %}
+	</div>
+      </li>
+      {% end %}
+    </ul>
+  </div>
+</section>
+{% end %}

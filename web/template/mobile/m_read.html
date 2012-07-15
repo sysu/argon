@@ -1,0 +1,23 @@
+{% extends 'm_base.html' %}
+{% block script %}
+<script type="text/javascript">
+  var m_board = '{{board.filename}}';
+  var m_files = [{% for file in files %}'{{ file.filename }}', {% endfor %}];
+  page_init_code = 'init_subject_read();';
+</script>
+{% endblock %}
+{% block content %}
+<session id="content">
+  <div id="new-post">
+    <span id="post-nav-board" onclick="javascript:window.location='/m/{{board.filename}}';">
+      正在浏览 {{ board.filename }} 版
+    </span>
+    <a id="write-post" href="/m/{{board.filename}}/post/">写新文章</a>
+    <div class="clear"></div>
+    <div id="sec-popup"></div>
+  </div>
+  <div id="content-div">
+  </div>
+  <div id="subject-more" onclick="javascript:subject_more();"></div>
+</session>
+{% endblock %}
