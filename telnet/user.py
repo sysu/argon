@@ -238,11 +238,16 @@ class QueryUserFrame(ArgoTextBoxFrame):
         super(QueryUserFrame,self).initialize()
         self.setup()
         self.cls()
-        self.set_text(self.query_user(userid))
+        self.set_text(self.query_user_normal(userid))
 
     def query_user_normal(self, userid):
         user = manager.userinfo.get_user(userid)
-        return self.render_str('user-t',**user)
+        if user is None :
+            self.write(u'没有该用户！')
+            self.pause()
+            self.goto_back()
+        else:
+            return self.render_str('user-t',**user)
 
     def finish(self,a):
         self.goto_back()
@@ -252,3 +257,12 @@ class QueryUserSelfFrame(QueryUserFrame):
 
     def initialize(self):
         super(QueryUserSelfFrame,self).initialize(self.userid)
+
+@mark('query_user_iter')
+class QueryUserIterFrame(QueryUserFrame):
+
+    def initialize(self):
+        self.write(ac.clear + u'要查询谁？')
+        userid = self.readline(acceptable=ac.is_alnum)
+        print repr(userid)
+        super(QueryUserIterFrame,self).initialize(userid)

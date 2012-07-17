@@ -1,0 +1,1 @@
+{{ ac.move2(24,1) }}{{ o_o(bg_blue,yellow,bold) }}[{{ ac.cyan }}{{ current() }}{{ ac.yellow }}] [{{ ac.cyan }}{{ manager.online.total_online()|width(4) }}{{ ac.yellow }}/在线]  帐号 [{{ ac.cyan }}{{ session.user.userid|width(10) }}{{ ac.yellow }}] {{ ac.move2(24,18) }}{{ ac.white }}{{ msg }}{{ ac.reset }}

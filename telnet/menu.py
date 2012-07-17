@@ -12,6 +12,30 @@ from model import manager
 from libtelnet import zh_format
 import config
 
+def chunks(data, height):
+    for i in xrange(0, len(data), height+1):
+        yield ('\r\n'.join(data[i:i+height]),int(data[height]))
+
+def tidy_anim(text, height):
+    l = text.split('\r\n')
+    return list(chunks(l, height))
+
+@mark('movie')
+class PlayMovie(ArgoFrame):
+
+    def initialize(self):
+        anim = tidy_anim(self.render_str('movie'), 9)
+        self.setup(anim)
+        self.start()
+    
+    def setup(self, data):
+        self.cls()
+        self.anim = self.load(Animation, data, start_line=5)
+        self.anim.setup()
+
+    def start(self):
+        self.anim.launch()
+
 class MenuFrame(ArgoFrame):
 
     def setup(self, menu_data, menu_height, menu_start_line,
@@ -19,7 +43,7 @@ class MenuFrame(ArgoFrame):
         super(MenuFrame,self).initialize()
         self.menu = self.load(ColMenu)
         self.menu.setup(menu_data, menu_height, ac.move2(menu_start_line,0)+background, hover)
-        self.anim = self.load(Animation, self.get_anim_data(), start_line=2)
+        self.anim = self.load(Animation, self.get_anim_data(), start_line=3)
         self.anim.setup()
         self.restore()
 
@@ -31,7 +55,10 @@ class MenuFrame(ArgoFrame):
         self.menu.restore()
 
     def get_anim_data(self):
-        return [("1",2),("2",3)]
+        # txt = self.render_str('active').split('\r\n')
+        # anim = list(chunks(txt,7))
+        # return anim
+        return tidy_anim(self.render_str('active'), 7)
 
     def get(self,data):
         if data in ac.ks_finish:
@@ -60,7 +87,7 @@ class MainMenuFrame(MenuFrame):
         menu_data = self.get_tidy_data()
         background = self.render_str('menu_main')
         anim_data = self.get_anim_data()
-        self.setup(menu_data, 1, 11, background, 0, anim_data)
+        self.setup(menu_data, False, 11, background, 0, anim_data)
 
     @property
     def status(self):

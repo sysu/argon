@@ -39,11 +39,12 @@ menu = {
     "main":(
         ( u'(E)Group       分类讨论区','sections','e',(12,5)),
         # ( u'(D)igest       本站精华区',"undone",'d' ),
-        # ( u'(F)avourite    个人收藏夹',"undone",'f' ),
+        ( u'(F)avourite    个人收藏夹',"favourite",'f' ),
         # ( u'(R)ecommend    推荐版面区',"undone",'r' ),
         # ( u'(M)ail         处理信笺区',"undone",'m' ),
         # ( u'(T)alk         谈天说地区',"undone",'t' ),
         ( u'(I)nfoEdit     个人工具箱',"user_space",'i' ),
+        ( u'(M)oive        电影放映室',"movie",'m' ),
         # ( u'(S)ervice      特别服务区',"undone",'s' ),
         # ( u'(C)onfig       系统信息区',"undone",'c' ),
         # ( u'(P)ersonal     个人文集区',"undone",'p' ),
@@ -134,6 +135,8 @@ str = {
     "BOARD_THEAD_GMODE":u"[0;1;44m 编号  未读 刊 登 者       日  期      标  题                      [文摘区]           [m",
     "BOARD_THEAD_MMODE":u"[0;1;44m 编号  未读 刊 登 者       日  期      标  题                      [美文区]           [m",
     "BOARD_THEAD_TOPIC":u"[0;1;44m 编号  未读 刊 登 者       日  期      标  题                      [同主题折叠]       [m",
+    "BOARD_THEAD_ONETOPIC":u"[0;1;44m 编号  未读 刊 登 者       日  期      标  题                      [主题阅读]         [m",
+    "BOARD_THEAD_AUTHOR":u"[0;1;44m 编号  未读 刊 登 者       日  期      标  题                      [同作者阅读]       [m",
    }
 
 hotkeys = {
@@ -160,30 +163,40 @@ hotkeys = {
     "boardlist":{
         '/':'search',         ac.k_right:'finish',
         'q':'goto_back',      'e':'goto_back',        ac.k_left:'goto_back',
-        's':'change_sort',
+        's':'change_sort',           '#':'go_line',
+        ac.k_end:"go_last",           '$':'go_last',
+
+        "a":"add_to_fav",  "d":"remove_fav",
         # admin
         ac.k_ctrl_a:'watch_board',
         'X':'set_readonly',
         ac.k_ctrl_e:'change_board_attr',
+        # jump
+        },
+    "boardlist_jump":{
+        "u":"query_user_iter",
         },
     "boardlist_table":{
-        "k":"move_uo",        "j":"move_down",
+        "k":"move_up",        "j":"move_down",
         'P':'page_up',          ac.k_ctrl_b:'page_up',        'b':'page_up',
         'N':'page_down',        ac.k_ctrl_f:'page_down',      ' ':'page_down',
-        ac.k_home:'go_first',   ac.k_end:"go_last",           '$':'go_last',
-        '#':'go_line',
+        ac.k_home:'goto_first',   
         },
     "board":{
-        ac.k_end:"go_last", "$":"go_last",
         "#":"go_line",
         ac.k_right:"finish", ac.k_left:"goto_back",
         ac.k_ctrl_p:"new_post",ac.k_ctrl_r:"reply_post","E":"edit_post",
         ac.k_ctrl_t:"change_mode",
         'g':"set_g_mark",        'm':"set_m_mark",
         ac.k_ctrl_l:"restore",
+        "=":"goto_tid", "/":"goto_tid", ac.k_ctrl_s :"goto_tid", "p":"goto_tid",
+        ac.k_ctrl_u:"goto_author",
+        "c":"clear_readmark", "K":"set_read", ac.k_ctrl_a:"query_author",
+        # ac.k_ctrl_t:"edit_title"
         },
     "board_table":{
         "k":"move_up", "j":"move_down", "P":"page_up", "N":"page_down",
+        ac.k_end:"go_last", "$":"go_last",
         ac.k_home:"go_first", 
         },
     "edit_2ndcmd_start": ac.k_ctrl_u,
@@ -228,7 +241,7 @@ hotkeys = {
         "Q":"goto_back",
         ac.k_left:"goto_back",
         ac.k_ctrl_u:"go_link",
-        "a":"jump_from_screen",
+        "h":"jump_from_screen",
         ac.k_ctrl_a:"jump_man",
         ac.k_ctrl_r:"jump_history",
         },
@@ -247,6 +260,9 @@ hotkeys = {
         ac.k_end:"go_last",
         "$":"go_last",
         },
+    "view-board":{
+        "a":"add_to_fav",
+        }
     }
 
 options = {
@@ -259,3 +275,7 @@ options = {
         "about":u"个人说明档",
         }
     }
+
+data_pool = {
+    }
+

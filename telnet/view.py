@@ -113,9 +113,11 @@ class ArgoTextBoxFrame(ArgoFrame):
         text,self.lines = self.textbox.getscreen_with_raw()
         self.select_and_jump(text)
 
-
     def show_help(self):
         self.suspend('help',page='view')
+
+    def message(self,msg):
+        self.bottom_bar(msg)
 
     # def jump_man(self):
     #     self.bottom_bar(u'前往：')
@@ -160,6 +162,9 @@ class ArgoReadPostFrame(ArgoTextBoxFrame):
         if pid is not None:
             self.boardname,self.pid = boardname,pid
             self.post = self.get_post(boardname,pid)
+            self.session['lastboard'] = boardname
+            self.session['lastpid'] = pid
+            self.session['lasttid'] = self.post.tid
             self.text = self.wrapper_post(self.post)
             self.cls()
             manager.readmark.set_read(self.userid, self.boardname, self.pid)

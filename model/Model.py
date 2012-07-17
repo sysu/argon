@@ -67,10 +67,10 @@ class Model:
         pass
 
     def table_select_all(self,tablename):
-        return self.db.query("SELECT * FROM %s" % tablename)
+        return self.db.query("SELECT * FROM `%s`" % tablename)
 
     def table_get_by_key(self,tablename,key,value):
-        return self.db.get("SELECT * FROM %s WHERE %s = %%s" %\
+        return self.db.get("SELECT * FROM `%s` WHERE %s = %%s" %\
                                (tablename,key),
                            value)
 
@@ -78,24 +78,24 @@ class Model:
         names,values = zip(*attr.items())
         cols = ','.join(map(str,names))
         vals = ','.join(('%s',) * len(values))
-        return self.db.execute("INSERT INTO %s (%s) VALUES (%s)" % \
+        return self.db.execute("INSERT INTO `%s` (%s) VALUES (%s)" % \
                                    (tablename, cols,vals),
                                *values)
     
     def table_update_by_key(self,tablename,key,value,attr):
         names,values = zip(*attr.items())
         set_sql = ','.join( map(lambda x: "%s = %%s" % x,names))
-        return self.db.execute("UPDATE %s SET %s WHERE %s = %%s" % \
+        return self.db.execute("UPDATE `%s` SET %s WHERE %s = %%s" % \
                                    (tablename, set_sql, key),
                                *(values + (value,)))
 
     def table_delete_by_key(self,tablename,key,value):
-        return self.db.execute("DELETE FROM %s WHERE %s = %%s" % \
+        return self.db.execute("DELETE FROM `%s` WHERE %s = %%s" % \
                                    (tablename, key),
                                value)
 
     def table_select_by_key(self,tablename,what,key,value):
-        return self.db.get("SELECT %s FROM %s WHERE %s = %%s" %\
+        return self.db.get("SELECT %s FROM `%s` WHERE %s = %%s" %\
                                (what, tablename, key),
                            value)
 
@@ -121,6 +121,10 @@ class Section(Model):
     def name2id(self,sectionname):
         d = self.table_select_by_key(self.__, 'sid', 'sectionname', sectionname)
         return d and d['sid']
+
+    def id2name(self,sid):
+        n = self.table_select_by_key(self.__, 'sectionname', 'sid', sid)
+        return n and n['sectionname']
         
 class Board(Model):
 
@@ -128,7 +132,7 @@ class Board(Model):
     _r = 'argo_recommend'
     
     def get_by_sid(self,sid):
-        return self.db.query("SELECT * FROM %s WHERE sid = %%s" % self.__,
+        return self.db.query("SELECT * FROM `%s` WHERE sid = %%s" % self.__,
                              sid)
 
     def get_all_boards(self):
@@ -139,7 +143,7 @@ class Board(Model):
 
     def get_recommend(self):
         return self.db.query(
-            "SELECT %s.* FROM %s INNER JOIN %s ON "
+            "SELECT %s.* FROM `%s` INNER JOIN %s ON "
             "%s.bid = %s.bid ORDER BY %s.bid" % \
                 (self.__, self.__, self._r, self.__, self._r, self.__))
 
@@ -188,10 +192,6 @@ class Post(Model):
             board_template = Template(f.read())
             self.db.execute(board_template.safe_substitute(boardname=boardname))
 
-    def get_topic(self,boardname,tid):
-        sql = "SELECT * FROM %s WHERE tid = %%s" % self.__(boardname)
-        return self.db.query(sql,tid)
-
     # def _get_posts_advan(self,boardname,order='pid',mark=None,sel='*'):
     #     cond = ''
     #     if mark:
@@ -202,11 +202,11 @@ class Post(Model):
     #         if buf:
     #             cond = 'WHERE ' + ' AND '.join(buf)
     #     # if offset is None :
-    #     #     sql = "SELECT * FROM %s ORDER BY %s %s %s LIMIT %%S" %\
+    #     #     sql = "SELECT * FROM `%s` ORDER BY %s %s %s LIMIT %%S" %\
     #     #         (self.__(boardname),order,cond,'DESC' if limit < 0 else '')
     #     #     return self.db.query(sql,abs(limit))
     #     # else:
-    #     sql = "SELECT %s FROM %s WHERE %s ORDER BY %s LIMIT %%s,%%s" % \
+    #     sql = "SELECT %s FROM `%s` WHERE %s ORDER BY %s LIMIT %%s,%%s" % \
     #         (sel,self.__(boardname),cond,order)
     #     return sql
 
@@ -222,13 +222,13 @@ class Post(Model):
             cond = 'WHERE %s' % ' AND '.join(cond)
         else : cond = ''
         if limit<0:
-            sql = "SELECT %s FROM %s %s ORDER BY %s DESC LIMIT %%s"%\
+            sql = "SELECT %s FROM `%s` %s ORDER BY %s DESC LIMIT %%s"%\
                 (sel,self.__(boardname),cond,order)
             res = self.db.query(sql, -limit)
             res.reverse()
             return res
         else:
-            sql = "SELECT %s FROM %s %s ORDER BY %s LIMIT %%s"%\
+            sql = "SELECT %s FROM `%s` %s ORDER BY %s LIMIT %%s"%\
                 (sel,self.__(boardname),cond,order)
             return self.db.query(sql, limit)
 
@@ -248,8 +248,14 @@ class Post(Model):
     def get_posts_topic(self,boardname,num,limit):
         return self._query_posts_filter(boardname,num,limit,cond=['replyid=0'])
 
+    def get_posts_onetopic(self,tid,boardname,num,limit):
+        return self._query_posts_filter(boardname,num,limit,cond=['tid=%s'%tid])
+
+    def get_posts_owner(self,author,boardname,num,limit):
+        return self._query_posts_filter(boardname,num,limit,cond=['owner=%s'%author])
+
     def get_last_pid(self,boardname):
-        res = self.db.get("SELECT pid FROM %s ORDER BY pid DESC LIMIT 1" % \
+        res = self.db.get("SELECT pid FROM `%s` ORDER BY pid DESC LIMIT 1" % \
                               self.__(boardname))
         return res and res['pid']
 
@@ -257,12 +263,12 @@ class Post(Model):
         return self.table_get_by_key(self.__(boardname), 'pid', pid)
 
     def prev_post_pid(self,boardname,pid):
-        res = self.db.get("SELECT pid FROM %s WHERE pid < %s ORDER BY pid DESC LIMIT 1" %\
+        res = self.db.get("SELECT pid FROM `%s` WHERE pid < %s ORDER BY pid DESC LIMIT 1" %\
                               (self.__(boardname),pid))
         return res and res['pid']
 
     def next_post_pid(self,boardname,pid):
-        res = self.db.get("SELECT pid FROM %s WHERE pid > %s ORDER BY pid LIMIT 1" %\
+        res = self.db.get("SELECT pid FROM `%s` WHERE pid > %s ORDER BY pid LIMIT 1" %\
                               (self.__(boardname),pid))
         return res and res['pid']
 
@@ -279,7 +285,7 @@ class Post(Model):
         pass
 
     def get_board_total(self,boardname):
-        res = self.db.get("SELECT count(*) as total FROM %s%s" % (self._prefix,boardname))
+        res = self.db.get("SELECT count(*) as total FROM `%s`%s" % (self._prefix,boardname))
         r = res.get('total')
         return (r and int(r)) or 0
 
@@ -324,7 +330,7 @@ class UserInfo(Model):
         return d and d['uid']
 
     def select_attr(self,userid,sql_what):
-        return self.db.get("SELECT %s FROM %s WHERE userid = %%s" % (sql_what, self.__),
+        return self.db.get("SELECT %s FROM `%s` WHERE userid = %%s" % (sql_what, self.__),
                            userid)
 
 class Online(Model):
@@ -510,7 +516,7 @@ class Mail(Model):
     # def get_mail_to_uid(self,uid,
 
     def get_mail_to_uid(self,uid,offset,limit):
-        sql = "SELECT * FROM %s WHERE touserid = %%s ORDER BY mid LIMIT %%s,%%s" \
+        sql = "SELECT * FROM `%s` WHERE touserid = %%s ORDER BY mid LIMIT %%s,%%s" \
             % self.__(uid)
         try:
             return self.db.query(sql,uid,offset,limit)
@@ -551,15 +557,15 @@ class Disgest(Model):
             self.db.execute(board_template.safe_substitute(partition=partition))
 
     def get_all_books(self,partname):
-        sql = "SELECT * FROM %s" % self.__(partname)
+        sql = "SELECT * FROM `%s`" % self.__(partname)
         return self.db.query(sql)
 
     def get_children(self,partname,pid):
-        sql = "SELECT * FROM %s WHERE pid = %%s" % self.__(partname)
+        sql = "SELECT * FROM `%s` WHERE pid = %%s" % self.__(partname)
         return self.db.query(sql,pid)
 
     def get_node(self,partname,id):
-        sql = "SELECT * FROM %s WHERE id = %%s" % self.__(partname)
+        sql = "SELECT * FROM `%s` WHERE id = %%s" % self.__(partname)
         return self.db.get(sql,id)
     
 class ReadMark(Model):
@@ -646,7 +652,7 @@ class Permissions(Model):
         return True
 
     def has_edit_perm(self,userid,boardname,pid):
-        return False
+        return True
 
 class Action(Model):
 
@@ -696,11 +702,10 @@ class Action(Model):
             )
         self.board.update_attr_plus1(bid,'total')
 
-    def update_post(self,boardname,userid,pid,title,content):
+    def update_post(self,boardname,userid,pid,content):
         self.post.update_post(boardname,
                               pid,
                               owner = userid,
-                              title=title,
                               content=content)
 
     def get_rebox_mail(self,userid,offset,limit=20):
@@ -722,7 +727,27 @@ class Action(Model):
 
     def update_title(self,userid,boardname,pid,new_title):
         return self.post.update_title(boardname,pid,new_title)
-                   
+
+class Favourite(Model):
+
+    keyf = "argo:favourite:%s"
+
+    max_size = 50
+
+    def add(self, userid, bid):
+        key = self.keyf % userid
+        self.ch.lrem(key, bid, 0)
+        self.ch.lpush(key, bid)
+        self.ch.ltrim(key, 0, self.max_size)
+                      
+    def remove(self, userid, bid):
+        key = self.keyf % userid
+        self.ch.lrem(key, bid, 0)
+
+    def get_all(self, userid):
+        key = self.keyf % userid
+        return self.ch.lrange(key,0,-1)
+
 class Manager:
 
     @classmethod

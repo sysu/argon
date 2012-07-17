@@ -41,8 +41,16 @@ def flag2state(num):
         return 'm'
     return ' '
 
+def three_part(left,mid,right,width):
+    lm = len(mid)
+    l = (width - lm) // 2
+    return '%*s%*s%*s' % (-l,left,lm,mid,l,right)
+
 def current_ctime():
     return datetime.now().ctime()
+
+def rightalign(source):
+    return ac.movex(-len(source)) + source
 
 RENDER_FILTERS = {
     "uid":userid2uid,
@@ -52,6 +60,7 @@ RENDER_FILTERS = {
     "bid2boardname":bid2boardname,
     "width":ascii_width,
     "post_mark":flag2state,
+    "right":rightalign
     }
 
 RENDER_TESTS = {}
@@ -63,6 +72,8 @@ RENDER_GLOBALS = {
     "o_o":ac.outlook,
     "delay":ac.delay,
     "current":current_ctime,
+    "three_part":three_part,
+    "wrapper":ascii_wrapper,
     }
 
 env = Environment(loader=FileSystemLoader('./static'),

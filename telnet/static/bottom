@@ -1,1 +1,1 @@
-{{ ac.move2(24,1) }}[{{ current() }}] [{{ manager.online.total_online()|width(4) }}/在线]  {{ messages|default('欢迎来到逸仙时空bbs') }} 帐号 [{{ session.userid|width(10) }}]
+{{ ac.move2(24,1) }}{{ o_o(bg_blue,yellow,bold) }}[{{ ac.cyan }}{{ current() }}{{ ac.yellow }}] [{{ ac.cyan }}{{ manager.online.total_online()|width(4) }}{{ ac.yellow }}/在线]  {{ ac.white }}欢迎来到逸仙时空bbs {{ ac.yellow }}帐号 [{{ ac.cyan }}{{ session.user.userid|width(10) }}{{ ac.yellow }}] {{ ac.reset }}

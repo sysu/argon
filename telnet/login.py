@@ -21,7 +21,6 @@ class WelcomeFrame(ArgoBaseFrame):
         self.render('welcome')
         self.try_login_iter()
 
-
     def try_login_iter(self):
         passwd_reader = self.load(Password,prompt=config.str['PROMPT_INPUT_PASSWD'])
         with Timeout(config.max_try_login_time , EndInterrupt):

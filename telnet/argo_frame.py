@@ -21,6 +21,14 @@ class ArgoBaseFrame(Frame):
     全部类的基类。
     '''
 
+    _jinja_env = env
+    def render_str(self, filename, **kwargs):
+        t = self._jinja_env.get_template(filename)
+        s = t.render(session=self.session,
+                     uwidth=self.format_width,
+                     **kwargs)
+        return s
+
     def cls(self):
         '''
         Clear current screen.
@@ -61,15 +69,6 @@ class ArgoBaseFrame(Frame):
     #         self.write( zh_format(string,*args) )
     #     else:
     #         self.write(string)
-
-    _jinja_env = env
-    def render_str(self, filename, **kwargs):
-        t = self._jinja_env.get_template(filename)
-        s = t.render(session=self.session,
-                     user=self.session.user,
-                     uwidth=self.format_width,
-                     **kwargs)
-        return s
 
     def format_width(self,source,width):
         s = self.s(source)
@@ -152,6 +151,14 @@ class ArgoAuthFrame(ArgoBaseFrame):
 
     # do something common
 
+    def render_str(self, filename, **kwargs):
+        t = self._jinja_env.get_template(filename)
+        s = t.render(session=self.session,
+                     user=self.session.user,
+                     uwidth=self.format_width,
+                     **kwargs)
+        return s
+
     def suspend(self,where,**kwargs):
         '''
         Push current frame's status to history
@@ -200,7 +207,10 @@ class ArgoAuthFrame(ArgoBaseFrame):
         self.render('bottom')
 
     def message(self,msg):
-        self.render('bottom',messages=msg)
+        self.render('bottom_msg',messages=msg)
+        self.pause()
+        self.render('bottom')
+        self.table.refresh_cursor()
 
 class ArgoFrame(ArgoAuthFrame):
 
@@ -212,8 +222,9 @@ class ArgoFrame(ArgoAuthFrame):
     def is_gbk_zh(self,data):
         return '\x80' < data < '\xff'
 
-    def readline(self,acceptable=ac.is_safe_char,finish=ac.ks_finish,buf_size=20):
-        buf = []
+    def readline(self,acceptable=ac.is_safe_char,finish=ac.ks_finish,buf_size=20, prefix=u''):
+        buf = list(prefix)
+        if prefix : self.write(prefix)
         while len(buf) < buf_size:
             ds = self.read_secret()
             if len(ds) == 1 and self.is_gbk_zh(ds):  ## fix_bug for sterm

@@ -112,10 +112,14 @@ class NewPostFrame(EditFrame):
 class ReplyPostFrame(NewPostFrame):
 
     def initialize(self,boardname,replyid):
-        super(ReplyPostFrame,self).initialize(boardname)
         self.replyid = replyid
-        self.setup()
-        self.reset()
+        super(ReplyPostFrame,self).initialize(boardname)
+
+    def _read_title(self):
+        self.write(ac.move2(24,1) + ac.kill_line + u'文章标题：')
+        tid = manager.post.pid2tid(self.boardname, self.replyid)
+        return self.readline(prefix=u'Re: %s'%manager.post.pid2title(self.boardname,
+                                                                     tid))
 
     @property
     def status(self):
@@ -147,7 +151,7 @@ class EditPostFrame(EditFrame):
         self.boardname = boardname
         self.pid = pid
         self.setup()
-        self.reset()
+        self.reset(text=manager.post.get_post(boardname,pid)['content'])
         self.message(u'开始编辑文章')
         
     @property

@@ -8,7 +8,7 @@ from chaofeng.ui import SimpleTable,HiddenInput,AppendTable
 from model import manager
 from argo_frame import ArgoFrame
 from libtelnet import zh_format_d
-
+from view import ArgoTextBoxFrame
 import config
 
 class ArgoTableFrame(ArgoFrame):
@@ -39,13 +39,17 @@ class ArgoTableFrame(ArgoFrame):
 class ArgoBoardListTableFrame(ArgoTableFrame):
 
     def setup(self, data):
-        self.boards = data
-        self.max_index = len(data)
-        table = self.load(SimpleTable, start_line=4)
-        table.reset(data, self.fformat)
-        super(ArgoBoardListTableFrame, self).setup(table,
+        self.table = self.load(SimpleTable, start_line=4)
+        self.reload_data(data)
+        self.mode = 0 # for sort
+        super(ArgoBoardListTableFrame, self).setup(self.table,
                                                    config.str['BOARDLIST_QUICK_HELP'],
                                                    config.str['BOARDLIST_THEAD'])
+
+    def reload_data(self, data):
+        self.boards = data
+        self.max_index = len(data)
+        self.table.reset(data, self.fformat)
 
     def fformat(self, li):
         return self.render_str('boardlist-li', **li)
@@ -53,10 +57,13 @@ class ArgoBoardListTableFrame(ArgoTableFrame):
     def get(self, data):
         super(ArgoBoardListTableFrame,self).get(data)
         self.try_action(config.hotkeys['boardlist'].get(data))
-        self.try_action(config.hotkeys['boardlist_table'].get(data))
+        self.table.try_action(config.hotkeys['boardlist_table'].get(data))
+        if data in config.hotkeys['boardlist_jump'] :
+            self.goto(config.hotkeys['boardlist_jump'][data])
 
     def go_last(self):
-        self.table.goto(self.max_index)
+        print self.max_index
+        self.table.goto(self.max_index-1)
 
     def go_line(self):
         text = self.input.read(prompt=u"跳转到哪个讨论区？")
@@ -95,13 +102,51 @@ class ArgoBoardListTableFrame(ArgoTableFrame):
             self.table.data.sort(key = lambda x: x['boardname'])
         elif mode == 3:
             self.table.data.sort(key = lambda x: x['description'])
+        else:
+            self.table.data.sort(key = lambda x:x['bid'])
 
     def change_sort(self):
         self.mode += 1
         if self.mode > 3 :
             self.mode = 0
-        self.data.setup(mode=self.mode)
-        self.refresh()
+        self.sort(self.mode)
+        self.restore()
+
+    def watch_board(self):
+        self.suspend('query_board', bid=self.table.fetch()['bid'])
+
+    def add_to_fav(self):
+        manager.favourite.add(self.userid, self.table.fetch()['bid'])
+        self.message(u'预定版块成功！')
+
+    def remove_fav(self):
+        manager.favourite.remove(self.userid, self.table.fetch()['bid'])
+        self.message(u'取消预定版块成功！')
+
+@mark('query_board')
+class QueryBoardFrame(ArgoTextBoxFrame):
+
+    def initialize(self, bid):
+        super(QueryBoardFrame,self).initialize()
+        self.bid = bid
+        self.setup()
+        self.cls()
+        self.set_text(self.query_board(bid))
+
+    def query_board(self, bid):
+        board = manager.board.get_board_by_id(bid)
+        return self.render_str('board-t',**board)
+
+    def finish(self,a):
+        self.goto_back()
+
+    def add_to_fav(self):
+        manager.favourite.add(self.userid, self.bid)
+        self.message(u'预定版块成功！')
+
+    def get(self, data):
+        super(QueryBoardFrame, self).get(data)
+        self.try_action(config.hotkeys['view-board'].get(data))
 
 @mark('boardlist')
 class ArgoBoardListFrame(ArgoBoardListTableFrame):
@@ -130,6 +175,54 @@ class ArgoBoardListFrame(ArgoBoardListTableFrame):
 
     def show_help(self):
         self.suspend('help',page='boardlist')
+
+@mark('favourite')
+class ArgoFavouriteFrame(ArgoBoardListTableFrame):
+
+    def initialize(self):
+        super(ArgoFavouriteFrame, self).initialize()
+        self.setup(self.get_data())
+        self.restore()
+
+    def get_data(self):
+        data = manager.favourite.get_all(self.userid)
+        data = map(lambda d : manager.board.get_board_by_id(d),
+                   data)
+        return data
+
+    def restore(self):
+        data = manager.favourite.get_all(self.userid)
+        print data
+        data = map(lambda d : manager.board.get_board_by_id(d),
+                   data)
+        self.reload_data(data)
+        super(ArgoFavouriteFrame, self).restore()
+
+    @property
+    def status(self):
+        return dict()
+
+    @classmethod
+    def describe(cls,s):
+        return u'收藏夹'
+  
+    def finish(self):
+        r = self.table.fetch()
+        if r :
+            self.suspend('board',boardname=r['boardname'])
+
+    def show_help(self):
+        self.suspend('help',page='boardlist')
+
+    def add_to_fav(self):
+        super(ArgoFavouriteFrame, self).add_to_fav()
+        self.reload_data(self.get_data())
+        self.table.restore()
+
+    def remove_fav(self):
+        super(ArgoFavouriteFrame, self).remove_fav()
+        self.reload_data(self.get_data())
+        self.table.restore()
 
 class ArgoBoardTableFrame(ArgoTableFrame):
 
@@ -179,6 +272,14 @@ class ArgoBoardFrame(ArgoBoardTableFrame):
         elif mode == 3:
             thead = config.str['BOARD_THEAD_TOPIC']
             get_data = lambda p,l : manager.post.get_posts_topic(self.boardname, p, l)
+        elif mode == 4:
+            thead = config.str["BOARD_THEAD_ONETOPIC"]
+            get_data = lambda p,l : manager.post.get_posts_onetopic(self.tid,
+                                                                    self.boardname,p,l)
+        elif mode == 5:
+            thead = config.str["BOARD_THEAD_AUTHOR"]
+            get_data = lambda p,l : manager.post.get_posts_owner(self.author,
+                                                                 self.boardname,p,l)
         else :
             thead = config.str['BOARD_THEAD_NORMAL']
             get_data = lambda o,l : manager.post.get_posts(self.boardname, o, l)
@@ -190,7 +291,7 @@ class ArgoBoardFrame(ArgoBoardTableFrame):
     def get(self, data):
         super(ArgoBoardFrame,self).get(data)
         self.try_action(config.hotkeys['board'].get(data))
-        self.try_action(config.hotkeys['board_table'].get(data))
+        self.table.try_action(config.hotkeys['board_table'].get(data))
 
     def finish(self):
         res = self.table.fetch()
@@ -218,12 +319,9 @@ class ArgoBoardFrame(ArgoBoardTableFrame):
     ###############
     # Read/common #
     ###############
-
-    def get_last_index(self):
+    
+    def get_last_pid(self):
         return manager.post.get_last_pid(self.boardname)
-
-    def go_last(self):
-        self.table.goto(self.get_last_index())
 
     ###############
     # Edit/Reply  #
@@ -245,11 +343,11 @@ class ArgoBoardFrame(ArgoBoardTableFrame):
         else:
             self.message(u'你没有编辑此文章的权限！')
 
-    def edit_title(self):
-        text = self.input.read(prompt=u'新标题：')
-        self.table.refresh_cursor()
-        manager.action.update_title(self.userid,self.boardname,
-                                    self.table.fetch()['pid'], text)
+    # def edit_title(self):
+    #     text = self.input.read(prompt=u'新标题：')
+    #     self.table.refresh_cursor()
+    #     manager.action.update_title(self.userid,self.boardname,
+    #                                 self.table.fetch()['pid'], text)
 
     def del_post(self):
         pass
@@ -281,3 +379,35 @@ class ArgoBoardFrame(ArgoBoardTableFrame):
         manager.post.update_post(self.boardname,pid,flag=flag)
         p['flag'] = flag
         self.table.refresh_hover()
+
+    def goto_tid(self):
+        self.tid = self.table.fetch()['tid']
+        self.set_mode(4)
+        self.restore()
+
+    def goto_author(self):
+        self.author = self.table.fetch()['owner']
+        self.set_mode(5)
+        self.restore()
+
+    def goto_back(self):
+        if self.mode != 0 :
+            self.set_mode(0)
+            self.restore()
+            return
+        super(ArgoBoardFrame, self).goto_back()
+
+    def clear_readmark(self):
+        last = self.get_last_pid()
+        manager.readmark.clear_unread(self.userid, self.boardname, last)
+        self.restore()
+
+    def set_read(self):
+        pid = self.hover_pid()
+        manager.readmark.set_read(self.userid, self.boardname, pid)
+        self.table.refresh_hover()
+
+    def query_author(self):
+        userid = self.table.fetch()['owner']
+        self.suspend('query_user', userid=userid)
+        
