@@ -23,7 +23,7 @@ class CF:
 
     from globaldb import global_conn,global_cache
     from Model import Section,Online,UserInfo,UserAuth,\
-        Board,Post,Action,ReadMark,Mail,Permissions
+        Board,Post,Action,ReadMark,Mail,Permissions,UserSign
     
     db = global_conn
     ch = global_cache
@@ -31,15 +31,16 @@ class CF:
     section   = Section()
     online    = Online(max_login=9999)
     userinfo  = UserInfo()
+    usersign  = UserSign()
     auth      = UserAuth(userinfo,online)
     board     = Board()
     post      = Post()
     mail      = Mail()
     action    = Action(board,online,post,mail,userinfo)
     perm      = Permissions()
-    readmark  = ReadMark()
+    readmark  = ReadMark(post=post)
     
-    loads = [section,online,userinfo,auth,board,post,readmark,mail]
+    loads = [section,online,userinfo,auth,board,post,readmark,mail,usersign]
 
     use = {
         "section":section,
@@ -51,6 +52,7 @@ class CF:
         "action":action,
         "readmark":readmark,
         "perm":perm,
+        "usersign":usersign,
         }
 
     @classmethod

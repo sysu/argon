@@ -1,4 +1,3 @@
-
 #!/usr/bin/python2
 # -*- coding: utf-8 -*-
 
@@ -8,6 +7,7 @@ import error
 import bcrypt
 from datetime import datetime
 import mode
+import random
 
 class MetaModel(type):
 
@@ -51,7 +51,7 @@ def v__(s,*args):
     print s
     print args
     return (s,) + args
-    
+
 class Model:
 
     __metaclass__ = MetaModel
@@ -98,7 +98,7 @@ class Model:
         return self.db.get("SELECT %s FROM %s WHERE %s = %%s" %\
                                (what, tablename, key),
                            value)
-        
+
 class Section(Model):
 
     __ = 'argo_sectionhead'
@@ -232,17 +232,21 @@ class Post(Model):
                 (sel,self.__(boardname),cond,order)
             return self.db.query(sql, limit)
 
+    def get_posts_list(self,boardname,pids):
+        return map(lambda x:self.get_post(boardname,x),
+                   pids)
+
     def get_posts(self,boardname,num,limit):
         return self._query_posts_filter(boardname,num,limit)
 
     def get_posts_g(self,boardname,num,limit):
         return self._query_posts_filter(boardname,num,limit,cond=['flag & 1'])
 
-    def get_posts_g(self,boardname,num,limit):
+    def get_posts_m(self,boardname,num,limit):
         return self._query_posts_filter(boardname,num,limit,cond=['flag & 2'])
 
     def get_posts_topic(self,boardname,num,limit):
-        return self._query_posts_filter(boardname,num,limit,cond=['tid=0'])
+        return self._query_posts_filter(boardname,num,limit,cond=['replyid=0'])
 
     def get_last_pid(self,boardname):
         res = self.db.get("SELECT pid FROM %s ORDER BY pid DESC LIMIT 1" % \
@@ -291,7 +295,7 @@ class Post(Model):
         res = self.table_select_by_key(self.__(boardname),
                                        'title','pid',pid)
         return res and res['title']
-    
+
 class UserInfo(Model):
 
     __ = 'argo_user'
@@ -322,6 +326,7 @@ class UserInfo(Model):
     def select_attr(self,userid,sql_what):
         return self.db.get("SELECT %s FROM %s WHERE userid = %%s" % (sql_what, self.__),
                            userid)
+
 class Online(Model):
 
     def __init__(self,max_login):
@@ -413,6 +418,9 @@ class UserAuth(Model):
     def gen_passwd(self,passwd):
         return bcrypt.hashpw(passwd, bcrypt.gensalt(10))
 
+    def set_passwd(self, userid, passwd):
+        self.userinfo.update_user(userid, self.gen_passwd(passwd))
+
     def check_passwd_match(self,passwd,code):
         try:
             return bcrypt.hashpw(passwd, code) == code
@@ -498,7 +506,9 @@ class Mail(Model):
         with open(config.SQL_TPL_DIR + 'template/argo_mailhead.sql') as f :
             mail_template = Template(f.read())
             self.db.execute(mail_template.safe_substitute(tableid=tableid))
-    
+
+    # def get_mail_to_uid(self,uid,
+
     def get_mail_to_uid(self,uid,offset,limit):
         sql = "SELECT * FROM %s WHERE touserid = %%s ORDER BY mid LIMIT %%s,%%s" \
             % self.__(uid)
@@ -510,6 +520,7 @@ class Mail(Model):
                 self.db.query(sql,uid,offset,limit)
             else:
                 raise e
+
     # def get_uid_mail_unread(self,uid,offset,limit):
     #     sql = "SELECT * FROM %S OEDERY BY mid WHERE fromuserid = "\
     #         "%s AND readmark & 1 LIMIT %%s,%%s" % (self.__(uid),uid)
@@ -558,19 +569,28 @@ class ReadMark(Model):
     limit_max = 200
     limit_clear = -50
 
+    def __(self,userid,boardname):
+        return self.keyf%(userid,boardname)
+
+    def __init__(self, post):
+        self.post = post
+
     def is_read(self,userid,boardname,pid):
         key = self.keyf % (userid, boardname)
         # Empty record, not read
         # And play a trick here, add -1 into read mark
         if self.ch.zcard(key) == 0: 
-            self.ch.zaddr(key, -1, -1)
+            self.ch.zadd(key, -1, -1)
             return 0
-
-        res = self.ch.zcount(key, pid,pid)
+        res = self.ch.zcount(key, pid, pid)
         if res: return res
         # If pid is smaller the oldest one in read record, mark as read
-        first_pid = self.ch.zrange(self.key%(userid, boardname), 0, 0)[0]
+        first_pid = self.ch.zrange(key, 0, 0)[0]
         return pid < int(first_pid)
+
+    def is_new_board(self,userid,boardname):
+        lastpid = self.post.get_last_pid(boardname)
+        return lastpid is not None and not self.is_read(userid, boardname, lastpid)
 
     def set_read(self,userid,boardname,pid):
         key = self.keyf%(userid,boardname)
@@ -584,6 +604,38 @@ class ReadMark(Model):
         key = self.keyf%(userid,boardname)
         self.ch.delete(key)
         self.ch.zadd(key, last, last)
+
+    def get_user_read(self, userid, boardname, num):
+        return self.ch.zrange(self.__(userid, boardname),-num,-1)
+
+class UserSign(Model):
+
+    keyf = "argo:usersign:%s"
+
+    def set_sign(self,userid,data):
+        key = self.keyf % userid
+        if len(data) >= 20 :
+            data = data[:20]
+        self.ch.delete(key)
+        self.ch.rpush(key,*data)
+
+    def get_all_sign(self,userid):
+        key = self.keyf % userid
+        return self.ch.lrange(key,0,-1)
+
+    def get_sign(self,userid,index):
+        key = self.keyf % userid
+        return self.ch.lindex(key,index)
+
+    def get_random(self,userid):
+        key = self.keyf % userid
+        l = self.ch.llen(key)
+        i = self.ch.lindex(key,random.randint(0,l-1))
+        return self.ch.lindex(key,i)
+
+    def get_sign_num(self,userid):
+        key = self.keyf % userid
+        return self.ch.llen(key)
 
 class Permissions(Model):
 

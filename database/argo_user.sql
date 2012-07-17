@@ -1,14 +1,14 @@
 DROP TABLE IF EXISTS `argo_user`;
 CREATE TABLE IF NOT EXISTS `argo_user` (
-
     `uid` int(11) unsigned NOT NULL auto_increment,
     `userid` varchar(20) NOT NULL,
     `passwd` varchar(60),
     `nickname` varchar(20),
-    `email` varchar(80),
-/*    `userlevel` int(11) unsigned NOT NULL default 0, */
-    `identity` int(11) unsigned NOT NULL default 2,
+    `email` varchar(80) ,
+
+    `remail` varchar(80),
     `netid`  varchar(20),
+    
     `iconidx` varchar(20),
 
     -- `register` datetime NOT NULL default CURRENT_TIMESTAMP,
@@ -32,6 +32,14 @@ CREATE TABLE IF NOT EXISTS `argo_user` (
     `usertitle` varchar(20) NOT NULL default 'user',
     `gender`  int(11) unsigned default 1,
     `realname` varchar(20),
+
+    `contact` varchar(80) ,
+    `want` varchar(50) ,
+    `job` varchar(80) ,
+    `shai` varchar(140) ,
+    `marriage` varchar(10) ,
+
+    `about` text ,
     
     `dattr` blob,
 
