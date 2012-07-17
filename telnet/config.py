@@ -43,10 +43,11 @@ menu = {
         # ( u'(R)ecommend    推荐版面区',"undone",'r' ),
         # ( u'(M)ail         处理信笺区',"undone",'m' ),
         # ( u'(T)alk         谈天说地区',"undone",'t' ),
-        # ( u'(I)nfoEdit     个人工具箱',"user_space",'i' ),
+        ( u'(I)nfoEdit     个人工具箱',"user_space",'i' ),
         # ( u'(S)ervice      特别服务区',"undone",'s' ),
         # ( u'(C)onfig       系统信息区',"undone",'c' ),
         # ( u'(P)ersonal     个人文集区',"undone",'p' ),
+        ( u'(H)elp           帮助中心',"help",'h'),
         ( u'(G)oodbye    离开逸仙时空',"finish",'g' )
         ),
     "main_guest":(
@@ -58,10 +59,12 @@ menu = {
         # ( u'(P)ersonal     个人文集区',"undone",'p' ),
         ( u'(G)oodbye    离开逸仙时空 ',"finish",'g' )
         ),
-    "userspace":(
-        ( u'I) 设定个人资料','user_edit_data','i',(12,4)),
-        ( u'P) 修改个人密码','change_passwd','p'),
-        ( u'W) 编修个人档案','undone','w'),
+    "user_space":(
+        ( u'I) 设定个人资料','user_editdata','i',(12,4)),
+        ( u'P) 修改个人密码','user_change_passwd','p'),
+        ( u'W) 编修个人档案','user_nickdata','w'),
+        ( u'S) 修改签名档','user_edit_sign','s'),
+        ( u'U) 查看我的资料','query_user_self','u'),
         ( u'E) 回到主选单','main','e'),),
     "section":(
         # dy + append
@@ -109,6 +112,8 @@ max_try_register_time = 150
 max_stack_deep = 5
 max_history_deep = 20
 
+have_help_page = set(("main","sections","board","boardlist","edit","view","help"))
+
 str = {
     "PROMPT_INPUT_PASSWD":u"请输入密码：",
     "PROMPT_INPUT_USERID":u"请输入帐号：",
@@ -122,8 +127,13 @@ str = {
     "PROMPT_REG_REGISTERED":u"抱歉，您的id已经被注册了。 请再拟。",
     "PROMPT_REG_PASSWD_TOO_SHORT":u"密码太短了，请大于6位。",
     "PROMPT_CANCEL":u'\r\n你按下了Ctrl+C ，将会取消本次的活动。\r\n :-) 别害怕，你可以再来一次。',
-    "BOARDLIST_QUICK_HELP":u"[0m[I 主选单[[1;32m←[0m,[1;32mq[0m] 阅读[[1;32m→[0m,[1;32mRtn[0m] 选择[[1;32m↑[0m,[1;32m↓[0m]  求助[[1;32mh][m",
-    "BOARDLIST_THEAD":u"[0;1;44m[I 编号  讨论区名称           中 文 叙 述         在线  全部  属性  版主          [m"
+    "BOARDLIST_QUICK_HELP":u"[0m 主选单[[1;32m←[0m,[1;32mq[0m] 阅读[[1;32m→[0m,[1;32mRtn[0m] 选择[[1;32m↑[0m,[1;32m↓[0m]  求助[[1;32mh][m",
+    "BOARDLIST_THEAD":u"[0;1;44m 编号   讨论区名称           中 文 叙 述         在线  全部  版主                [m",
+    "BOARD_QUICK_HELP":u"[0m离开[[1;32m←[0m,[1;32mq[0m] 选择[[1;32m↑[0m,[1;32m↓[0m] 阅读[[1;32m→[0m,[1;32mRtn[0m] 发表文章[[1;32mCtrl-P[0m] 求助[[1;32mh[0m][m",
+    "BOARD_THEAD_NORMAL":u"[0;1;44m 编号  未读 刊 登 者       日  期      标  题                                         [m",
+    "BOARD_THEAD_GMODE":u"[0;1;44m 编号  未读 刊 登 者       日  期      标  题                      [文摘区]           [m",
+    "BOARD_THEAD_MMODE":u"[0;1;44m 编号  未读 刊 登 者       日  期      标  题                      [美文区]           [m",
+    "BOARD_THEAD_TOPIC":u"[0;1;44m 编号  未读 刊 登 者       日  期      标  题                      [同主题折叠]       [m",
    }
 
 hotkeys = {
@@ -163,4 +173,89 @@ hotkeys = {
         ac.k_home:'go_first',   ac.k_end:"go_last",           '$':'go_last',
         '#':'go_line',
         },
+    "board":{
+        ac.k_end:"go_last", "$":"go_last",
+        "#":"go_line",
+        ac.k_right:"finish", ac.k_left:"goto_back",
+        ac.k_ctrl_p:"new_post",ac.k_ctrl_r:"reply_post","E":"edit_post",
+        ac.k_ctrl_t:"change_mode",
+        'g':"set_g_mark",        'm':"set_m_mark",
+        ac.k_ctrl_l:"restore",
+        },
+    "board_table":{
+        "k":"move_up", "j":"move_down", "P":"page_up", "N":"page_down",
+        ac.k_home:"go_first", 
+        },
+    "edit_2ndcmd_start": ac.k_ctrl_u,
+    "edit_editor":{
+        ac.k_up:"move_up",          ac.k_ctrl_p:"move_up",
+        ac.k_down:"move_down",      ac.k_ctrl_n:"move_down",
+        ac.k_left:"move_left",
+        ac.k_right:"move_right",    ac.k_ctrl_v:"move_right",
+        ac.k_home:"move_line_beginning", ac.k_ctrl_a:"move_line_beginning",
+        ac.k_ctrl_k:"kill_to_end",  ac.k_ctrl_e:"move_line_end",
+        ac.k_ctrl_b:"page_up",      ac.k_page_up:"page_up",
+        ac.k_ctrl_f:"page_down",    ac.k_page_down:"page_down",
+        ac.k_backspace:"backspace", ac.k_ctrl_h:"backspace",
+        ac.k_del:"delete",          ac.k_ctrl_d:"delete",
+        ac.k_delete:"delete",
+        ac.k_ctrl_y:"kill_whole_line",
+        ac.k_end:"move_line_end",
+        ac.k_ctrl_s:"move_firstline",
+        ac.k_ctrl_t:"move_lastline",
+        
+        ac.k_enter_linux:"new_line",
+        ac.k_enter_window:"new_line",
+
+        ac.k_ctrl_S2:"set_mark",
+
+        ac.k_ctrl_f2:"save_history",
+        ac.k_ctrl_g:"restore_history",
+        ac.k_ctrl_l:"refresh",
+        },
+    "edit_editor_2nd":{
+        ac.k_ctrl_d:"remove_area",
+        ac.k_ctrl_u:"exchange_pos",
+        ac.k_ctrl_p:"paste_area",
+        ac.k_ctrl_s:"msg_select",
+        },
+    "edit":{
+        ac.k_ctrl_w:"finish",
+        ac.k_ctrl_q:"show_help",
+        ac.k_ctrl_c:"quit_iter",
+        },
+    "view":{
+        "Q":"goto_back",
+        ac.k_left:"goto_back",
+        ac.k_ctrl_u:"go_link",
+        "a":"jump_from_screen",
+        ac.k_ctrl_a:"jump_man",
+        ac.k_ctrl_r:"jump_history",
+        },
+    "view_textbox":{
+        ac.k_up : "move_up",
+        "k":"move_up",
+        ac.k_down : "move_down",
+        ac.k_right:"move_down",
+        "j":"move_down",
+        ac.k_ctrl_b:"page_up",
+        ac.k_page_up:"page_up",
+        ac.k_ctrl_f:"page_down",
+        ac.k_page_down:"page_down",
+        ac.k_right:"page_down",
+        ac.k_home:"go_first",
+        ac.k_end:"go_last",
+        "$":"go_last",
+        },
+    }
+
+options = {
+    "nickdata":{
+        "shai":u"晒一下",
+        "contact":u"联系方式",
+        "want":u"想要的东西",
+        "job":u"工作",
+        "marriage":u"婚恋状况",
+        "about":u"个人说明档",
+        }
     }

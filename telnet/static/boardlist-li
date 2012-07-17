@@ -1,1 +1,1 @@
- {{ bid|width(3) }}   {{ boardname|width(-20) }} {{ uwidth(description,-18) }}{{ online|width(4) }}   {{ total|width(4) }}   NONE   {{ bm }}
+ {{ bid|width(3) }} {{ '◆' if manager.readmark.is_new_board(user.userid, boardname) else '◇' }} {{ boardname|width(-20) }} {{ uwidth(description,-18) }}{{ online|width(4) }}   {{ total|width(4) }}   {{ bm }}

@@ -13,18 +13,19 @@ import config
 
 class ArgoTableFrame(ArgoFrame):
 
-    def setup(self, table, help_text, thread, data, fformat):
-        self.thread = thread
+    def setup(self, table, help_text, thead):
+        self.thead = thead
         self.input = self.load(HiddenInput, text=help_text, start_line=2)
-        self.table = self.load(table, start_line=4)
-        self.table.reset(data, fformat)
-        self.restore()
+        self.table = table
+
+    def reset_thead(self, thead):
+        self.thead = thead
 
     def restore(self):
         self.cls()
         self.top_bar()
         self.writeln(ac.move2(2,0)+self.input.text)
-        self.writeln(self.thread)
+        self.writeln(self.thead)
         self.bottom_bar()
         self.table.restore()
 
@@ -40,10 +41,11 @@ class ArgoBoardListTableFrame(ArgoTableFrame):
     def setup(self, data):
         self.boards = data
         self.max_index = len(data)
-        super(ArgoBoardListTableFrame, self).setup(SimpleTable,
+        table = self.load(SimpleTable, start_line=4)
+        table.reset(data, self.fformat)
+        super(ArgoBoardListTableFrame, self).setup(table,
                                                    config.str['BOARDLIST_QUICK_HELP'],
-                                                   config.str['BOARDLIST_THEAD'],
-                                                   data, self.fformat)
+                                                   config.str['BOARDLIST_THEAD'])
 
     def fformat(self, li):
         return self.render_str('boardlist-li', **li)
@@ -52,9 +54,6 @@ class ArgoBoardListTableFrame(ArgoTableFrame):
         super(ArgoBoardListTableFrame,self).get(data)
         self.try_action(config.hotkeys['boardlist'].get(data))
         self.try_action(config.hotkeys['boardlist_table'].get(data))
-
-    def go_first(self):
-        self.table.goto_first()
 
     def go_last(self):
         self.table.goto(self.max_index)
@@ -108,12 +107,13 @@ class ArgoBoardListTableFrame(ArgoTableFrame):
 class ArgoBoardListFrame(ArgoBoardListTableFrame):
     
     def initialize(self,sid=None):
-        super(ArgoBoardListFrame, self).initialize()
+        super(ArgoBoardListFrame, self).initialize()        
         if sid is None:
-            data = manager.board.get_all_books()
+            data = manager.board.get_all_boards()
         else:
             data = manager.board.get_by_sid(sid)
         self.setup(data)
+        self.restore()
 
     @property
     def status(self):
@@ -131,4 +131,153 @@ class ArgoBoardListFrame(ArgoBoardListTableFrame):
     def show_help(self):
         self.suspend('help',page='boardlist')
 
+class ArgoBoardTableFrame(ArgoTableFrame):
 
+    def setup(self):
+        table = self.load(AppendTable, 'pid', start_line=4)
+        super(ArgoBoardTableFrame, self).setup(table,
+                                               config.str['BOARD_QUICK_HELP'],
+                                               config.str['BOARD_THEAD_NORMAL'])
+
+    def reset_table(self, data_loader, fformat):
+        self.table.reset_with_upper(data_loader, fformat, None)
+
+    ####################
+    # meta
+    ####################
+
+    def go_line(self):
+        text = self.input.read(prompt=u"跳转到哪篇文章？")
+        self.table.refresh_cursor()
+        try:
+            g = int(text)
+        except:
+            return
+        self.table.goto(g)
+
+@mark('board')
+class ArgoBoardFrame(ArgoBoardTableFrame):
+
+    def initialize(self, boardname):
+        manager.action.enter_board(self.userid, self.seid, boardname)
+        self.session.lastboard = boardname
+        self.boardname = boardname
+        self.setup()
+        self.set_mode(0)
+        self.restore()
+    
+    def clear(self):
+        manager.action.exit_board(self.userid,self.seid,self.boardname)
+
+    def set_mode(self, mode):
+        if mode == 1:
+            thead = config.str['BOARD_THEAD_GMODE']
+            get_data = lambda o,l : manager.post.get_posts_g(self.boardname, o, l)
+        elif mode == 2:
+            thead = config.str['BOARD_THEAD_MMODE']
+            get_data = lambda o,l : manager.post.get_posts_m(self.boardname, o, l)
+        elif mode == 3:
+            thead = config.str['BOARD_THEAD_TOPIC']
+            get_data = lambda p,l : manager.post.get_posts_topic(self.boardname, p, l)
+        else :
+            thead = config.str['BOARD_THEAD_NORMAL']
+            get_data = lambda o,l : manager.post.get_posts(self.boardname, o, l)
+        fformat = self.fformat
+        self.mode = mode
+        self.reset_thead(thead)
+        self.reset_table(get_data, fformat)
+
+    def get(self, data):
+        super(ArgoBoardFrame,self).get(data)
+        self.try_action(config.hotkeys['board'].get(data))
+        self.try_action(config.hotkeys['board_table'].get(data))
+
+    def finish(self):
+        res = self.table.fetch()
+        if res:
+            self.suspend('post',
+                         boardname=self.boardname,
+                         pid=res['pid'])
+
+    @property
+    def status(self):
+        return dict(boardname=self.boardname,
+                    default=self.table_.hover,
+                    mode=self.mode)
+
+    @classmethod
+    def describe(self,s):
+        return u'讨论区              -- %s' % s['boardname']
+
+    def show_help(self):
+        self.suspend('help',page='board')
+
+    def fformat(self, d):
+        return self.render_str('board-li', **d)
+
+    ###############
+    # Read/common #
+    ###############
+
+    def get_last_index(self):
+        return manager.post.get_last_pid(self.boardname)
+
+    def go_last(self):
+        self.table.goto(self.get_last_index())
+
+    ###############
+    # Edit/Reply  #
+    ###############
+
+    def new_post(self):
+        if manager.perm.has_new_post_perm(self.userid,self.boardname):
+            self.suspend('new_post',boardname=self.boardname)
+
+    def reply_post(self):
+        pid = self.table.fetch()['pid']
+        if manager.perm.has_reply_perm(self.userid,self.boardname,pid):
+            self.suspend('reply_post',boardname=self.boardname,replyid=pid)
+
+    def edit_post(self):
+        pid = self.table.fetch()['pid']
+        if manager.perm.has_edit_perm(self.userid,self.boardname,pid):
+            self.suspend('edit_post',boardname=self.boardname,pid=pid)
+        else:
+            self.message(u'你没有编辑此文章的权限！')
+
+    def edit_title(self):
+        text = self.input.read(prompt=u'新标题：')
+        self.table.refresh_cursor()
+        manager.action.update_title(self.userid,self.boardname,
+                                    self.table.fetch()['pid'], text)
+
+    def del_post(self):
+        pass
+
+    def reproduced(self):
+        pass
+
+    def change_mode(self):
+        if self.mode >=3 : mode=0
+        else : mode = self.mode+1
+        self.set_mode(mode)
+        self.restore()
+
+    def hover_pid(self):
+        return self.table.fetch()['pid']
+
+    def set_g_mark(self):
+        p = self.table.fetch()
+        pid = p['pid']
+        flag = p['flag'] ^ 1
+        manager.post.update_post(self.boardname,pid,flag=flag)
+        p['flag'] = flag
+        self.table.refresh_hover()
+
+    def set_m_mark(self):
+        p = self.table.fetch()
+        pid = p['pid']
+        flag = p['flag'] ^ 2
+        manager.post.update_post(self.boardname,pid,flag=flag)
+        p['flag'] = flag
+        self.table.refresh_hover()

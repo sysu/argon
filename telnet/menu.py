@@ -60,7 +60,7 @@ class MainMenuFrame(MenuFrame):
         menu_data = self.get_tidy_data()
         background = self.render_str('menu_main')
         anim_data = self.get_anim_data()
-        self.setup(menu_data, None, 11, background, 0, anim_data)
+        self.setup(menu_data, 1, 11, background, 0, anim_data)
 
     @property
     def status(self):
@@ -71,7 +71,7 @@ class MainMenuFrame(MenuFrame):
         return u'主菜单'
 
     def show_help(self):
-        self.suspend('help',page='menu_index')
+        self.suspend('help',page='main')
 
     # @simple_cache('main_menu_data')
     def get_tidy_data(self):
@@ -99,7 +99,7 @@ class SectionMenuFrame(MenuFrame):
         return u'讨论区分类选单'
 
     def show_help(self):
-        self.suspend('help',page='menu_section')
+        self.suspend('help',page='sections')
 
     @classmethod
     def wrapper_li(self, x):

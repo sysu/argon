@@ -31,6 +31,16 @@ def userid2info(userid,attr):
 def bid2boardname(bid):
     return manager.board.id2name(bid)
 
+def flag2state(num):
+    if num & 1:
+        if num & 2:
+            return 'b'
+        else:
+            return 'g'
+    if num & 2:
+        return 'm'
+    return ' '
+
 def current_ctime():
     return datetime.now().ctime()
 
@@ -41,6 +51,7 @@ RENDER_FILTERS = {
     "art":ascii_format,
     "bid2boardname":bid2boardname,
     "width":ascii_width,
+    "post_mark":flag2state,
     }
 
 RENDER_TESTS = {}

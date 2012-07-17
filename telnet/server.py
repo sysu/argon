@@ -6,7 +6,7 @@ sys.path.append('../')
 
 from chaofeng import Server,g
 from chaofeng.g import mark
-import login, menu,boardlist#,user,menu,boardlist,board,view,special_frame,editor
+import login, menu,boardlist,editor,view,user#special_frame
 import config
 # from model import db_orm
 
@@ -15,7 +15,9 @@ class LoginDebugFrame(login.WelcomeFrame):
 
     def initialize(self):
         # self.auth('333','123456')
-        self.try_login('333','555555')
+        # self.auth('123','123456')
+        self.try_login('123','123456')
+        # self.goto('dd')
         # self.goto('post','Test1','3')
 
 config.root = 'debug'

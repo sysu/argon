@@ -1,0 +1,1 @@
+{{ o_o(bg_blue,yellow,bold) }} 帮助 {{ o_o(red) }}h{{ o_o(yellow) }} │ {{ o_o(green) }}{{ s|width(4) }}{{ o_o(yellow) }}/{{ maxs|width(4) }} │                               [{{ o_o(green) }}{{ current() }}{{ o_o(yellow) }}]{{ ac.move2(24,25) }}{{ o_o(bold,cyan) }}{{ message }}{{ ac.reset }}

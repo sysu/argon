@@ -66,6 +66,7 @@ class ArgoBaseFrame(Frame):
     def render_str(self, filename, **kwargs):
         t = self._jinja_env.get_template(filename)
         s = t.render(session=self.session,
+                     user=self.session.user,
                      uwidth=self.format_width,
                      **kwargs)
         return s
@@ -105,6 +106,15 @@ class ArgoAuthFrame(ArgoBaseFrame):
         charset.
         '''
         return self.session.charset
+
+    def get_pipe(self):
+        return self.session['_$$pipe$$']
+
+    def set_pipe(self, value):
+        print 'zzzzzzzzzzzzzz'
+        self.session['_$$pipe$$'] = value
+
+    pipe = property(get_pipe, set_pipe)
 
     @property
     def user(self):
@@ -231,13 +241,17 @@ class ArgoFrame(ArgoAuthFrame):
             while True:
                 msg(options[s])
                 d = self.read_secret()
-                if d == ac.k_up and s :
-                    s -= 1
-                elif d == ac.k_down and s<l :
-                    s += 1
+                if d == ac.k_up :
+                    if s :
+                        s -= 1
+                elif d == ac.k_down:
+                    if s<l :
+                        s += 1
+                elif d in '123456789':
+                    s = min(l,int(d)-1)
                 elif d in finish :
                     return s
-                else:
+                elif d == ac.k_ctrl_c:
                     return False
         return False        
                     

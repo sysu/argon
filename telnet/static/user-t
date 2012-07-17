@@ -1,0 +1,30 @@
+{{ userid|wrapper(bold) }}({{ nickname|wrapper(yellow,bold) }}) 共上站{{ numlogins|wrapper(green,bold) }},发表文章{{ numposts|wrapper(green,bold) }}篇
+ 上次在[{{ lastupdate.ctime()|wrapper(green,bold) }}]从[{{ lasthost|wrapper(green,bold) }}]到本站一游
+
+{{ about|default('没有个人说明档') }}
+
+{% if contact %}
+{{ '联系方式'|wrapper(bold) }}
+{{ contact }}
+
+{% endif %}
+{%- if job %}
+{{ '职业'|wrapper(bold) }}
+{{ job }}
+
+{% endif %}
+{%- if want %}
+{{ '近期目标'|wrapper(bold) }}
+{{ want }}
+
+{% endif %}
+{%- if shai %}
+{{ '晒一下'|wrapper(bold) }}
+{{ shai }}
+
+{% endif %}
+{%- if marriage %}
+{{ '婚恋状况'|wrapper(bold) }}
+{{ marriage }}
+
+{% endif %}

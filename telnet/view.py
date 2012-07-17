@@ -1,21 +1,18 @@
 # -*- coding: utf-8 -*-
-from chaofeng import static
 from chaofeng.g import mark
 from chaofeng.ui import Animation,LongTextBox,TextEditor
 from chaofeng import ascii as ac
 from argo_frame import ArgoFrame,zh_format
 from model import manager
-from common import post_render#,help_render
 from datetime import datetime
+import config
 import re
 
 class ArgoTextBox(LongTextBox):
 
-    bottom_txt = ac.move2(24,1) + static['bottom_bar/text_view'] + ac.reset
-    
     def bottom_bar(self,msg):
-        self.write(zh_format(self.bottom_txt,self.s,self.max,
-                             datetime.now().ctime(),msg))
+        self.write(ac.move2(24,1))
+        self.frame.render('bottom_view', message=msg, s=self.s, maxs=self.max)
 
 class ArgoTextBoxFrame(ArgoFrame):
 
@@ -26,57 +23,27 @@ class ArgoTextBoxFrame(ArgoFrame):
     and add new key/value into them.
     '''
 
-    _textbox = ArgoTextBox()
-    key_maps = ArgoFrame.key_maps.copy()
-    key_maps.update({
-            "Q":"goto_back",
-            ac.k_left:"goto_back",
-            ac.k_ctrl_c:"goto_back",
-            ac.k_ctrl_u:"go_link",
-            "a":"jump_from_screen",
-            ac.k_ctrl_a:"jump_man",
-            ac.k_ctrl_r:"jump_history",
-            "h":"show_help",
-            })
-    
-    textbox_cmd = {
-        ac.k_up : "move_up",
-        "k":"move_up",
-        ac.k_down : "move_down",
-        ac.k_right:"move_down",
-        "j":"move_down",
-        ac.k_ctrl_b:"page_up",
-        ac.k_page_up:"page_up",
-        ac.k_ctrl_f:"page_down",
-        ac.k_page_down:"page_down",
-        ac.k_right:"page_down",
-        ac.k_home:"go_first",
-        ac.k_end:"go_last",
-        "$":"go_last",
-        }
-
-    def initialize(self):
-        super(ArgoTextBoxFrame,self).initialize()
-        self.textbox_ = self.load(self._textbox)
-        self.textbox_.bind(self.finish)
+    def setup(self):
+        self.textbox = self.load(ArgoTextBox)
+        self.textbox.bind(self.finish)
 
     def restore(self):
-        self.textbox_.refresh_all()
+        self.textbox.refresh_all()
         self.bottom_bar()
 
     def set_text(self,text):
-        self.textbox_.set_text(text)
-        self.textbox_.refresh_all()
+        self.textbox.set_text(text)
+        self.textbox.refresh_all()
         self.bottom_bar()
         
     def get(self,data):
-        if data in self.textbox_cmd:
-            getattr(self.textbox_,self.textbox_cmd[data])()
+        if data in config.hotkeys['view_textbox']:
+            getattr(self.textbox, config.hotkeys['view_textbox'][data])()
             self.bottom_bar()
-        self.try_action(data)
+        self.try_action(config.hotkeys['view'].get(data))
 
     def bottom_bar(self,msg=''):
-        self.textbox_.bottom_bar(msg)
+        self.textbox.bottom_bar(msg)
 
     def _go_link(self,line):
         s = line.split()
@@ -143,8 +110,12 @@ class ArgoTextBoxFrame(ArgoFrame):
             self.check_jump()
 
     def jump_from_screen(self):
-        text,self.lines = self.textbox_.getscreen_with_raw()
+        text,self.lines = self.textbox.getscreen_with_raw()
         self.select_and_jump(text)
+
+
+    def show_help(self):
+        self.suspend('help',page='view')
 
     # def jump_man(self):
     #     self.bottom_bar(u'前往：')
@@ -166,6 +137,7 @@ class ArgoReadPostFrame(ArgoTextBoxFrame):
 
     def initialize(self,boardname,pid):
         super(ArgoReadPostFrame,self).initialize()
+        self.setup()
         self.set_post(boardname,pid)
 
     @property
@@ -182,7 +154,7 @@ class ArgoReadPostFrame(ArgoTextBoxFrame):
         return manager.post.get_post(boardname,pid)
 
     def wrapper_post(self,post):
-        return post_render.render(post=post)
+        return self.render_str('post-t',post=post)
 
     def set_post(self,boardname,pid):
         if pid is not None:
@@ -190,6 +162,7 @@ class ArgoReadPostFrame(ArgoTextBoxFrame):
             self.post = self.get_post(boardname,pid)
             self.text = self.wrapper_post(self.post)
             self.cls()
+            manager.readmark.set_read(self.userid, self.boardname, self.pid)
             self.set_text(self.text)
 
     def next_post(self):
@@ -206,20 +179,12 @@ class ArgoReadPostFrame(ArgoTextBoxFrame):
         if args is None:
             self.goto_back()
 
-    def show_help(self):
-        self.suspend('help',page='view')
-
 @mark('help')
 class TutorialFrame(ArgoTextBoxFrame):
 
-    key_maps = ArgoTextBoxFrame.key_maps.copy()
-    key_maps.update({
-            ac.k_ctrl_h:"show_help",
-            })
-
     @classmethod
     def try_jump(cls,args):
-        if static.dict.get('help/%s' % args[0]) :
+        if args[0] in config.have_help_page :
             return dict(page=args[0])
 
     @property
@@ -230,10 +195,11 @@ class TutorialFrame(ArgoTextBoxFrame):
     def describe(self,s):
         return u'查看帮助            -- [](/h/%s)' % s['page']
     
-    def initialize(self,page):
+    def initialize(self,page='index'):
         super(TutorialFrame,self).initialize()
+        self.setup()
         self.page = page
-        self.set_text(static['help/%s' % page])
+        self.set_text(self.render_str('help/%s'%page))
 
     def finish(self,args=None):
         self.goto_back()

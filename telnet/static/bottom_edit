@@ -1,0 +1,1 @@
+{{ ac.move2(24,1) }}[0;1;44;33m 求救[31m Ctrl-Q[33m 信息栏 :[36m {{ uwidth(message, -40) }} [33m[[32m{{ l|width(3) }}s[33m ,[32m{{ r|width(4) }}[33m ]  [m{{ ac.reset }}

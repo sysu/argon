@@ -3,7 +3,7 @@ import sys
 sys.path.append('../')
 
 from chaofeng import ascii as ac
-from chaofeng.g import static,mark
+from chaofeng.g import mark
 from chaofeng.ui import TextEditor
 from model import manager
 from argo_frame import ArgoFrame
@@ -13,66 +13,20 @@ import config
 
 class ArgoEditor(TextEditor):
 
-    bottom_text = ac.move2(24,0) + static['bottom'][1]
-
     def bottom_bar(self,msg=''):
-        self.write(zh_format(self.bottom_text,
-                             msg or u'现在的时间是【%s】'% datetime.now().ctime(),
-                             self.l,self.r))
+        self.write(ac.move2(24,0))
+        self.frame.render('bottom_edit', message=msg, l=self.l, r=self.r)
         self.fix_cursor()
 
 class EditFrame(ArgoFrame):
 
-    key_editor = {
-        ac.k_up:"move_up",          ac.k_ctrl_p:"move_up",
-        ac.k_down:"move_down",      ac.k_ctrl_n:"move_down",
-        ac.k_left:"move_left",
-        ac.k_right:"move_right",    ac.k_ctrl_v:"move_right",
-        ac.k_home:"move_line_beginning", ac.k_ctrl_a:"move_line_beginning",
-        ac.k_ctrl_k:"kill_to_end",  ac.k_ctrl_e:"move_line_end",
-        ac.k_ctrl_b:"page_up",      ac.k_page_up:"page_up",
-        ac.k_ctrl_f:"page_down",    ac.k_page_down:"page_down",
-        ac.k_backspace:"backspace", ac.k_ctrl_h:"backspace",
-        ac.k_del:"delete",          ac.k_ctrl_d:"delete",
-        ac.k_delete:"delete",
-        ac.k_ctrl_y:"kill_whole_line",
-        ac.k_end:"move_line_end",
-        ac.k_ctrl_s:"move_firstline",
-        ac.k_ctrl_t:"move_lastline",
-        
-        ac.k_enter_linux:"new_line",
-        ac.k_enter_window:"new_line",
-
-        ac.k_ctrl_S2:"set_mark",
-
-        ac.k_ctrl_f2:"save_history",
-        ac.k_ctrl_g:"restore_history",
-        ac.k_ctrl_l:"refresh",
-
-        }
-
-    key_editor_area = {
-        ac.k_ctrl_d:"remove_area",
-        ac.k_ctrl_u:"exchange_pos",
-        ac.k_ctrl_p:"paste_area",
-        ac.k_ctrl_s:"msg_select",
-        }
-
-    key_maps = {
-        ac.k_ctrl_w:"finish",
-        ac.k_ctrl_q:"show_help",
-        ac.k_ctrl_c:"quit_iter",
-        }
-
-    REG_CMD_START = ac.k_ctrl_u
-
-    _e = ArgoEditor(height=23,hislen=5,dis=10)
-
-    def initialize(self):
-        self.e = self.load(self._e)
-        self.e.refresh_all()
-        self.cls()
+    def setup(self):
+        self.e = self.load(ArgoEditor, height=23, hislen=5, dis=10)
         self.ugly = ''  # 修复单字节发送的bug （sterm）
+
+    def reset(self, text=u'', l=0):
+        self.e.set_text(self.u(text),l)
+        self.e.refresh_all()
 
     def restore(self):
         self.e.do_command("refresh")
@@ -86,14 +40,14 @@ class EditFrame(ArgoFrame):
             self.ugly = char
             return
             
-        if char in self.key_editor:
-            self.e.do_command(self.key_editor[char])
-        elif char == self.REG_CMD_START:
+        if char in config.hotkeys['edit_editor'] :
+            self.e.do_command( config.hotkeys['edit_editor'][char])
+        elif char == config.hotkeys['edit_2ndcmd_start'] :
             x = self.read_secret()
-            if x in self.key_editor_area:
-                self.e.do_command(self.key_editor_area[x])
-        elif char in self.key_maps:
-            getattr(self,self.key_maps[char])()
+            if x in config.hotkeys['edit_editor_2nd']:
+                self.e.do_command(config.hotkeys['edit_editor_2nd'][x])
+        elif char in config.hotkeys['edit']:
+            getattr(self,config.hotkeys['edit'][char])()
         else:
             self.e.safe_insert_iter(char)
 
@@ -116,9 +70,11 @@ class EditFrame(ArgoFrame):
 class NewPostFrame(EditFrame):
 
     def initialize(self,boardname):
+        super(NewPostFrame,self).initialize()
         self.boardname = boardname
         self.read_title()
-        super(NewPostFrame,self).initialize()
+        self.setup()
+        self.reset()
         self.message(u'文章标题设置为 %s' % self.title)
         
     @property
@@ -158,6 +114,8 @@ class ReplyPostFrame(NewPostFrame):
     def initialize(self,boardname,replyid):
         super(ReplyPostFrame,self).initialize(boardname)
         self.replyid = replyid
+        self.setup()
+        self.reset()
 
     @property
     def status(self):
@@ -188,8 +146,10 @@ class EditPostFrame(EditFrame):
         super(EditPostFrame,self).initialize()
         self.boardname = boardname
         self.pid = pid
+        self.setup()
+        self.reset()
         self.message(u'开始编辑文章')
-
+        
     @property
     def status(self):
         return dict(boardname=self.boardname,
@@ -208,3 +168,33 @@ class EditPostFrame(EditFrame):
         self.message(u'编辑文章成功！')
         self.goto_back()
 
+@mark('edit_text')
+class EditFileFrame(EditFrame):
+
+    def initialize(self, filename, text='', l=0, split=False):
+        super(EditFrame, self).initialize()
+        self.split = split
+        self.setup()
+        print repr(text)
+        self.reset(text, l)
+        self.message(u'开始编辑档案 -- %s' % filename)
+
+    @classmethod
+    def describe(self,s):
+        return '编辑档案 -- %s' % s.filename
+
+    def finish(self):
+        if self.split:
+            self.pipe = self.e.get_all_lines()
+        else:
+            self.pipe = self.e.getall()
+        self.message(u'修改档案结束!')
+        self.goto_back()
+
+    def quit_iter(self):
+        self.message(u'放弃本次编辑操作？')
+        d = self.readline()
+        if not d :
+            print 'Cancel'
+            self.pipe = None
+            self.goto_back()
