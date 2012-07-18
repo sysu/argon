@@ -43,8 +43,9 @@ menu = {
         # ( u'(R)ecommend    推荐版面区',"undone",'r' ),
         # ( u'(M)ail         处理信笺区',"undone",'m' ),
         # ( u'(T)alk         谈天说地区',"undone",'t' ),
-        ( u'(I)nfoEdit     个人工具箱',"user_space",'i' ),
-        ( u'(M)oive        电影放映室',"movie",'m' ),
+        ( u'(I)nfoEdit   个人资料设定',"user_space",'i' ),
+        ( u'(F)ilm         电影放映室',"movie",'f' ),
+        ( u'(M)ail           处理信笺','mail_menu','m'),
         # ( u'(S)ervice      特别服务区',"undone",'s' ),
         # ( u'(C)onfig       系统信息区',"undone",'c' ),
         # ( u'(P)ersonal     个人文集区',"undone",'p' ),
@@ -72,7 +73,12 @@ menu = {
         ( u"[1;32mA[0m) 所有讨论区 -- [ALL]",("boardlist",dict(sid=None)),'a',(11,41)),
         ( u"[1;36mN[0m) 阅读新文章 -- [NEW]","undone",'n'),
         ( u"[1;36mE[0m) 回到主选单 -- [EXIT]","main",'e'),
-        )
+        ),
+    "mail":(
+        ( u"(R)ead          览阅全部信笺", "get_mail", "r", (16,41)),
+        ( u"(S)end          发送站内信件", "send_mail", "s"),
+        ( u"(E)xit          回到主选单",   "main", "e"),
+        ),        
 }
 
 key_maps = {
@@ -137,6 +143,8 @@ str = {
     "BOARD_THEAD_TOPIC":u"[0;1;44m 编号  未读 刊 登 者       日  期      标  题                      [同主题折叠]       [m",
     "BOARD_THEAD_ONETOPIC":u"[0;1;44m 编号  未读 刊 登 者       日  期      标  题                      [主题阅读]         [m",
     "BOARD_THEAD_AUTHOR":u"[0;1;44m 编号  未读 刊 登 者       日  期      标  题                      [同作者阅读]       [m",
+    "MAIL_QUICK_HELP":u"[0m离开[[1;32m←[0m,[1;32mq[0m] 选择[[1;32m↑[0m, [1;32m↓[0m] 阅读信件[[1;32m→[0m,[1;32mRtn[0m] 回 信[[1;32mR[0m] 砍信／清除旧信[[1;32md[0m,[1;32mD[0m] 求助[[1;32mh[0m][m",
+    "MAIL_THEAD":u"[0;1;44m 编号  发信者       日 期      标题                                                       [m",
    }
 
 hotkeys = {
@@ -262,6 +270,17 @@ hotkeys = {
         },
     "view-board":{
         "a":"add_to_fav",
+        },
+    "get_mail":{
+        ac.k_ctrl_p:"send_mail",
+        "R":"reply",
+        ac.k_left:"goto_back", ac.k_right:"finish",
+        },
+    "get_mail_table":{
+        "k":"move_up",       "p":"move_up",      
+        "j":"move_down",     "n":"move_down",
+        "P":"page_up",       "N":"page_down",
+        "$":"go_last",
         }
     }
 

@@ -506,41 +506,69 @@ class Mail(Model):
         return int(uid) / 100
 
     def _create_table(self,tableid):
-        return
         import config
         from string import Template
         with open(config.SQL_TPL_DIR + 'template/argo_mailhead.sql') as f :
             mail_template = Template(f.read())
-            self.db.execute(mail_template.safe_substitute(tableid=tableid))
+            gentxt = mail_template.safe_substitute(tableid=tableid)
+            self.db.execute(gentxt)
 
-    # def get_mail_to_uid(self,uid,
-
-    def get_mail_to_uid(self,uid,offset,limit):
-        sql = "SELECT * FROM `%s` WHERE touserid = %%s ORDER BY mid LIMIT %%s,%%s" \
-            % self.__(uid)
+    def send_mail(self, touid, **kwargs):
         try:
-            return self.db.query(sql,uid,offset,limit)
-        except ProgrammingError,e:
+            return self.table_insert(self.__(touid), kwargs)
+        except ProgrammingError as e:
+            print e
             if e.args[0] == 1146 : # Table NOT EXIST
-                self._create_table(self._tableid(uid))
-                self.db.query(sql,uid,offset,limit)
+                self._create_table(self._tableid(touid))
+                self.send_mail(touid, **kwargs)
+            raise e
+
+    def _query_mail(self, touid, touserid, limit, cond):
+        try:
+            if limit > 0:
+                sql = "SELECT * FROM `%s` WHERE touserid=%%s %s ORDER BY mid LIMIT %%s"%\
+                    (self.__(touid), cond)#'AND %s'%cond if cond else '')
+            else:
+                sql = "SELECT * FROM `%s` WHERE touserid=%%s %s ORDER BY mid DESC LIMIT %%s"%\
+                    (self.__(touid), cond)#'AND %s'%cond if cond else '')
+            return self.db.query(sql, touserid, abs(limit))
+        except ProgrammingError as e:
+            if e.args[0] == 1146 : # Table NOT EXIST
+                self._create_table(self._tableid(touid))
+                return []
             else:
                 raise e
 
-    # def get_uid_mail_unread(self,uid,offset,limit):
-    #     sql = "SELECT * FROM %S OEDERY BY mid WHERE fromuserid = "\
-    #         "%s AND readmark & 1 LIMIT %%s,%%s" % (self.__(uid),uid)
-    #     return self.db.query(sql,offset,limit)
+    def one_mail(self, touid, mid):
+        return self.table_get_by_key(self.__(touid), mid)
 
-    def get_mail(self,uid,mid):
-        return self.table_get_by_key(self.__(uid), 'mid', mid)
+    def get_mail(self, touid, touserid, num, limit):
+        # print (touid, touseridm, num, limit)
+        if limit > 0 :
+            return self._query_mail(touid, touserid, limit, '' if num is None else 'AND mid>=%s' % num)
+        else :
+            res = self._query_mail(touid, touserid, limit, '' if num is None else 'AND mid<=%s' % num)
+            res.reverse()
+            return res
 
-    def add_mail_touid(self,touid,**kwargs):
-        kwargs["touserid"] = touid
-        return self.table_insert(self.__(touid),kwargs)
+    def get_new_mail(self, touid, num, limit):
+        return self._query_mail(touid, touserid, limit, 'AND mid>=%s AND readmark & 1'%num)
 
-    def del_mail(self,uid,mid):
-        return self.table_delete_by_key(self.__(uid),'mid',mid)
+    def del_mail(self,touid,mid):
+        return self.table_delete_by_key(self.__(touid), 'mid',mid)
+
+    def update_mail(self, uid, mid, **kwargs):
+        return self.table_update_by_key(self.__(uid), 'mid', mid, kwargs)
+
+    def set_read(self, uid, mid):
+        sql = "UPDATE `%s` SET readmark = readmark | 1 WHERE mid = %%s" %\
+            self.__(uid)
+        self.db.execute(sql, mid)
+
+    def set_reply(self, uid, mid):
+        sql = "UPDATE `%s` SET readmark = readmark | 3 WHERE mid = %%s" %\
+            self.__(uid)
+        self.db.execute(sql, mid)
 
 class Disgest(Model):
 
@@ -711,19 +739,40 @@ class Action(Model):
     def get_rebox_mail(self,userid,offset,limit=20):
         uid = self.userinfo.name2id(userid)
         return self.mail.get_mail_to_uid(uid,offset,limit)
-
-    def send_mail(self,fromuserid,touserid,**kwargs):
-        fromuid = self.userinfo.name2id(fromuserid)
+    
+    def send_mail(self, fromuserid, touserid, **kwargs):
         touid = self.userinfo.name2id(touserid)
-        self.mail.add_mail_touid(touid,fromuserid=fromuid,**kwargs)
+        mid =  self.mail.send_mail(touid,
+                                   fromuserid=fromuserid,
+                                   touserid=touserid,
+                                   replyid=0,
+                                   **kwargs)
+        self.mail.update_mail(touid, mid, tid=mid)
+
+    def reply_mail(self, userid, old_mail, **kwargs):
+        touid = self.userinfo.name2id(old_mail['fromuserid'])
+        return self.mail.send_mail(touid,
+                                   fromuserid=userid,
+                                   touserid=old_mail['fromuserid'],
+                                   tid=old_mail['tid'],
+                                   replyid=old_mail['mid'],
+                                   **kwargs)
 
     def del_mail(self,touserid,mid):
         touid = self.userinfo.name2id(touserid)
-        self.mail.del_mail(touid,mid)
+        return self.mail.del_mail(touid, mid)
 
-    def get_mail(self,userid,mid):
-        uid = self.userinfo.name2id(userid)
-        return self.mail.get_mail(uid,mid)
+    def get_mail(self, userid, num, limit):
+        touid = self.userinfo.name2id(userid)
+        return self.mail.get_mail(touid, userid, num, limit)
+
+    def get_new_mail(self, userid, num, limit):
+        touid = self.userinfo.name2id(userid)
+        return self.mail.get_new_mail(touid, userid, num, limit)
+
+    def one_mail(self, userid, mid):
+        touid = self.userinfo.name2id(userid)
+        return self.mail.one_mail(userid, mid)        
 
     def update_title(self,userid,boardname,pid,new_title):
         return self.post.update_title(boardname,pid,new_title)

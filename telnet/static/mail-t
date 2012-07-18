@@ -1,0 +1,10 @@
+发信人: {{ fromuserid }}
+标  题: {{ title }} 
+发信时间：{{ sendtime.ctime() }}
+
+{{ content }}
+--
+{{ signature }}
+
+※ 来源:．{{ BBS_HOST_FULLNAME|wrapper(bold) }} [FROM: {{ fromaddr }}]
+本文id：{{ mid }}

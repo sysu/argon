@@ -57,6 +57,7 @@ class CF:
         "perm":perm,
         "usersign":usersign,
         "favourite":favourite,
+        "mail":mail,
         }
 
     @classmethod

@@ -266,3 +266,4 @@ class QueryUserIterFrame(QueryUserFrame):
         userid = self.readline(acceptable=ac.is_alnum)
         print repr(userid)
         super(QueryUserIterFrame,self).initialize(userid)
+

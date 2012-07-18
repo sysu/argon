@@ -6,7 +6,7 @@ sys.path.append('../')
 
 from chaofeng import Server,g
 from chaofeng.g import mark
-import login, menu,boardlist,editor,view,user#special_frame
+import login, menu,boardlist,editor,view,user,mail#special_frame
 import config
 # from model import db_orm
 
@@ -20,7 +20,7 @@ class LoginDebugFrame(login.WelcomeFrame):
         # self.goto('dd')
         # self.goto('post','Test1','3')
 
-config.root = 'debug'
+# config.root = 'debug'
 
 if __name__ == '__main__' :
     s = Server(mark[config.root])
