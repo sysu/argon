@@ -4,7 +4,7 @@ sys.path.append('../')
 
 from argo_frame import ArgoFrame
 from chaofeng import EndInterrupt
-from chaofeng.g import mark,static
+from chaofeng.g import mark
 import chaofeng.ascii as ac
 from model import manager
 from view import ArgoTextBoxFrame
@@ -38,7 +38,7 @@ class ArgoHistoryFrame(ArgoTextBoxFrame):
 
     def show_history(self):
         items = map(lambda x : self.getdesc(x),self.history)
-        self.set_text(static['template/history'].render(items=items))
+        self.set_text(self.render_str('history',items=items))
 
     def finish(self,args):
         self.goto_back_nh()
@@ -51,7 +51,7 @@ class Finish(ArgoFrame):
 
     def initialize(self):
         self.finish(None)
-        self.write(static['undone'])
+        self.render('undone')
         self.pause()
         self.close()
 

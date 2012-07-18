@@ -3,7 +3,7 @@
 import sys
 sys.path.append('../')
 
-from chaofeng import EndInterrupt,Timeout
+from chaofeng import EndInterrupt,Timeout,sleep
 from chaofeng.g import mark
 from chaofeng.ui import Animation,ColMenu
 import chaofeng.ascii as ac
@@ -24,17 +24,26 @@ def tidy_anim(text, height):
 class PlayMovie(ArgoFrame):
 
     def initialize(self):
-        anim = tidy_anim(self.render_str('movie'), 9)
+        for i in range(10,0,-1):
+            sleep(1)
+            self.write(ac.clear + ac.move2(12, 40) + str(i))
+        self.write(ac.clear + ac.move2(12,40) + ac.blink + u'任意键继续')
+        self.pause()
+        anim = tidy_anim(self.render_str('movie'), 21)
         self.setup(anim)
         self.start()
     
     def setup(self, data):
         self.cls()
-        self.anim = self.load(Animation, data, start_line=5)
-        self.anim.setup()
+        self.anim = self.load(Animation, data, start_line=1)
+        self.anim.setup(playone=True)
 
     def start(self):
         self.anim.launch()
+
+    def play_done(self):
+        self.pause()
+        self.goto_back()
 
 class MenuFrame(ArgoFrame):
 

@@ -1,0 +1,7 @@
+{{ "历史记录"|center|wrapper(bg_blue,white) }}
+
+{% for item in items %}
+   {{ loop.index|width(5)|wrapper(yellow) }}. {{ item|wrapper(cyan,bold) }}
+{%- endfor %}
+
+

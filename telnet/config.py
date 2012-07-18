@@ -37,7 +37,7 @@ root = 'welcome'
 
 menu = {
     "main":(
-        ( u'(E)Group       分类讨论区','sections','e',(12,5)),
+        ( u'(E)Group       分类讨论区','sections','e',(13,5)),
         # ( u'(D)igest       本站精华区',"undone",'d' ),
         ( u'(F)avourite    个人收藏夹',"favourite",'f' ),
         # ( u'(R)ecommend    推荐版面区',"undone",'r' ),

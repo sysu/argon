@@ -6,7 +6,7 @@ sys.path.append('../')
 
 from chaofeng import Server,g
 from chaofeng.g import mark
-import login, menu,boardlist,editor,view,user,mail#special_frame
+import login, menu,boardlist,editor,view,user,mail,special_frame
 import config
 # from model import db_orm
 
