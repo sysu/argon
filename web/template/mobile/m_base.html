@@ -22,7 +22,7 @@
       <div id="logo">
         <h1 id="site_name">ARGO<sup class="sup">m_beta</sup></h1>
       </div>
-      {% if login %}
+      {% if userid %}
       <div id="signedin">欢迎你， {{ userid }} | <a href="/m/logout/">退出</a></div>
       {% else %}
       <div id="signedin"><a href="/m/login/">登陆</a></div>
@@ -32,7 +32,7 @@
       <h1>逸仙时空 Yat-sen Channel</h1>
       <nav id="main_menu">
 	<ul>
-	  {% if login %}
+	  {% if userid %}
 	  <li id="nav-m"><a href="/m/">首页</a></li>
 	  <li id="nav-brds"><a href="/m/brds/">讨论区</a></li>
 	  <li id="nav-fav"><a href="/m/fav/">收藏夹</a></li>
