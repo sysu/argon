@@ -1,0 +1,38 @@
+{% extends 'm_base.html' %}
+{% block content %}
+<section id="listmail">
+  <div id="compose-mail">
+    <a href="/m/mail/send/">写新信件</a>
+    <div class="clear"></div>
+  </div>
+  <div id="mail-container">
+    {% for m in mail %}
+    <div id="mail-entry-{{m.index}}" class="mail-entry-collapse{% if m.flag == 0 %} mail-new{% endif %}">
+      <div class="mail-header" onclick="m_toggle_mail('{{ m.index }}');">
+	<div class="mail-title">
+	  {{ m.title }} {% if m.flag > 31 %}&crarr;{% endif %}
+	</div>
+	<div class="mail-owner">
+	  - {{ m.owner }}, {{ m.filetime }}
+	</div>
+      </div>
+      <div id="mail-content-{{m.index}}" class="mail-content clear"></div>
+      <div id="mail-footer-{{m.index}}" class="mail-footer">
+	<a href="/m/mail/send/{{m.index}}">回复信件</a>
+      </div>
+      <div class="clear"></div>
+    </div>
+    {% endfor %}
+  </div>
+  <div class="pagectrl">
+    {% if prev != '-1' %}
+    <a href="/m/mail/0/" class="prev">&lt;&lt;</a>
+    <a href="/m/mail/{{prev}}/" class="prev">   上一页 </a>
+    {% endif %}
+    {% if next != '-1' %}
+    <a href="/m/mail/" class="next">&gt;&gt;</a>
+    <a href="/m/mail/{{next}}/" class="next">下一页   </a>
+    {% endif %}
+  </div>
+</section>
+{% endblock %}

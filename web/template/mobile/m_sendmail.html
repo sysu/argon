@@ -1,0 +1,32 @@
+{% extends 'm_base.html' %}
+{% block content %}
+<section id="send-mail">
+  <div class="form-container">
+    <form method="POST" id="mail-form" action="/m/mail/">
+      <div>
+	<label>标题:</label>
+	<br />
+	<input type="text" name="title" value="{{title}}" />
+      </div>
+      <div>
+	<label>收件人:</label>
+	<br />
+	<input type="text" name="receiver" value="{{receiver}}" />
+      </div>
+      <div>
+	<label>正文:</label>
+	<br />
+	<textarea name="content" rows="6">{{quote}}</textarea>
+      </div>
+      <div>
+	<input class="button" type="submit" value="发送" />
+	{% if reply %}
+	<input type="hidden" name="articleid" value="{{articleid}}" />
+	<input type="hidden" name="filename" value="{{filename}}" />
+	{% endif %}
+	<a href="javascript:history.go(-1);">取消</a>
+      </div>
+    </form>
+  </div>
+</section>
+{% endblock %}

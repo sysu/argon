@@ -1,0 +1,29 @@
+{% extends 'mobile/m_base.html' %}
+{% block content %}
+
+<section id="welcome">
+  <div id="welcome_top">
+    逸仙时空BBS欢迎你，<br />在这里你可以:
+  </div>
+  <div id="welcome_tip" class="welcome_div">
+    <dl>
+      <dd>o 加入感兴趣的话题</dd>
+      <dd>o 记录与分享生活中的点点滴滴</dd>
+      <dd>o 发布和查找各类实用信息</dd>
+      <dd>o 灌一灌水，紧张之余适度放松自己</dd>
+      <dd>o 以及更多..</dd>
+    </dl>
+  </div>
+  <ul class="welcome_div">
+    <li class="float_left">
+      <a class="button welcome_reg" href="#">现在注册[暂不可用]</a>
+    </li>
+    <li class="float_right">
+      <a class="button welcome_login" href="/m/login/">马上登陆</a>
+    </li>
+  </ul>
+  <div class="clear"> </div>
+</section>
+
+
+{% endblock %}

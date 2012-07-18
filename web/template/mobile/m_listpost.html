@@ -1,0 +1,107 @@
+{% extends 'm_base.html' %}
+{% block script %}
+<script type="text/javascript">
+  var m_board = '{{ board.filename }}';
+  var m_entry_index_list = [{% for t in plist %}'{{t.index}}', {% endfor %}];
+  var m_entry_file_list = [{% for t in plist %}'{{t.filename}}', {% endfor %}];
+  var m_entry_id_list = [{% for t in plist %}'{{t.id}}', {% endfor %}];
+  var m_entry_read_list = [{% for t in plist %} {{t.unread}}, {% endfor %}];
+  page_init_code = 'init_listpost();';
+</script>
+{% endblock %}
+{% block content %}
+<section id="listpost">
+  <div id="new-post">
+    <span id="post-nav-board" onclick="m_switch_board(this, '{{board.seccode}}');">
+      {{ board.secnum }}区 &raquo;  {{ board.filename }} 版
+    </span>
+    <a id="write-post" href="/m/{{board.filename}}/post/">写新文章</a>
+    <div class="clear"></div>
+    <div id="sec-popup"></div>
+  </div>
+  <div class="pagectrl">
+    {% if prev %}
+    <a href="/m/{{board.filename}}/1/" class="prev">&lt;&lt;</a>
+    <a href="/m/{{board.filename}}/{{prev}}/" class="prev" id="prev-link">   上一页 </a>
+    {% else %}
+    <span class="prev">&lt;&lt;</span>
+    <span class="prev">   上一页 </span>
+    {% endif %}
+    {% if next %}
+    <a href="/m/{{board.filename}}/" class="next">&gt;&gt;</a>
+    <a href="/m/{{board.filename}}/{{next}}/" class="next" id="next-link">下一页   </a>
+    {% else %}
+    <span class="next">&gt;&gt;</span>
+    <span class="next">下一页   </span>
+    {% endif %}
+  </div>
+  <div id="post-entries">
+    {% for post in plist %}
+    <div id="entry-row-{{post.index}}" class="entry-row entry-row-collapse" >
+      <div class="entry-container">
+	<div class="entry-top-bar">
+	  <span class="entry-collapse" onclick="m_collapse_post('{{post.index}}');">
+	    <span class="entry-collapse-icon"></span>
+	    <span class="entry-collapse-text">收起</span>
+	  </span>
+	  <span class="entry-next" onclick="m_expand_next('{{post.index}}');">
+	    <span class="entry-next-icon"></span>
+	    <span class="entry-next-text">下一篇</span>
+	  </span>
+	  <span class="entry-prev" onclick="m_expand_prev('{{post.index}}');">
+	    <span class="entry-prev-icon"></span>
+	    <span class="entry-prev-text">上一篇</span>
+	  </span>
+	  <span class="entry-subject" onclick="javascript:window.location='/m/{{board.filename}}/{{post.filename}}';">
+	    <span class="entry-subject-icon"></span>
+	    <span class="entry-subject-text">本主题</span>
+	  </span>
+	</div>
+	<div class="entry-header{% cycle ' bgcolor-blue' '' %}" onclick="m_expand_post('{{post.index}}', '{{board.filename}}', '{{post.filename}}');">
+	  <div class="entry-icon">
+	  </div>
+	  <div class="entry-header-body">
+	    <div id="entry-title-{{post.index}}" class="entry-title">
+	      {{ post.title }}
+	    </div>
+	    <div class="entry-owner">
+	      - {{ post.owner }}, {{ post.update }}
+	    </div>
+	  </div>
+	</div>
+	<div id="entry-content-{{post.index}}" class="entry-content entry-no-content"></div>
+	<div class="entry-footer">
+	  <span id="entry-info-{{post.index}}" class="entry-info">
+	  </span>
+	  {% if not post.noreply %}
+	  <span class="entry-reply" onclick="m_toggle_reply('{{post.index}}');">
+	    <span class="entry-reply-icon"></span>
+	    <span id="entry-reply-text-{{post.index}}" class="entry-reply-text">回复此文</span>
+	  </span>
+	  {% endif %}
+	</div>
+	<div id="entry-custom-{{post.index}}" class="entry-custom"></div>
+	<div class="clear"> </div>
+      </div>
+    </div>
+    {% endfor %}
+  </div>
+  <div class="pagectrl">
+    {% if prev %}
+    <a href="/m/{{board.filename}}/1/" class="prev">&lt;&lt;</a>
+    <a href="/m/{{board.filename}}/{{prev}}/" class="prev">   上一页 </a>
+    {% else %}
+    <span class="prev">&lt;&lt;</span>
+    <span class="prev">   上一页 </span>
+    {% endif %}
+    {% if next %}
+    <a href="/m/{{board.filename}}/" class="next">&gt;&gt;</a>
+    <a href="/m/{{board.filename}}/{{next}}/" class="next">下一页   </a>
+    {% else %}
+    <span class="next">&gt;&gt;</span>
+    <span class="next">下一页   </span>
+    {% endif %}
+  </div>
+</section>
+{% endblock %}
+

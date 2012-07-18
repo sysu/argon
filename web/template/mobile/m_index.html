@@ -1,0 +1,28 @@
+{% extends 'm_base.html' %}
+{% block content %}
+<section id="index">
+  <div></div>
+  <!--  -->
+  <div class="index-row" id="idx-announce" style="color:#999;">最新公告</div>
+  <div class="index-row" id="idx-topten">
+    <div class="index-row-title" onclick="m_toggle_topten();">十大热门话题</div>
+    <div id="topten-view" class="hidden">
+      <ul class="top-ten-list">
+	{% for i in top %}
+	<li>
+	  <span class="top-ten-title">
+	    <a href="/m/{{i.board}}/{{i.filename}}">{{ i.title }}</a>[{{ i.board }}]
+	  </span>
+	</li>
+	{% end %}
+      </ul>
+    </div>
+  </div>
+  <!--  -->
+  <div class="index-row" id="idx-recommand" style="color:#999;">推荐阅读文章</div>
+  <div class="index-row" id="idx-recent">
+    <div class="index-row-title" onclick="m_toggle_recent();">最近访问过的版</div>
+    <div id="recent-view"></div>
+  </div>
+</section>
+{% end %}

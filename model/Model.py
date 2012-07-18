@@ -57,7 +57,7 @@ class Model:
     __metaclass__ = MetaModel
 
     def __init__(self):
-        pass
+        self.dict = {}
     
     def bind(self,db=None,ch=None):
         if db : self.db = db
