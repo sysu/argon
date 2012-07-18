@@ -98,14 +98,6 @@ class MainMenuFrame(MenuFrame):
         anim_data = self.get_anim_data()
         self.setup(menu_data, False, 11, background, 0, anim_data)
 
-    @property
-    def status(self):
-        return dict(default=self.menu.hover)
-
-    @classmethod
-    def describe(cls,status):
-        return u'主菜单'
-
     def show_help(self):
         self.suspend('help',page='main')
 
@@ -125,14 +117,6 @@ class SectionMenuFrame(MenuFrame):
         background = self.render_str('menu_section')
         anim_data = self.get_anim_data()
         self.setup(menu_data, menu_height, 11, background, 0, anim_data)
-
-    @property
-    def status(self):
-        return dict(default=self.menu.hover)
-
-    @classmethod
-    def describe(cls,status):
-        return u'讨论区分类选单'
 
     def show_help(self):
         self.suspend('help',page='sections')

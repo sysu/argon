@@ -24,14 +24,6 @@ class UserSpaceFrame(MenuFrame):
         anim_data = self.get_anim_data()
         self.setup(menu_data, 1, 11, background, 0, anim_data)
 
-    @property
-    def status(self):
-        return dict()
-
-    @classmethod
-    def description(cls,status):
-        return u'个人工具箱'
-
     def show_help(self):
         self.suspend('help',page='user_space')
 

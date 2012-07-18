@@ -142,16 +142,9 @@ class ArgoReadPostFrame(ArgoTextBoxFrame):
         self.setup()
         self.set_post(boardname,pid)
 
-    @property
-    def status(self):
-        return dict(boardname=self.boardname,
-                    pid=self.pid)
+    def getdesc(self):
+        return u'阅读文章            -- [%s](/p/%s/%s)' % (self.post['title'], self.boardname, self.pid)
 
-    @classmethod
-    def describe(self,s):
-        return u'阅读文章            -- [%s](/p/%s/%s)' % (manager.post.pid2title(**s),
-                                                           s['boardname'],s['pid'])
-                                     
     def get_post(self,boardname,pid):
         return manager.post.get_post(boardname,pid)
 
@@ -189,16 +182,12 @@ class TutorialFrame(ArgoTextBoxFrame):
 
     @classmethod
     def try_jump(cls,args):
+        print args[0]
         if args[0] in config.have_help_page :
             return dict(page=args[0])
 
-    @property
-    def status(self):
-        return dict(page=self.page)
-
-    @classmethod
-    def describe(self,s):
-        return u'查看帮助            -- [](/h/%s)' % s['page']
+    def getdesc(self):
+        return u'查看帮助            -- [](/h/%s)' % self.page
     
     def initialize(self,page='index'):
         super(TutorialFrame,self).initialize()

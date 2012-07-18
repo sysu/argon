@@ -77,13 +77,6 @@ class NewPostFrame(EditFrame):
         self.reset()
         self.message(u'文章标题设置为 %s' % self.title)
         
-    @property
-    def status(self):
-        return dict(boardname=self.boardname)
-
-    @classmethod
-    def describe(self,s):
-        return '发表文章 -- %s' % s.boardname
 
     def _read_title(self):
         self.write(ac.move2(24,1) + ac.kill_line + u'文章标题：')
@@ -121,15 +114,6 @@ class ReplyPostFrame(NewPostFrame):
         return self.readline(prefix=u'Re: %s'%manager.post.pid2title(self.boardname,
                                                                      tid))
 
-    @property
-    def status(self):
-        return dict(boardname=self.boardname,
-                    replyid=self.replyid)
-
-    @classmethod
-    def describe(self,s):
-        return '回复文章 -- %s -- %s' % (s.boardname,s.replyid)
-
     def finish(self):
         manager.action.reply_post(
             self.boardname,
@@ -154,16 +138,6 @@ class EditPostFrame(EditFrame):
         self.reset(text=manager.post.get_post(boardname,pid)['content'])
         self.message(u'开始编辑文章')
         
-    @property
-    def status(self):
-        return dict(boardname=self.boardname,
-                    pid=pid)
-
-    @classmethod
-    def describe(self,s):
-        return '编辑文章 -- %s -- %s' % (s.boardname,
-                                         s.pid)   
-
     def finish(self):
         manager.action.update_post(self.boardname,
                                    self.userid,
@@ -182,10 +156,6 @@ class EditFileFrame(EditFrame):
         print repr(text)
         self.reset(text, l)
         self.message(u'开始编辑档案 -- %s' % filename)
-
-    @classmethod
-    def describe(self,s):
-        return '编辑档案 -- %s' % s.filename
 
     def finish(self):
         if self.split:

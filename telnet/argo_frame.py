@@ -90,12 +90,6 @@ class ArgoBaseFrame(Frame):
         '''
         self.goto(pack[0],**pack[1])
 
-    def describe(self,status):
-        return u"一个普通的画面"
-
-    def getdesc(self,frame):
-        return frame.describe(frame.status)
-
 class ArgoAuthFrame(ArgoBaseFrame):
 
     @property
@@ -296,10 +290,6 @@ class ArgoFrame(ArgoAuthFrame):
 
 @mark('undone')
 class UnDoneFrame(ArgoFrame):
-
-    @property
-    def status(self):
-        return dict()
 
     def initialize(self,*args,**kwargs):
         self.render('undone')

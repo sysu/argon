@@ -152,21 +152,14 @@ class QueryBoardFrame(ArgoTextBoxFrame):
 class ArgoBoardListFrame(ArgoBoardListTableFrame):
     
     def initialize(self,sid=None):
-        super(ArgoBoardListFrame, self).initialize()        
+        self.sid = sid
+        super(ArgoBoardListFrame, self).initialize()
         if sid is None:
             data = manager.board.get_all_boards()
         else:
             data = manager.board.get_by_sid(sid)
         self.setup(data)
         self.restore()
-
-    @property
-    def status(self):
-        return dict(sid=self.sid)
-
-    @classmethod
-    def describe(cls,s):
-        return u'讨论区列表          -- 分类 %s' % s['sid']
   
     def finish(self):
         r = self.table.fetch()
@@ -197,14 +190,6 @@ class ArgoFavouriteFrame(ArgoBoardListTableFrame):
                    data)
         self.reload_data(data)
         super(ArgoFavouriteFrame, self).restore()
-
-    @property
-    def status(self):
-        return dict()
-
-    @classmethod
-    def describe(cls,s):
-        return u'收藏夹'
   
     def finish(self):
         r = self.table.fetch()
@@ -299,16 +284,6 @@ class ArgoBoardFrame(ArgoBoardTableFrame):
             self.suspend('post',
                          boardname=self.boardname,
                          pid=res['pid'])
-
-    @property
-    def status(self):
-        return dict(boardname=self.boardname,
-                    default=self.table_.hover,
-                    mode=self.mode)
-
-    @classmethod
-    def describe(self,s):
-        return u'讨论区              -- %s' % s['boardname']
 
     def show_help(self):
         self.suspend('help',page='board')

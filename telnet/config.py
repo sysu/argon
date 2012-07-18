@@ -119,7 +119,8 @@ max_try_register_time = 150
 max_stack_deep = 5
 max_history_deep = 20
 
-have_help_page = set(("main","sections","board","boardlist","edit","view","help"))
+have_help_page = set(("index","main","sections","board","boardlist","edit",
+                      "view","help",'mail','testjump'))
 
 str = {
     "PROMPT_INPUT_PASSWD":u"请输入密码：",
@@ -151,6 +152,7 @@ hotkeys = {
     "g":{
         ac.k_ctrl_c:"goto_back",
         "h":"show_help",
+        ac.k_ctrl_be:"goto_history",
         },
     "menu":{
         ac.k_right:"right_or_finish",
@@ -173,7 +175,6 @@ hotkeys = {
         'q':'goto_back',      'e':'goto_back',        ac.k_left:'goto_back',
         's':'change_sort',           '#':'go_line',
         ac.k_end:"go_last",           '$':'go_last',
-
         "a":"add_to_fav",  "d":"remove_fav",
         # admin
         ac.k_ctrl_a:'watch_board',
@@ -249,9 +250,9 @@ hotkeys = {
         "Q":"goto_back",
         ac.k_left:"goto_back",
         ac.k_ctrl_u:"go_link",
-        "h":"jump_from_screen",
-        ac.k_ctrl_a:"jump_man",
-        ac.k_ctrl_r:"jump_history",
+        # "h":"jump_from_screen",
+        # ac.k_ctrl_a:"jump_man",
+        ac.k_ctrl_r:"jump_from_screen",
         },
     "view_textbox":{
         ac.k_up : "move_up",

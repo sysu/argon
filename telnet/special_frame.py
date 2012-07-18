@@ -24,20 +24,14 @@ class BadEndingFrame(ArgoFrame):
 @mark('history')
 class ArgoHistoryFrame(ArgoTextBoxFrame):
 
-    @property
-    def status(self):
-        return dict()
-
-    @classmethod
-    def describe(self,s):
-        return u'浏览历史记录'
-
     def initialize(self):
         super(ArgoHistoryFrame,self).initialize()
+        self.setup()
         self.show_history()
 
     def show_history(self):
-        items = map(lambda x : self.getdesc(x),self.history)
+        items = filter(lambda x: hasattr(x, 'getdesc'), self.history)
+        items = map(lambda x : x.getdesc(), items)
         self.set_text(self.render_str('history',items=items))
 
     def finish(self,args):
