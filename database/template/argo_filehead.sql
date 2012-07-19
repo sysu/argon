@@ -1,7 +1,3 @@
-/*
-    Just a template.
-    Using string.Template.safe_substitute({ ... })
-*/
 DROP TABLE IF EXISTS `argo_filehead_${boardname}`;
 CREATE TABLE IF NOT EXISTS `argo_filehead_${boardname}` ( 
     `pid` int(11) unsigned NOT NULL auto_increment,

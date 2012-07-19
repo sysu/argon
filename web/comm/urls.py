@@ -56,7 +56,9 @@ urls = [
            (r"/m/brds/?$", _import("mobile.m_main","MobileBoardHandler")),
            (r"/m/data/?$", _import("mobile.m_main","MobileDataHandler")),
            (r"/m/about/?$", _import("mobile.m_main","MobileAboutHandler")),
-    
+           (r"/m/(\w{2,16})/?", _import("mobile.m_main","MobilePostHandler")),
+           (r"/m/(\w{2,16})/(\d{1,4})/?", _import("mobile.m_main","MobilePostHandler")),
+           (r"/m/(\w{2,16})/post/?", _import("mobile.m_main","MobileNewPostHandler")),
            
         ]
 

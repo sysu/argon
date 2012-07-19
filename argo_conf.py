@@ -9,8 +9,12 @@ class ConfigBase:
     '''
         Basic config
     '''
-    #base_dir = '~/source'
-    base_dir = '/home/mo'
+    import os
+    if os.popen('whoami').read() == 'hbl\n':
+        base_dir = '/Users/hbl/source'
+    else:
+        base_dir = '/home/mo'
+
     data_dir = ''
 
 class ConfigDB:
