@@ -1,4 +1,5 @@
 #!/usr/bin/env python 
+#-*- encoding: utf8 -*-
 
 import sys
 import tornado.web
@@ -15,12 +16,21 @@ class BaseHandler(tornado.web.RequestHandler):
     @property
     def ch(self):
         return self.application.ch
+    
+    @property
+    def headers(self):
+        return self.request.headers 
 
+    def get_current_user(self):
+        return self.get_secure_cookie('userid')
+    
     def prepare(self):
-        self.tpl_setting = {}
-        self.tpl_setting['login'] = 0
-        self.tpl_setting['msg'] = '' 
-
+        try:
+            self.ref = self.headers['Referer']
+            self.remote_ip = self.request.remote_ip
+        except:
+            self.ref = ''
+    
 class Proxy(dict):
     
     def __call__(self, name):
@@ -42,10 +52,13 @@ urls = [
 
            (r"/m/?$", _import("mobile.m_main","MobileIndexHandler")),
            (r"/m/login/?$", _import("mobile.m_main","MobileLoginHandler")),
+           (r"/m/logout/?$", _import("mobile.m_main","MobileLogoutHandler")),
            (r"/m/brds/?$", _import("mobile.m_main","MobileBoardHandler")),
            (r"/m/data/?$", _import("mobile.m_main","MobileDataHandler")),
            (r"/m/about/?$", _import("mobile.m_main","MobileAboutHandler")),
-    
+           (r"/m/(\w{2,16})/?", _import("mobile.m_main","MobilePostHandler")),
+           (r"/m/(\w{2,16})/(\d{1,4})/?", _import("mobile.m_main","MobilePostHandler")),
+           (r"/m/(\w{2,16})/post/?", _import("mobile.m_main","MobileNewPostHandler")),
            
         ]
 

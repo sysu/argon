@@ -2,9 +2,10 @@
 {% block content %}
 <section id="newpost">
   <div id="post_top">
-    在 {{ board.filename }} 发表新文章
+    在 {{ board.boardname }} 发表新文章
   </div>
   <form method="POST" id="post_form" action="">
+    {% module xsrf_form_html()  %}
     <div class="newpost_row">
       <label>标题:</label>
       <br />
@@ -21,4 +22,4 @@
     </div>
   </form>
 </section>
-{% endblock %}
+{% end %}
