@@ -671,16 +671,61 @@ class UserSign(Model):
         key = self.keyf % userid
         return self.ch.llen(key)
 
+class Team(Model):
+
+    key_ust = 'argo:team_ust:%s' # User's team
+    key_tsm = 'argo:team_tsm:%s' # Team's member
+
+    # Base
+
+    def join_team(self, userid, teamname):
+        self.ch.sadd(self.key_ust%userid, teamname)
+        self.ch.sadd(self.key_tsm%teamname, userid)
+
+    def remove_team(self, userid, teamname):
+        self.ch.srem(self.key_ust%userid, teamname)
+        self.ch.sadd(self.key_tsm%teamname, userid)
+
+    def is_in_team(self, userid, teamname):
+        return self.ch.sismenber(self.key_tsm%teamname,
+                                 userid)
+
+    def all_menber(self, teamname):
+        return self.ch.smembers(self.key_tsm%teamname)
+
+    def user_teams(self, userid):
+        return self.ch.smembers(self.key_ust%userid)
+
 class Permissions(Model):
 
-    def has_new_post_perm(self,userid,boardname):
-        return True
+    key_glb = 'argo:perm_glb:%s'    # Global Permissions
+    key_brd = 'argo:perm_brd:%s:%s' # Board's Permissions
+    key_ust = Team.key_ust
 
-    def has_reply_perm(self,userid,boardname,pid):
-        return True
+    def give_perm(self, teamname, perm):
+        self.ch.sadd(self.key_glb%perm, teamname)
 
-    def has_edit_perm(self,userid,boardname,pid):
-        return True
+    def remove_perm(self, teamname, perm):
+        self.ch.srem(self.key_glb%perm, teamname)
+
+    def check_perm(self, userid, perm):
+        return self.ch.sinter(self.key_ust%userid, self.key_glb%perm)
+
+    def teams_with_perm(self, perm):
+        return self.ch.smembers(self.key_glb%perm)
+
+    def give_board_perm(self, teamname, boardname, perm):
+        self.ch.sadd(self.key_brd%(boardname, perm), teamname)
+
+    def remove_board_perm(self, teamname, boardname, perm):
+        self.ch.srem(self.key_brd%(boardname, perm), teamname)
+
+    def check_board_perm(self, teamname, boardname, perm):
+        return self.ch.sinter(self.key_ust%userid,
+                              self.key_brd%(boardname, perm))
+
+    def teams_with_board_perm(self, teamname, boardname, perm):
+        return self.ch.smembers(self.key_brd%(boardname, perm))
 
 class Action(Model):
 

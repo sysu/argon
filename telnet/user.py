@@ -207,6 +207,7 @@ class EditSignFrame(ArgoFrame):
                         tuple(enumerate(signs)))
         if r is False:
             self.write(u'取消设置签名档')
+            self.pause()
             self.goto_back()
         text = '\r\n'.join(signs)
         self.suspend('edit_text', filename=u'签名档',text=text, l=r*6, split=True)
