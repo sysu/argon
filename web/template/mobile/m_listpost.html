@@ -52,7 +52,7 @@
 	    <span class="entry-prev-icon"></span>
 	    <span class="entry-prev-text">上一篇</span>
 	  </span>
-	  <span class="entry-subject" onclick="javascript:window.location='/m/{{board.boardname}}/{{post.pid}}';">
+	  <span class="entry-subject" onclick="javascript:window.location='/m/{{board.boardname}}/thread/{{post.pid}}';">
 	    <span class="entry-subject-icon"></span>
 	    <span class="entry-subject-text">本主题</span>
 	  </span>
@@ -74,7 +74,7 @@
 	  <span id="entry-info-{{post.pid}}" class="entry-info">
       </span>
       <!-- if not noreply -->
-	  <span class="entry-reply" onclick="m_toggle_reply('{{post.index}}');">
+	  <span class="entry-reply" onclick="m_toggle_reply('{{post.pid}}');">
 	    <span class="entry-reply-icon"></span>
 	    <span id="entry-reply-text-{{post.pid}}" class="entry-reply-text">回复此文</span>
     </span>

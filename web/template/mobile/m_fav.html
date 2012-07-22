@@ -4,14 +4,14 @@
   <ul class="section">
     {% for brd in boards %}
     <li class="fav-row">
-      <div {% if brd.unread %} class="unread" {% endif %} onclick="window.location = '/m/{{ brd.filename }}';">
-	{{ brd.title }}<span class="board-ename">[{{ brd.filename }}]</span>
+      <div {% if brd.unread %} class="unread" {% end %} onclick="window.location = '/m/{{ brd.boardname }}';">
+	{{ brd.description }}<span class="board-ename">[{{ brd.boardname}}]</span>
 	<div class="lastpost">
-	  <small>鏇存柊:{{  brd.lastpost }}</small>
+	  <small> 更新:{{  brd.lastpost }}</small>
 	</div>
       </div>
     </li>
-    {% endfor %}
+    {% end %}
   </ul>
 </section>
-{% endblock %}
+{% end %}

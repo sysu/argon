@@ -6,33 +6,31 @@
     <div class="clear"></div>
   </div>
   <div id="mail-container">
-    {% for m in mail %}
-    <div id="mail-entry-{{m.index}}" class="mail-entry-collapse{% if m.flag == 0 %} mail-new{% endif %}">
-      <div class="mail-header" onclick="m_toggle_mail('{{ m.index }}');">
+    {% for m in mlist %}
+    <div id="mail-entry-{{m.mid}}" class="mail-entry-collapse{% if m.readmark == 0 %} mail-new{% end %}">
+      <div class="mail-header" onclick="m_toggle_mail('{{ m.mid }}');">
 	<div class="mail-title">
-	  {{ m.title }} {% if m.flag > 31 %}&crarr;{% endif %}
+	  {{ m.title }} {% if m.readmark == 3 %}&crarr;{% end %}
 	</div>
 	<div class="mail-owner">
-	  - {{ m.owner }}, {{ m.filetime }}
+	  - {{ m.fromuserid }}, {{ m.sendtime }}
 	</div>
       </div>
-      <div id="mail-content-{{m.index}}" class="mail-content clear"></div>
-      <div id="mail-footer-{{m.index}}" class="mail-footer">
-	<a href="/m/mail/send/{{m.index}}">回复信件</a>
+      <div id="mail-content-{{m.mid}}" class="mail-content clear"></div>
+      <div id="mail-footer-{{m.mid}}" class="mail-footer">
+	<a href="/m/mail/send/{{m.mid}}">回复信件</a>
       </div>
       <div class="clear"></div>
     </div>
-    {% endfor %}
+    {% end %}
   </div>
   <div class="pagectrl">
-    {% if prev != '-1' %}
-    <a href="/m/mail/0/" class="prev">&lt;&lt;</a>
+    {% if prev %}
     <a href="/m/mail/{{prev}}/" class="prev">   上一页 </a>
-    {% endif %}
-    {% if next != '-1' %}
-    <a href="/m/mail/" class="next">&gt;&gt;</a>
+    {% end %}
+    {% if next %}
     <a href="/m/mail/{{next}}/" class="next">下一页   </a>
-    {% endif %}
+    {% end %}
   </div>
 </section>
-{% endblock %}
+{% end %}
