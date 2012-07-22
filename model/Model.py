@@ -700,7 +700,10 @@ class Permissions(Model):
 
     key_glb = 'argo:perm_glb:%s'    # Global Permissions
     key_brd = 'argo:perm_brd:%s:%s' # Board's Permissions
+    key_tsp = 'argo:perm_tsp:%s:%s' # Team's Permissions
     key_ust = Team.key_ust
+
+    # Global Permissions
 
     def give_perm(self, teamname, perm):
         self.ch.sadd(self.key_glb%perm, teamname)
@@ -711,21 +714,38 @@ class Permissions(Model):
     def check_perm(self, userid, perm):
         return self.ch.sinter(self.key_ust%userid, self.key_glb%perm)
 
-    def teams_with_perm(self, perm):
+    def get_teams_with_perm(self, perm):
         return self.ch.smembers(self.key_glb%perm)
 
-    def give_board_perm(self, teamname, boardname, perm):
+    # Board Permissions
+
+    def give_boardperm(self, teamname, boardname, perm):
         self.ch.sadd(self.key_brd%(boardname, perm), teamname)
 
-    def remove_board_perm(self, teamname, boardname, perm):
+    def remove_boardperm(self, teamname, boardname, perm):
         self.ch.srem(self.key_brd%(boardname, perm), teamname)
 
-    def check_board_perm(self, teamname, boardname, perm):
+    def check_boardperm(self, teamname, boardname, perm):
         return self.ch.sinter(self.key_ust%userid,
                               self.key_brd%(boardname, perm))
 
-    def teams_with_board_perm(self, teamname, boardname, perm):
+    def get_teams_with_boardperm(self, teamname, boardname, perm):
         return self.ch.smembers(self.key_brd%(boardname, perm))
+
+    # # Teams Admin
+
+    # def give_teamperm(self, teamname, oteamname, perm):
+    #     self.ch.sadd(self.key_tsp%(oteamname, perm), teamname)
+
+    # def remove_teamperm(self, teamname, oteamname, perm):
+    #     self.ch.srem(self.key_tsp%(oteamname, perm), teamname)
+
+    # def check_boardperm(self, teamname, oteamname, perm):
+    #     self.ch.sinter(self.key_tsp%(oteamname, perm), teamname)
+
+    # def get_teams_with_teamperm(self, teamname, oteamname, perm):
+    #     return self.ch.smembers(self.key_tsp%(oteamname, perm),
+    #                             teamname)
 
 class Action(Model):
 
