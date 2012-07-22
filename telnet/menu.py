@@ -52,8 +52,8 @@ class MenuFrame(ArgoFrame):
         super(MenuFrame,self).initialize()
         self.menu = self.load(ColMenu)
         self.menu.setup(menu_data, menu_height, ac.move2(menu_start_line,0)+background, hover)
-        self.anim = self.load(Animation, self.get_anim_data(), start_line=3)
-        self.anim.setup()
+        data =  self.get_anim_data()
+        self.anim = self.load(Animation, data, start_line=3)
         self.restore()
 
     def restore(self):

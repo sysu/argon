@@ -4,7 +4,7 @@ sys.path.append('../')
 
 from chaofeng import ascii as ac
 from chaofeng.g import mark
-from chaofeng.ui import SimpleTable,HiddenInput,AppendTable
+from chaofeng.ui import PagedTable#,HiddenInput#,AppendTable#SimpleTable,
 from model import manager
 from argo_frame import ArgoFrame
 from libtelnet import zh_format_d

@@ -4,7 +4,7 @@ sys.path.append('../')
 
 from chaofeng import ascii as ac
 from chaofeng.g import mark
-from chaofeng.ui import TextEditor, AppendTable, ColMenu
+from chaofeng.ui import TextEditor, ColMenu
 from model import manager
 from argo_frame import ArgoFrame
 from libtelnet import zh_format

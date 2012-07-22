@@ -5,7 +5,7 @@ sys.path.append('../')
 
 from chaofeng import EndInterrupt,Timeout,asynchronous
 from chaofeng.g import mark
-from chaofeng.ui import TextInput,Password,DatePicker
+from chaofeng.ui import VisableInput,Password,DatePicker
 import chaofeng.ascii as ac
 from argo_frame import ArgoBaseFrame,ArgoFrame
 from model import manager

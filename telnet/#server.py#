@@ -20,7 +20,7 @@ class LoginDebugFrame(login.WelcomeFrame):
         # self.goto('dd')
         # self.goto('post','Test1','3')
 
-config.root = 'debug'
+# config.root = 'debug'
 
 if __name__ == '__main__' :
     s = Server(mark[config.root])

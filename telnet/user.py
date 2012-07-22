@@ -4,7 +4,7 @@ sys.path.append('../')
 
 from chaofeng import Frame,EndInterrupt,Timeout
 from chaofeng.g import mark,is_chchar
-from chaofeng.ui import zhTextInput,Password,DatePicker,Form,ColMenu
+from chaofeng.ui import EastAsiaTextInput,Password,DatePicker,Form,ColMenu
 from chaofeng import ascii as ac
 from model import manager
 from datetime import datetime
