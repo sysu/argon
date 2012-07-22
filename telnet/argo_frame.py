@@ -29,6 +29,9 @@ class BaseFrame(Frame):
                      **kwargs)
         return s
 
+    def format_str(self, f, *args):
+        return f % args
+
     def format_width(self,source,width):
         s = self.s(source)
         return self.u('%*s' % (width, s))
@@ -114,7 +117,7 @@ class AuthedFrame(BaseFrame):
     ##############################
 
     # Status Control
-    
+
     def suspend(self,where,**kwargs):
         '''
         Push current frame's status to history
@@ -145,12 +148,12 @@ class AuthedFrame(BaseFrame):
         '''
         raise NotImplementedError, "How to resotre at `%s` ?" % self.__mark__
 
-    def finish(self):
-        raise NotImplementedError, "What should `%s` do at the end?" % self.__mark__
-
     def message(self,msg):
         raise NotImplementedError, "How to show notity in `%s` ?" % self.__mark__
-
+    
+    def get(self,data):
+        raise NotImplementedError, "How to reation in `%` ?" % self.__mark__
+    
     def is_finish(self,data):
         return data in ac.ks_finish
 
@@ -162,17 +165,15 @@ class AuthedFrame(BaseFrame):
                      **kwargs)
         return s
 
-    def get(self,data):
-        if data in self.key_maps :
-            getattr(self,self.key_maps[data])()
-        if self.is_finish(data):
-            self.handle_finish()
+    def do_command(self, command):
+        if command :
+            getattr(self, command)()
 
-    def top_bar(self):
-        self.render('top')
+    # def top_bar(self):
+    #     self.render('top')
 
-    def bottom_bar(self):
-        self.render('bottom')
+    # def bottom_bar(self):
+    #     self.render('bottom')
 
         # self.render('bottom_msg',messages=msg)
         # self.pause()
@@ -262,7 +263,7 @@ class AuthedFrame(BaseFrame):
 #         pass
 
 @mark('undone')
-class UnDoneFrame(ArgoFrame):
+class UnDoneFrame(AuthedFrame):
 
     def initialize(self,*args,**kwargs):
         self.render('undone')

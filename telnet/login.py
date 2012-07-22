@@ -7,14 +7,14 @@ from chaofeng import EndInterrupt,Timeout,asynchronous
 from chaofeng.g import mark
 from chaofeng.ui import VisableInput,Password,DatePicker
 import chaofeng.ascii as ac
-from argo_frame import ArgoBaseFrame,ArgoFrame
+from argo_frame import BaseFrame, AuthedFrame
 from model import manager
 from datetime import datetime
 import config
 from collections import deque
 
 @mark('welcome')
-class WelcomeFrame(ArgoBaseFrame):
+class WelcomeFrame(BaseFrame):
 
     def initialize(self):
         print 'Connect :: %s : %s' % (self.session.ip, self.session.port)
@@ -22,7 +22,7 @@ class WelcomeFrame(ArgoBaseFrame):
         self.try_login_iter()
 
     def try_login_iter(self):
-        passwd_reader = self.load(Password,prompt=config.str['PROMPT_INPUT_PASSWD'])
+        passwd_reader = self.load(Password)
         with Timeout(config.max_try_login_time , EndInterrupt):
             while True :
                 self.write(config.str['PROMPT_INPUT_USERID'])
@@ -34,7 +34,8 @@ class WelcomeFrame(ArgoBaseFrame):
                     self.write(config.str['PROMPT_GUEST_UNABLE_TO_USE'])
                     continue
                 else:
-                    passwd = passwd_reader.readln()
+                    passwd = passwd_reader.readln(prompt=config.str['PROMPT_INPUT_PASSWD'])
+                print (userid, passwd)
                 self.try_login(userid, passwd)
 
     @asynchronous
@@ -54,7 +55,7 @@ class WelcomeFrame(ArgoBaseFrame):
             self.writeln(config.str['PROMPT_AUTH_FAILED'])
 
 @mark('register')
-class RegisterFrame(ArgoBaseFrame):
+class RegisterFrame(BaseFrame):
 
     def initialize(self):
         self.render('register')
@@ -106,7 +107,7 @@ class RegisterFrame(ArgoBaseFrame):
             self.goto('welcome')
 
 @mark('first_login')
-class FirstLoginFrame(ArgoFrame):
+class FirstLoginFrame(AuthedFrame):
 
     def initialize(self):
         self.goto('help','index')
