@@ -6,74 +6,64 @@ from chaofeng import ascii as ac
 from chaofeng.g import mark
 from chaofeng.ui import TextEditor, ColMenu
 from model import manager
-from argo_frame import ArgoFrame
-from libtelnet import zh_format
 from datetime import datetime
-from editor import EditFrame
-from boardlist import ArgoTableFrame
-from menu import MenuFrame
-from view import ArgoTextBoxFrame
+from edit import EditFrame
+from boardlist import BaseTableFrame
+from menu import NormalMenuFrame
+from view import TextBoxFrame
 import config
 
 @mark('mail_menu')
-class MailMenuFrame(MenuFrame):
+class MailMenuFrame(NormalMenuFrame):
 
     def initialize(self):
-        super(MailMenuFrame, self).initialize()
-        menu_data = self.get_tidy_data()
-        background = self.render_str('menu_mail')
-        anim_data = self.get_anim_data()
-        self.setup(menu_data, False, 11, background, 0, anim_data)
-
-    def get_tidy_data(self):
-        return ColMenu.tidy_data(config.menu['mail'])
-
-    def finish(self):
-        self.suspend(self.menu.fetch())
+        super(MailMenuFrame, self).initialize('mail')
 
 @mark('get_mail')
-class GetMailFrame(ArgoTableFrame):
+class GetMailFrame(BaseTableFrame):
 
-    def setup(self):
-        table = self.load(AppendTable, 'mid', start_line=4)
-        table.reset_with_upper(self.get_data, self.fformat, 999999999999999)
-        super(GetMailFrame, self).setup(table,
-                                        config.str['MAIL_QUICK_HELP'],
-                                        config.str['MAIL_THEAD'])
+    def top_bar(self):
+        self.writeln(self.render_str('top'))
 
-    def get_data(self, o, l):
-        d = map(lambda x : dict(num=x[0],**x[1]),
-                enumerate(manager.action.get_mail(self.userid, o, l)))
-        return d
+    def quick_help(self):
+        self.writeln(config.str['MAIL_QUICK_HELP'])
 
-    def fformat(self, d):
+    def print_thead(self):
+        self.writeln(config.str['MAIL_THEAD'])
+
+    def notify(self, msg):
+        self.write(ac.move2(0, 1))
+        self.render('top_msg', messages=msg)
+        self.table.restore_cursor_gently()
+
+    def get_default_index(self):
+        return 0
+
+    def get_data(self, start, limit):
+        return manager.action.get_mail(self.userid, start, limit)
+
+    def wrapper_li(self, d):
         return self.render_str('mail-li', **d)
-
-    def restore(self):
-        self.table.reload()   ####  very ugly
-        super(GetMailFrame, self).restore()
 
     def initialize(self):
         super(GetMailFrame, self).initialize()
-        self.setup()
         if self.table.is_empty() :
             self.write(u'你没有信笺哟！')
             self.pause()
             self.goto_back()
         self.restore()
 
+    def get(self, data):
+        if data in ac.ks_finish:
+            self.finish()
+        self.table.do_command(config.hotkeys['g_table'].get(data))
+        self.table.do_command(config.hotkeys['maillist_table'].get(data))
+        self.do_command(config.hotkeys['maillist'].get(data))
+
     def finish(self):
         mail = self.table.fetch()
         if mail:
             self.suspend('view_mail', mail=mail)
-
-    def show_help(self):
-        self.suspend('help',page='mail')
-
-    def get(self, data):
-        super(GetMailFrame, self).get(data)
-        self.try_action(config.hotkeys['get_mail'].get(data))
-        self.table.try_action(config.hotkeys['get_mail_table'].get(data))
 
     def send_mail(self):
         self.suspend("send_mail")
@@ -84,28 +74,25 @@ class GetMailFrame(ArgoTableFrame):
 @mark('send_mail')
 class SendMailFrame(EditFrame):
 
-    def readline_s(self, prompt=''):
-        self.write(prompt)
-        res = self.readline()
-        self.write('\r\n')
-        return res        
-
     def initialize(self):
-        super(SendMailFrame, self).initialize()
         self.cls()
-        self.touserid = self.readline_s(u'收信人：')
-        if self.touserid is False:
+        touserid = self.read_title(prompt=u'收信人：')
+        if touserid is False :
             self.writeln(u'取消写信！')
             self.pause()
             self.goto_back()
-        if not manager.userinfo.get_user(self.touserid):
+        if not manager.userinfo.get_user(touserid):
             self.writeln(u'无法找到该收信人！')
             self.pause()
             self.goto_back()
-        self.title = self.readline_s(u'标题:')
-        self.setup()
-        self.reset()
-        self.message(u'发信给 %s' % self.touserid)
+        self.touserid = touserid
+        self.writeln()
+        self.title = self.readline(prompt=u'标题:')
+        if self.title :
+            super(SendMailFrame, self).initialize()
+            self.message(u'发信给 %s' % self.touserid)
+        else:
+            self.message(u'放弃发表新文章')
 
     def finish(self):
         manager.action.send_mail(fromuserid=self.userid,
@@ -121,15 +108,18 @@ class SendMailFrame(EditFrame):
 class ReplyMailFrame(EditFrame):
 
     def initialize(self, mail):
-        super(ReplyMailFrame, self).initialize()
         self.replymail = mail
         self.cls()
         self.touserid = mail['fromuserid']
         self.write(u'标题: ')
         self.title = self.readline(prefix=u'Re: %s'%mail['title'])
-        self.setup()
-        self.reset()
-        self.message(u'回信给 %s' % self.touserid)
+        if self.title :
+            super(ReplyMailFrame, self).initialize()
+            self.message(u'回信给 %s' % self.touserid)
+        else:
+            self.write(u'放弃编辑')
+            self.pause()
+            self.goto_back()
 
     def finish(self):
         manager.action.reply_mail(self.userid,
@@ -143,13 +133,15 @@ class ReplyMailFrame(EditFrame):
         self.goto_back()
 
 @mark('view_mail')
-class ArgoReadMailFrame(ArgoTextBoxFrame):
+class ReadMailFrame(TextBoxFrame):
+
+    def get_text(self):
+        return self.render_str('mail-t', **self.mail)
 
     def initialize(self, mail):
-        super(ArgoReadMailFrame, self).initialize()
-        self.setup()
+        self.mail = mail
         manager.mail.set_read(self.session.user['uid'], mail['mid'])
-        self.set_text(self.render_str('mail-t', **mail))
+        super(ReadMailFrame, self).initialize()
 
     def finish(self,e):
         self.goto_back()

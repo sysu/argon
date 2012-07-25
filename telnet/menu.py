@@ -17,6 +17,9 @@ class BaseMenuFrame(AuthedFrame):
     menu_start_line = 11
     anim_start_line = 3
 
+    def load_all(self):
+        raise NotImplementedError
+
     def initialize(self):
         super(BaseMenuFrame, self).initialize()
         self.menu = self.load(ColMenu)
@@ -36,9 +39,14 @@ class BaseMenuFrame(AuthedFrame):
     def bottom_bar(self):
         self.render('bottom')
 
-    def message(self, msg):
+    def notify(self, msg):
         self.write(ac.move2(0, 1))
-        self.render('top_msg',messages=msg)
+        self.render('top_msg', messages=msg)
+        self.menu.refresh_cursor_gently()
+
+    def message(self, msg):
+        self.write(ac.move2(24, 1))
+        self.render('bottom_msg', message=msg)
         self.menu.refresh_cursor_gently()
 
     def restore(self):
@@ -74,9 +82,6 @@ class BaseMenuFrame(AuthedFrame):
         else:
             self.suspend(args[0],**args[1])
 
-    def load_all(self):
-        raise NotImplementedError
-
 @mark('menu')
 class NormalMenuFrame(BaseMenuFrame):
 
@@ -93,7 +98,10 @@ class NormalMenuFrame(BaseMenuFrame):
             self.goto_back()
 
     def load_all(self):
-        return ColMenu.tidy_data(config.menu[self.menuname])
+        height = None
+        menu = ColMenu.tidy_data(config.menu[self.menuname])
+        background = self.render_str('menu_%s' % self.menuname)
+        return (menu, height, background)
 
 @mark('main')
 class MainMenuFrame(BaseMenuFrame):
@@ -117,13 +125,14 @@ class SectionMenuFrame(BaseMenuFrame):
         height = len(sections)
         sections_d = map(self.wrapper_li, enumerate(sections))
         if sections_d :
-            sections_d += (self.second_start_point, )
+            sections_d[0] += (self.second_start_point,)
         menu = ColMenu.tidy_data(tuple(sections_d) + config.menu['section'])
         background = self.render_str('menu_section')
         return (menu, height, background)
 
     def wrapper_li(self, x):
         return (self.render_str('section-li', index=x[0], **x[1]),
+                ('boardlist', {"sid":x[1]['sid']}),
                 str(x[0]))
 
     # def show_help(self):
@@ -139,6 +148,7 @@ def tidy_anim(text, height):
     return list(chunks(l, height))
 
 from chaofeng import sleep
+
 # @mark('movie')
 # class PlayMovie(ArgoFrame):
 

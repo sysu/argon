@@ -45,6 +45,7 @@ class WelcomeFrame(BaseFrame):
             self.session.user = authobj
             self.session.stack = deque(maxlen=config.max_stack_deep)  #!!!!
             self.session.history = deque(maxlen=config.max_history_deep)
+            self.session.messages = [u'逸仙时空 argo.sysu.edu.cn']
         return authobj
                 
     def try_login(self,userid,passwd):

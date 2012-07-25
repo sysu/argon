@@ -747,6 +747,26 @@ class Permissions(Model):
     #     return self.ch.smembers(self.key_tsp%(oteamname, perm),
     #                             teamname)
 
+class Clipboard(Model):
+
+    keyf = 'argo:clipboard:%s'
+    max_len = 100000
+    
+    def set_clipboard(self, userid, value=''):
+        key = self.keyf % userid
+        self.ch.set(key, value)
+
+    def append_clipboard(self, userid, value):
+        key = self.keyf % userid
+        l = self.ch.strlen(userid)
+        if l + len(value) > self.max_len :
+            return False
+        self.ch.append(key, value)
+
+    def get_clipboard(self, userid):
+        key = self.keyf % userid
+        return self.ch.get(key)
+
 class Action(Model):
 
     def __init__(self,board,online,post,mail,userinfo):

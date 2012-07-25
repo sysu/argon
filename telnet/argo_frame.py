@@ -148,8 +148,11 @@ class AuthedFrame(BaseFrame):
         '''
         raise NotImplementedError, "How to resotre at `%s` ?" % self.__mark__
 
-    def message(self,msg):
-        raise NotImplementedError, "How to show notity in `%s` ?" % self.__mark__
+    def message(self, msg):
+        raise NotImplementedError, "How to show message in `%s` ?" % self.__mark__
+
+    def notify(self, msg):
+        raise NotImplementedError, "How to show notify in `%s` ?" % self.__mark__
     
     def get(self,data):
         raise NotImplementedError, "How to reation in `%` ?" % self.__mark__
@@ -168,6 +171,53 @@ class AuthedFrame(BaseFrame):
     def do_command(self, command):
         if command :
             getattr(self, command)()
+
+    def readline(self,acceptable=ac.is_safe_char,finish=ac.ks_finish,buf_size=20, prompt='', prefix=u''):
+        if prompt :
+            self.write(prompt)
+        if prefix :
+            buf = list(prefix)
+            self.write(prefix)
+        else:
+            buf = []
+        while len(buf) < buf_size:
+            ds = self.read_secret(2)
+            if len(ds) == 1 and ac.is_gbk_zh(ds):  ## fix_bug for sterm
+                ds += self.read_secret()
+            if ds == ac.k_backspace :
+                if buf :
+                    data = buf.pop()
+                    self.write(ac.backspace * ac.srcwidth(data))
+                    continue
+            elif ds in finish :
+                return ''.join(buf)
+            elif ds == ac.k_ctrl_c:
+                return False
+            elif acceptable(ds):
+                buf.append(ds)
+                self.write(ds)
+        return ''.join(buf)
+    
+    def select(self,msg,options,finish=ac.ks_finish):
+        if options :
+            s = 0
+            l = len(options) -1
+            while True:
+                msg(options[s])
+                d = self.read_secret()
+                if d == ac.k_up :
+                    if s :
+                        s -= 1
+                elif d == ac.k_down:
+                    if s<l :
+                        s += 1
+                elif d in '123456789':
+                    s = min(l,int(d)-1)
+                elif d in finish :
+                    return s
+                elif d == ac.k_ctrl_c:
+                    return False
+        return False        
 
     # def top_bar(self):
     #     self.render('top')
@@ -212,27 +262,6 @@ class AuthedFrame(BaseFrame):
 #                         buf.append(d)
 #                         self.write(d)
 #         return ''.join(buf)
-
-#     def select(self,msg,options,finish=ac.ks_finish):
-#         if options :
-#             s = 0
-#             l = len(options) -1
-#             while True:
-#                 msg(options[s])
-#                 d = self.read_secret()
-#                 if d == ac.k_up :
-#                     if s :
-#                         s -= 1
-#                 elif d == ac.k_down:
-#                     if s<l :
-#                         s += 1
-#                 elif d in '123456789':
-#                     s = min(l,int(d)-1)
-#                 elif d in finish :
-#                     return s
-#                 elif d == ac.k_ctrl_c:
-#                     return False
-#         return False        
                     
 #     def try_action(self, action):
 #         if action:

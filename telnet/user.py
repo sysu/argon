@@ -4,124 +4,66 @@ sys.path.append('../')
 
 from chaofeng import Frame,EndInterrupt,Timeout
 from chaofeng.g import mark,is_chchar
-from chaofeng.ui import EastAsiaTextInput,Password,DatePicker,Form,ColMenu
+from chaofeng.ui import EastAsiaTextInput,Password,DatePicker,Form,ColMenu,VisableInput
 from chaofeng import ascii as ac
 from model import manager
 from datetime import datetime
-from argo_frame import ArgoFrame
-from menu import MenuFrame
-from view import ArgoTextBoxFrame
+from argo_frame import AuthedFrame
+from menu import NormalMenuFrame
+from view import TextBoxFrame
 from MySQLdb import DataError
 import config
 
 @mark('user_space')
-class UserSpaceFrame(MenuFrame):
+class UserSpaceFrame(NormalMenuFrame):
 
     def initialize(self):
-        super(UserSpaceFrame,self).initialize()
-        menu_data = self.get_tidy_data()
-        background = self.render_str('menu_user_space')
-        anim_data = self.get_anim_data()
-        self.setup(menu_data, 1, 11, background, 0, anim_data)
-
-    def show_help(self):
-        self.suspend('help',page='user_space')
-
-    def get_tidy_data(self):
-        return ColMenu.tidy_data(config.menu['user_space'])
-
-    def finish(self):
-        self.suspend(self.menu.fetch())
-
-    def do_help(self):
-        self.write(ac.move2(11,0)+static['help_user_space'])
-        self.pause()
-        self.do_refresh()
+        super(UserSpaceFrame, self).initialize('user_space')
 
 @mark('user_editdata')
-class UserEditDataFrame(ArgoFrame):
+class UserEditDataFrame(AuthedFrame):
 
-    pos = ((4,24),
-           (5,24),
-           (6,24),
-           (7,24),
-           (8,24),
-           (9,24))
-            
     def initialize(self):
         self.cls()
         self.render('edit_user_data')
-        acc = self.session.user.copy()
-        self.zh_input = self.load(zhTextInput)
-        self.date_picker = self.load(DatePicker)
-        self.f = self.load(Form)
-        self.f.run((self.read_nickname,
-                    self.read_realname,
-                    self.read_address,
-                    self.read_email,
-                    self.read_birthday,
-                    self.read_gender),
-                   self.pos,
-                   acc=acc)
+        user = self.session.user
+        buf = [user.nickname, user.realname,
+               user.address, user.email,
+               user.birthday.strftime("%Y-%m-%d"),
+               'M' if user.gender else 'F']
+        form = self.load(Form, buf, [
+                self.load(EastAsiaTextInput), 
+                self.load(EastAsiaTextInput),
+                self.load(EastAsiaTextInput),
+                self.load(EastAsiaTextInput),
+                self.load(DatePicker),
+                self.load(VisableInput),
+                ], 4, 24)
+        form.restore_screen()
+        data = form.read()
+        if data is False:
+            self.write(u'\r\n取消编辑！')
+            self.pause()
+            self.goto_back()
         self.write(u'\r\n\r\n确认修改您的资料？y/else.')
         d = self.readline()
         if d == 'y' :
-            manager.userinfo.update_user(**acc)
+            self.set_user_attr(*data)
             self.write(u'\r\n修改成功!')
         else:
             self.write(u'\r\n取消编辑')
         self.pause()
         self.goto_back()
 
-    def read_nickname(self, acc):
-        res = self.zh_input.read(buf=list(acc['nickname']),stop=ac.k_ctrl_c)
-        if res is False:
-            return False
-        acc['nickname'] = res
-        return True
-
-    def read_realname(self, acc):
-        realname = acc.get('realname') or ''
-        res = self.zh_input.read(buf=list(realname),stop=ac.k_ctrl_c)
-        if res is False:
-            return False
-        acc['realname'] = res 
-        return True
-
-    def read_address(self, acc):
-        address = acc.get('address') or ''
-        res = self.zh_input.read(buf=list(address),stop=ac.k_ctrl_c)
-        if res is False:
-            return False
-        acc['address'] = res 
-        return True
-
-    def read_email(self, acc): 
-        email = acc.get('email') or ''
-        res = self.zh_input.read(buf=list(email),stop=ac.k_ctrl_c)
-        if res is False:
-            return False
-        acc['email'] = res or None
-        return True
-
-    def read_birthday(self, acc):
-        res = self.date_picker.read(buf=list(acc['birthday'].strftime("%Y%m%d")),
-                                    stop=ac.k_ctrl_c)
-        if res is False:
-            return False
-        acc['birthday'] = res
-        return True
-
-    def read_gender(self, acc):
-        res = self.zh_input.read(buf=list('M' if acc['gender'] else 'F'),stop=ac.k_ctrl_c)
-        if res is False:
-            return False
-        if res in 'FM-':
-            acc['gender'] = 0 if res=='F' else ( 1 if res=='M' else 2)
-            return True
+    def set_user_attr(self, nickname, realname, address, email, birthday, gender):
+        gender = 0 if gender in 'Ff' else 1
+        packup = dict(nickname=nickname, realname=realname, address=address,
+                      email=email, birthday=birthday, gender=gender)
+        manager.userinfo.update_user(self.userid, **packup)
+        self.session.user.update(packup)
 
 @mark('user_nickdata')
-class NickDataFrame(ArgoFrame):
+class NickDataFrame(AuthedFrame):
 
     options = ('shai','contact','want','job','marriage','about')
     def initialize(self):
@@ -134,40 +76,41 @@ class NickDataFrame(ArgoFrame):
                           self.options)
         if res is not False:
             self.sel = self.options[res]
-            self.suspend('edit_text', filename=config.options['nickdata'][self.sel])
+            self.suspend('edit_text', callback=self.save_text,
+                         filename=config.options['nickdata'][self.sel])
         else:
             self.write(u'\r\n取消设置！')
             self.pause()
             self.goto_back()
 
-    def restore(self):
+    def save_text(self, text):
+        self.text = text
+
+    def restore(self):  ################ Ugly
         self.cls()
-        args = {
-            self.sel:self.pipe,
-            }
-        if args[self.sel] is None:
+        if self.text is None :
             self.write(u'\r\n取消设置资料')
         else:
+            args = {
+                self.sel : self.text,
+                }
             try:
-                manager.userinfo.update_user(self.userid,
-                                             **args)
+                manager.userinfo.update_user(self.userid,  **args)
             except:
                 self.write(u'\r\n编辑档案失败！')
             else:
-                self.session.user[self.sel] = self.pipe
+                self.session.user[self.sel] = self.text
                 self.write(u'\r\n编辑档案成功！')
         self.pause()
         self.goto_back()
 
 @mark('user_change_passwd')
-class ChangePasswdFrame(ArgoFrame):
+class ChangePasswdFrame(AuthedFrame):
 
     def initialize(self):
         self.write(ac.clear + u'开始修改密码...\r\nCtrl+C退出取消本次活动。')
         self.write(u'\r\n\r\n请输入旧密码进行确认 ：')
         ui_passwd = self.load(Password)
-        ui_passwd.reset()
-
         passwd = ui_passwd.readln()
         if not manager.auth.check_passwd_match(passwd, self.user['passwd']):
             self.write(u'\r\n很抱歉, 您输入的密码不正确。')
@@ -197,7 +140,7 @@ def chunks(l, n):
         yield l[i:i+n]
 
 @mark('user_edit_sign')
-class EditSignFrame(ArgoFrame):
+class EditSignFrame(AuthedFrame):
 
     def initialize(self):
         self.cls()
@@ -210,28 +153,31 @@ class EditSignFrame(ArgoFrame):
             self.pause()
             self.goto_back()
         text = '\r\n'.join(signs)
-        self.suspend('edit_text', filename=u'签名档',text=text, l=r*6, split=True)
+        self.suspend('edit_text', filename=u'签名档', callback=self.save_text, text=text, l=r*6, split=True)
+
+    def save_text(self, text):
+        self.text = text
 
     def restore(self):
         self.cls()
-        if self.pipe is None:
+        if self.text is None:
             self.write(u'取消设置签名档')
             self.goto_back()
         data = map(lambda x:'\r\n'.join(x),
-                   chunks(self.pipe,6))
+                   chunks(self.text, 6))
         manager.usersign.set_sign(self.userid, data)
         self.write(u'设置签名档成功！')
         self.pause()
         self.goto_back()
 
 @mark('query_user')
-class QueryUserFrame(ArgoTextBoxFrame):
+class QueryUserFrame(TextBoxFrame):
 
-    def initialize(self, userid):
+    def initialize(self, userid=None):
+        if userid is None:
+            userid = self.userid
+        self.query_user_normal(userid)
         super(QueryUserFrame,self).initialize()
-        self.setup()
-        self.cls()
-        self.set_text(self.query_user_normal(userid))
 
     def query_user_normal(self, userid):
         user = manager.userinfo.get_user(userid)
@@ -240,16 +186,14 @@ class QueryUserFrame(ArgoTextBoxFrame):
             self.pause()
             self.goto_back()
         else:
-            return self.render_str('user-t',**user)
+            self.query_user = user
+            self.text = self.render_str('user-t',**user)
 
     def finish(self,a):
         self.goto_back()
 
-@mark('query_user_self')
-class QueryUserSelfFrame(QueryUserFrame):
-
-    def initialize(self):
-        super(QueryUserSelfFrame,self).initialize(self.userid)
+    def get_text(self):
+        return self.text
 
 @mark('query_user_iter')
 class QueryUserIterFrame(QueryUserFrame):

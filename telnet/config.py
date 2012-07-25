@@ -62,11 +62,11 @@ menu = {
         ( u'(G)oodbye    离开逸仙时空 ',"finish",'g' )
         ),
     "user_space":(
-        ( u'I) 设定个人资料','user_editdata','i',(12,4)),
+        ( u'I) 设定个人资料','user_editdata','i',(12,6)),
         ( u'P) 修改个人密码','user_change_passwd','p'),
         ( u'W) 编修个人档案','user_nickdata','w'),
         ( u'S) 修改签名档','user_edit_sign','s'),
-        ( u'U) 查看我的资料','query_user_self','u'),
+        ( u'U) 查看我的资料','query_user','u'),
         ( u'E) 回到主选单','main','e'),),
     "section":(
         # dy + append
@@ -103,8 +103,8 @@ TABLE_KEY_MAPS = {
     ac.k_down : "move_down",
     ac.k_page_down : "page_down",
     ac.k_page_up : "page_up",
-    ac.k_home : "go_first",
-    ac.k_end : "go_last",
+    ac.k_home : "goto_first",
+    ac.k_end : "goto_last",
     ac.k_ctrl_c : "goto_back",
     "h":"show_help",
     "q":"goto_back",
@@ -146,6 +146,16 @@ str = {
     "BOARD_THEAD_AUTHOR":u"[0;1;44m 编号  未读 刊 登 者       日  期      标  题                      [同作者阅读]       [m",
     "MAIL_QUICK_HELP":u"[0m离开[[1;32m←[0m,[1;32mq[0m] 选择[[1;32m↑[0m, [1;32m↓[0m] 阅读信件[[1;32m→[0m,[1;32mRtn[0m] 回 信[[1;32mR[0m] 砍信／清除旧信[[1;32md[0m,[1;32mD[0m] 求助[[1;32mh[0m][m",
     "MAIL_THEAD":u"[0;1;44m 编号  发信者       日 期      标题                                                       [m",
+    'MSG_BOARDLIST_MODE_0':u'按讨论区编号排序',
+    'MSG_BOARDLIST_MODE_1':u'按在线人数排序',
+    'MSG_BOARDLIST_MODE_2':u'按讨论区名称排序',
+    'MSG_BOARDLIST_MODE_3':u'按中文描述排序',
+    'MSG_BOARD_MODE_NORMAL':u'切换一般模式',
+    'MSG_BOARD_MODE_GMODE':u'阅读带g标记的文章',
+    'MSG_BOARD_MODE_MMODE':u'阅读带m标记的文章',
+    'MSG_BOARD_MODE_TOPIC':u'只看主题贴',
+    'MSG_BOARD_MODE_ONETO{IC':u'查看单一主题',
+    'MSG_BOARD_MODE_AUTHOR':u'查看单一作者',
    }
 
 hotkeys = {
@@ -164,7 +174,7 @@ hotkeys = {
         },
     "table":{
         },
-    "table_table":{
+    "g_table":{
         ac.k_up:"move_up",
         ac.k_down:"move_down",
         ac.k_page_up:"page_up",
@@ -173,8 +183,8 @@ hotkeys = {
     "boardlist":{
         '/':'search',         ac.k_right:'finish',
         'q':'goto_back',      'e':'goto_back',        ac.k_left:'goto_back',
-        's':'change_sort',           '#':'go_line',
-        ac.k_end:"go_last",           '$':'go_last',
+        's':'change_sort',           '#':'goto_line',
+        ac.k_end:"goto_last",           '$':'goto_last',
         "a":"add_to_fav",  "d":"remove_fav",
         # admin
         ac.k_ctrl_a:'watch_board',
@@ -192,7 +202,7 @@ hotkeys = {
         ac.k_home:'goto_first',   
         },
     "board":{
-        "#":"go_line",
+        "#":"goto_line",
         ac.k_right:"finish", ac.k_left:"goto_back",
         ac.k_ctrl_p:"new_post",ac.k_ctrl_r:"reply_post","E":"edit_post",
         ac.k_ctrl_t:"change_mode",
@@ -201,12 +211,12 @@ hotkeys = {
         "=":"goto_tid", "/":"goto_tid", ac.k_ctrl_s :"goto_tid", "p":"goto_tid",
         ac.k_ctrl_u:"goto_author",
         "c":"clear_readmark", "K":"set_read", ac.k_ctrl_a:"query_author",
-        # ac.k_ctrl_t:"edit_title"
+        ac.k_end:"goto_last", "$":"goto_last",
+        "T":"edit_title"
         },
     "board_table":{
         "k":"move_up", "j":"move_down", "P":"page_up", "N":"page_down",
-        ac.k_end:"go_last", "$":"go_last",
-        ac.k_home:"go_first", 
+        ac.k_home:"goto_first", 
         },
     "edit_2ndcmd_start": ac.k_ctrl_u,
     "edit_editor":{
@@ -242,6 +252,8 @@ hotkeys = {
         ac.k_ctrl_s:"msg_select",
         },
     "edit":{
+        ac.k_ctrl_o:"insert_superclip",
+        ac.k_ctrl_i:"copy_to_superclip",
         ac.k_ctrl_w:"finish",
         ac.k_ctrl_q:"show_help",
         ac.k_ctrl_c:"quit_iter",
@@ -249,7 +261,7 @@ hotkeys = {
     "view":{
         "Q":"goto_back",
         ac.k_left:"goto_back",
-        ac.k_ctrl_u:"go_link",
+        # ac.k_ctrl_u:"goto_link",
         # "h":"jump_from_screen",
         # ac.k_ctrl_a:"jump_man",
         ac.k_ctrl_r:"jump_from_screen",
@@ -265,23 +277,23 @@ hotkeys = {
         ac.k_ctrl_f:"page_down",
         ac.k_page_down:"page_down",
         ac.k_right:"page_down",
-        ac.k_home:"go_first",
-        ac.k_end:"go_last",
-        "$":"go_last",
+        ac.k_home:"goto_first",
+        ac.k_end:"goto_last",
+        "$":"goto_last",
         },
     "view-board":{
         "a":"add_to_fav",
         },
-    "get_mail":{
+    "maillist":{
         ac.k_ctrl_p:"send_mail",
         "R":"reply",
         ac.k_left:"goto_back", ac.k_right:"finish",
         },
-    "get_mail_table":{
+    "maillist_table":{
         "k":"move_up",       "p":"move_up",      
         "j":"move_down",     "n":"move_down",
         "P":"page_up",       "N":"page_down",
-        "$":"go_last",
+        "$":"goto_last",
         }
     }
 

@@ -2,48 +2,63 @@
 from chaofeng.g import mark
 from chaofeng.ui import Animation,LongTextBox,TextEditor
 from chaofeng import ascii as ac
-from argo_frame import ArgoFrame,zh_format
+from argo_frame import AuthedFrame
 from model import manager
 from datetime import datetime
 import config
 import re
 
-class ArgoTextBox(LongTextBox):
+class TextBox(LongTextBox):
 
-    def bottom_bar(self,msg):
+    def message(self, message):
         self.write(ac.move2(24,1))
-        self.frame.render('bottom_view', message=msg, s=self.s, maxs=self.max)
+        self.frame.render('bottom_view', message=message, s=self.s, maxs=self.max)
 
-class ArgoTextBoxFrame(ArgoFrame):
+    def fix_bottom(self):
+        self.message('')
+
+class TextBoxFrame(AuthedFrame):
 
     '''
-    Inherit this class and call the `set_text` method
+    Inherit this class and rewirte the `get_text` method
     to display the text.
     It's useful to copy the `key_maps` and `textbox_cmd`
     and add new key/value into them.
     '''
 
-    def setup(self):
-        self.textbox = self.load(ArgoTextBox)
-        self.textbox.bind(self.finish)
+    def get_text(self):
+        raise NotImplementedError
 
     def restore(self):
         self.textbox.refresh_all()
-        self.bottom_bar()
+        self.textbox.fix_bottom()
+
+    def reset_text(self, text):
+        self.textbox.set_text(text)
+        self.restore()
+
+    def message(self,msg):
+        self.textbox.message(msg)
+
+    def notify(self, msg):
+        self.textbox.message(msg)  #########
+        
+    def get(self,data):
+        if data in ac.ks_finish:
+            self.finish()
+        self.textbox.do_command(config.hotkeys['view_textbox'].get(data))
+        self.do_command(config.hotkeys['view'].get(data))
+        self.do_command(config.hotkeys['view'].get(data))
+
+    def initialize(self):
+        super(TextBoxFrame, self).initialize()
+        self.textbox = self.load(TextBox, self.get_text(), self.finish)
+        self.restore()
 
     def set_text(self,text):
         self.textbox.set_text(text)
         self.textbox.refresh_all()
-        self.bottom_bar()
-        
-    def get(self,data):
-        if data in config.hotkeys['view_textbox']:
-            getattr(self.textbox, config.hotkeys['view_textbox'][data])()
-            self.bottom_bar()
-        self.try_action(config.hotkeys['view'].get(data))
-
-    def bottom_bar(self,msg=''):
-        self.textbox.bottom_bar(msg)
+        self.textbox.fix_bottom()
 
     def _go_link(self,line):
         s = line.split()
@@ -57,7 +72,7 @@ class ArgoTextBoxFrame(ArgoFrame):
         self.write(ac.move2(24,1) + ac.kill_line)
         d = self.readline()
         self._go_link(d)
-        self.bottom_bar()
+        self.table.fix_bottom()
 
     links_re = re.compile(r'\[[^\]]*\]\(/(p)/(.+)/(\d+)\)|'
                           r'\[[^\]]*\]\(/(h)/(.+)\)')
@@ -82,7 +97,7 @@ class ArgoTextBoxFrame(ArgoFrame):
         if r :
             self.suspend(n,**r)
         else:
-            self.bottom_bar(u'不是一个有效的跳转标志')
+            self.message(u'不是一个有效的跳转标志')
             return
 
     def find_options(self, opstring):
@@ -98,14 +113,14 @@ class ArgoTextBoxFrame(ArgoFrame):
     def select_and_jump(self,text):
         options = re.findall(self.links_re,text)
         if not options :
-            self.bottom_bar(u'没有可用的跳转标志')
+            self.message(u'没有可用的跳转标志')
             return
         self.select_start = 0
         res = self.select(lambda x :
-                              self.bottom_bar(self.hint_link(x)),
+                              self.message(self.hint_link(x)),
                           options)
         if res is False :
-            self.bottom_bar(u'放弃跳转')
+            self.message(u'放弃跳转')
         else:
             self.check_jump()
 
@@ -113,20 +128,18 @@ class ArgoTextBoxFrame(ArgoFrame):
         text,self.lines = self.textbox.getscreen_with_raw()
         self.select_and_jump(text)
 
-    def show_help(self):
-        self.suspend('help',page='view')
+@mark('view_text')
+class ViewTextFrame(TextBoxFrame):
 
-    def message(self,msg):
-        self.bottom_bar(msg)
+    def get_text(self):
+        return self.text
 
-    # def jump_man(self):
-    #     self.bottom_bar(u'前往：')
-    #     self.write(ac.bg_blue)
-    #     text = self.readline()
-    #     self.select_and_jump('[](%s)' % text)
+    def initialize(self, text):
+        self.text = text
+        super(ViewTextFrame, self).initialize()
         
 @mark('post')
-class ArgoReadPostFrame(ArgoTextBoxFrame):
+class ReadPostFrame(TextBoxFrame):
 
     @classmethod
     def try_jump(self,args):
@@ -135,15 +148,7 @@ class ArgoReadPostFrame(ArgoTextBoxFrame):
                 return dict(boardname=args[0],
                             pid=args[1])
         except:
-            return False            
-
-    def initialize(self,boardname,pid):
-        super(ArgoReadPostFrame,self).initialize()
-        self.setup()
-        self.set_post(boardname,pid)
-
-    def getdesc(self):
-        return u'阅读文章            -- [%s](/p/%s/%s)' % (self.post['title'], self.boardname, self.pid)
+            return False
 
     def get_post(self,boardname,pid):
         return manager.post.get_post(boardname,pid)
@@ -151,17 +156,29 @@ class ArgoReadPostFrame(ArgoTextBoxFrame):
     def wrapper_post(self,post):
         return self.render_str('post-t',post=post)
 
-    def set_post(self,boardname,pid):
-        if pid is not None:
-            self.boardname,self.pid = boardname,pid
-            self.post = self.get_post(boardname,pid)
-            self.session['lastboard'] = boardname
-            self.session['lastpid'] = pid
-            self.session['lasttid'] = self.post.tid
-            self.text = self.wrapper_post(self.post)
-            self.cls()
-            manager.readmark.set_read(self.userid, self.boardname, self.pid)
-            self.set_text(self.text)
+    def get_text(self):
+        return self.text
+        
+    def initialize(self, boardname, pid):
+        self._read_post(boardname, pid)
+        super(ReadPostFrame,self).initialize()
+
+    def getdesc(self):
+        return u'阅读文章            -- [%s](/p/%s/%s)' % (self.post['title'], self.boardname, self.pid)
+
+    def _read_post(self,boardname,pid):
+        self.boardname, self.pid = boardname, pid
+        self.post = self.get_post(boardname,pid)
+        self.session['lastboard'] = boardname
+        self.session['lastpid'] = pid
+        self.session['lasttid'] = self.post.tid
+        self.text = self.wrapper_post(self.post)
+        manager.readmark.set_read(self.userid, self.boardname, self.pid)
+
+    def reset_post(self, boardname, pid):
+        if pid :
+            self._read_post(boardname, pid)
+            self.reset_text(self.text)
 
     def next_post(self):
         return self.boardname,manager.post.next_post_pid(self.boardname,self.pid)
@@ -171,32 +188,43 @@ class ArgoReadPostFrame(ArgoTextBoxFrame):
 
     def finish(self,args=None):
         if args is True:
-            self.set_post(*self.next_post())
+            self.reset_post(*self.next_post())
         if args is False:
-            self.set_post(*self.prev_post())
+            self.reset_post(*self.prev_post())
         if args is None:
             self.goto_back()
 
-@mark('help')
-class TutorialFrame(ArgoTextBoxFrame):
+@mark('view_clipboard')
+class ViewClipboardFrame(TextBoxFrame):
 
-    @classmethod
-    def try_jump(cls,args):
-        print args[0]
-        if args[0] in config.have_help_page :
-            return dict(page=args[0])
+    def get_text(self):
+        return manager.clipboard.get_clipboard(self.userid)
 
-    def getdesc(self):
-        return u'查看帮助            -- [](/h/%s)' % self.page
-    
-    def initialize(self,page='index'):
-        super(TutorialFrame,self).initialize()
-        self.setup()
-        self.page = page
-        self.set_text(self.render_str('help/%s'%page))
-
-    def finish(self,args=None):
+    def finish(self, a=None):
         self.goto_back()
 
-    def show_help(self):
-        self.suspend('help',page='help')
+# def goto_link(mark):    
+
+# @mark('help')
+# class TutorialFrame(TextBoxFrame):
+
+#     @classmethod
+#     def try_jump(cls,args):
+#         print args[0]
+#         if args[0] in config.have_help_page :
+#             return dict(page=args[0])
+
+#     def getdesc(self):
+#         return u'查看帮助            -- [](/h/%s)' % self.page
+    
+#     def initialize(self,page='index'):
+#         super(TutorialFrame,self).initialize()
+#         self.setup()
+#         self.page = page
+#         self.set_text(self.render_str('help/%s'%page))
+
+#     def finish(self,args=None):
+#         self.goto_back()
+
+#     def show_help(self):
+#         self.suspend('help',page='help')
