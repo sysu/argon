@@ -4,7 +4,7 @@
 from globaldb import global_conn,global_cache
 from MySQLdb import ProgrammingError
 import error 
-import bcrypt
+import bcrypt,time
 from datetime import datetime
 import mode
 import random
@@ -190,7 +190,7 @@ class Post(Model):
         from string import Template
         with open(config.SQL_TPL_DIR + 'template/argo_filehead.sql') as f :
             board_template = Template(f.read())
-            self.db.execute(board_template.safe_substitute(boardname=boardname))
+            self.db.executemany(board_template.safe_substitute(boardname=boardname))
 
     # def _get_posts_advan(self,boardname,order='pid',mark=None,sel='*'):
     #     cond = ''
@@ -221,17 +221,22 @@ class Post(Model):
         if cond :
             cond = 'WHERE %s' % ' AND '.join(cond)
         else : cond = ''
-        if limit<0:
+        
+        if limit is None: # No limit
+            sql = "SELECT %s FROM `%s` %s ORDER BY %s "%\
+                (sel, self.__(boardname), cond, order)
+            return self.db.query(sql)
+        elif limit<0:
             sql = "SELECT %s FROM `%s` %s ORDER BY %s DESC LIMIT %%s"%\
                 (sel,self.__(boardname),cond,order)
             res = self.db.query(sql, -limit)
             res.reverse()
             return res
-        else:
+        else: 
             sql = "SELECT %s FROM `%s` %s ORDER BY %s LIMIT %%s"%\
                 (sel,self.__(boardname),cond,order)
             return self.db.query(sql, limit)
-
+        
     def get_posts_list(self,boardname,pids):
         return map(lambda x:self.get_post(boardname,x),
                    pids)
@@ -285,7 +290,7 @@ class Post(Model):
         pass
 
     def get_board_total(self,boardname):
-        res = self.db.get("SELECT count(*) as total FROM `%s`%s" % (self._prefix,boardname))
+        res = self.db.get("SELECT count(pid) as total FROM `%s`%s" % (self._prefix,boardname))
         r = res.get('total')
         return (r and int(r)) or 0
 
@@ -540,7 +545,7 @@ class Mail(Model):
                 raise e
 
     def one_mail(self, touid, mid):
-        return self.table_get_by_key(self.__(touid), mid)
+        return self.table_get_by_key(self.__(touid), 'mid', mid)
 
     def get_mail(self, touid, touserid, num, limit):
         # print (touid, touseridm, num, limit)
@@ -550,9 +555,29 @@ class Mail(Model):
             res = self._query_mail(touid, touserid, limit, '' if num is None else 'AND mid<=%s' % num)
             res.reverse()
             return res
+    
+    def get_mail_total(self, touid, touserid):
+        res = self.db.get("SELECT count(mid) as total FROM `%s` WHERE touserid = %%s" % self.__(touid), touserid)
+        r = res.get('total')
+        return int(r) if r else 0 
 
-    def get_new_mail(self, touid, num, limit):
-        return self._query_mail(touid, touserid, limit, 'AND mid>=%s AND readmark & 1'%num)
+    def prev_mail_mid(self, touid, mid):
+        res = self.db.get("SELECT mid FROM `%s` WHERE mid < %s ORDER BY mid DESC LIMIT 1" %\
+                              (self.__(touid),mid))
+        return res and res['mid']
+
+    def next_mail_mid(self, touid, mid):
+        res = self.db.get("SELECT mid FROM `%s` WHERE mid > %s ORDER BY mid LIMIT 1" %\
+                              (self.__(touid),mid))
+        return res and res['mid']
+
+    def get_new_mail(self, touid, touserid, num, limit):
+        return self._query_mail(touid, touserid, limit, 'AND mid>=%s AND readmark = 0'%num)
+    
+    def get_last_mid(self, touid, touserid):
+        res = self.db.get("SELECT max(mid) as maxid FROM `%s` WHERE touserid=%%s" % self.__(touid), touserid)
+        r = res.get('maxid')
+        return int(r) if r else 0 
 
     def del_mail(self,touid,mid):
         return self.table_delete_by_key(self.__(touid), 'mid',mid)
@@ -798,6 +823,8 @@ class Action(Model):
         self.post.update_post(boardname,pid,tid=pid)
         self.board.update_attr_plus1(bid,'total')
         self.board.update_attr_plus1(bid,'topic_total')
+        self.board.update_board(bid, lastpost=int(time.time()))
+        return pid
 
     def reply_post(self,boardname,userid,title,content,addr,host,replyid):
         tid = self.post.pid2tid(boardname,replyid)
@@ -814,6 +841,8 @@ class Action(Model):
             tid=tid,
             )
         self.board.update_attr_plus1(bid,'total')
+        self.board.update_board(bid, lastpost = int(time.time()))
+        return pid
 
     def update_post(self,boardname,userid,pid,content):
         self.post.update_post(boardname,
@@ -833,15 +862,19 @@ class Action(Model):
                                    replyid=0,
                                    **kwargs)
         self.mail.update_mail(touid, mid, tid=mid)
+        return mid
 
     def reply_mail(self, userid, old_mail, **kwargs):
         touid = self.userinfo.name2id(old_mail['fromuserid'])
-        return self.mail.send_mail(touid,
+        res = self.mail.send_mail(touid,
                                    fromuserid=userid,
                                    touserid=old_mail['fromuserid'],
                                    tid=old_mail['tid'],
                                    replyid=old_mail['mid'],
                                    **kwargs)
+        myuid = self.userinfo.name2id(userid)
+        self.mail.set_reply(myuid, old_mail['mid'])
+        return res
 
     def del_mail(self,touserid,mid):
         touid = self.userinfo.name2id(touserid)
@@ -866,21 +899,17 @@ class Favourite(Model):
 
     keyf = "argo:favourite:%s"
 
-    max_size = 50
-
-    def add(self, userid, bid):
+    def add(self, userid, boardname):
         key = self.keyf % userid
-        self.ch.lrem(key, bid, 0)
-        self.ch.lpush(key, bid)
-        self.ch.ltrim(key, 0, self.max_size)
+        self.ch.sadd(key, boardname)
                       
-    def remove(self, userid, bid):
+    def remove(self, userid, boardname):
         key = self.keyf % userid
-        self.ch.lrem(key, bid, 0)
+        self.ch.srem(key, boardname)
 
     def get_all(self, userid):
         key = self.keyf % userid
-        return self.ch.lrange(key,0,-1)
+        return self.ch.smembers(key)
 
 class Manager:
 

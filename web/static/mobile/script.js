@@ -56,7 +56,7 @@ function to_top()
 
 /******* for m_listpost.html *******/
 
-function m_switch_board(d, seccode) {
+function m_switch_board(d, sid) {
     var container = document.getElementById('sec-popup');
 
     // already loaded, just a display toggle
@@ -69,16 +69,17 @@ function m_switch_board(d, seccode) {
     var req = new XMLHttpRequest();
     req.onreadystatechange = function() {
 	if (req.readyState == 4 /* complete */) {
-	    var bl = eval('(' + req.responseText + ')');
+	    var bl = JSON.parse( req.responseText );
+        bl = bl['boards'];
 	    for(var i = 0; i < bl.length; i++) {
-		board_list += '<li onclick="window.location=\'/m/' + bl[i].filename + '\';">' + bl[i].filename + '</li>';
+		board_list += '<li onclick="window.location=\'/m/' + bl[i]+ '\';">' + bl[i] + '</li>';
 	    }
 	    board_list += '</ul>';
 	    container.innerHTML = board_list;
 	    container.className = '';
 	}
     }
-    req.open("GET", "/j/board/" + seccode, /* async */ true);
+    req.open("GET", "/a/board/" + sid, /* async */ true);
     req.send(/* no params */ null);
 }
 
@@ -117,22 +118,10 @@ function m_expand_post(index, board, filename) {
     var req = new XMLHttpRequest();
     req.onreadystatechange = function() {
 	if (req.readyState == 4 /* complete */) {
-	    var data_recv = req.responseText;
-	    // remove three header lines and signature..
-	    // todo: move implementation to php code ?
-	    var ret = data_recv.search('·¢ĞÅÈË.*±ê&nbsp;&nbsp;Ìâ.*·¢ĞÅÕ¾');
-	    if (ret != -1) {
-		var sub_index = data_recv.indexOf('<br /><br />');
-		var end_index = data_recv.indexOf('<br />--<br />'); // not lastIndexOf
-		if (end_index != -1) {
-		    data_recv = '<font>' + data_recv.substring(sub_index + 6, end_index + 8) + '</font>';
-		} else {
-		    data_recv = '<font>' + data_recv.substring(sub_index + 6);
-		}
-	    }
-
-	    content_div.className = content_div.className.replace('entry-no-content', 'entry-has-content');
-	    content_div.innerHTML = data_recv;
+	    var data_recv = JSON.parse(req.responseText);
+	    
+        content_div.className = content_div.className.replace('entry-no-content', 'entry-has-content');
+	    content_div.innerHTML = data_recv['content'];
 	    m_collapse_all_post();
 	    entry.className = entry.className.replace('entry-row-collapse', 'entry-row-expand');
 	    // entry.scrollIntoView(); // not work when rendering ?
@@ -141,7 +130,7 @@ function m_expand_post(index, board, filename) {
 	    title.className = title.className.replace('new-flag', '');
 	}
     }
-    req.open("GET", "/m/a/" + board + "/" + filename, /* async */ true);
+    req.open("GET", "/a/" + board + "/" + filename, /* async */ true);
     req.send(/* no params */ null);
 }
 
@@ -153,7 +142,7 @@ function m_expand_prev(index) {
 	    window.location = plink.href + "#" + (--index);
 	    return;
 	}
-	alert('ÒÑÊÇ±¾°æµÚÒ»ÌûÁË£¬ =¡£=');
+	alert('å·²æ˜¯æœ¬ç‰ˆç¬¬ä¸€å¸–äº†ï¼Œ =ã€‚=');
 	return;
     }
     m_expand_post(m_entry_index_list[i - 1], m_board, m_entry_file_list[i - 1]);
@@ -167,7 +156,7 @@ function m_expand_next(index) {
 	    window.location = nlink.href + "#" + (++index);
 	    return;
 	}
-	alert('ÒÑÊÇ±¾°æ×îºóÒ»ÌûÁË£¬ =¡£=');
+	alert('å·²æ˜¯æœ¬ç‰ˆæœ€åä¸€å¸–äº†ï¼Œ =ã€‚=');
 	return;
     }
     m_expand_post(m_entry_index_list[i + 1], m_board, m_entry_file_list[i + 1]);
@@ -234,7 +223,7 @@ function m_toggle_reply(index) {
     }
     if (reply_div.innerHTML != "") {
 	reply_div.innerHTML = "";
-	entry_reply_text.innerHTML = "»Ø¸´´ËÎÄ";
+	entry_reply_text.innerHTML = "å›å¤æ­¤æ–‡";
 	return;
     }
 
@@ -242,19 +231,22 @@ function m_toggle_reply(index) {
     req.onreadystatechange = function() {
 	if (req.readyState == 4 /* complete */) {
 
-	    data_recv = eval('(' + req.responseText + ')');
-	    reply_div.innerHTML = '<textarea rows="5" id="reply-content-' + index + '">\n\n\n' + data_recv + '</textarea>';
-	    reply_div.innerHTML += '<input type="button" value="È·¶¨" class="reply-submit" onclick="m_do_reply(\'' + index + '\');" />';
-	    entry_reply_text.innerHTML = "È¡Ïû»Ø¸´";
+	    //data_recv = eval('(' + req.responseText + ')');
+        data_recv = JSON.parse(req.responseText);
+        if (data_recv['success']) {
+	    reply_div.innerHTML = '<textarea rows="5" id="reply-content-' + index + '">\n\n\n' + data_recv['content'] + '</textarea>';
+	    reply_div.innerHTML += '<input type="button" value="ç¡®å®š" class="reply-submit" onclick="m_do_reply(\'' + index + '\', \''+data_recv['_xsrf']+'\');" />';
+	    entry_reply_text.innerHTML = "å–æ¶ˆå›å¤";
 
+        } else alert(data_recv['content'])
 	}
     }
-    req.open("GET", "/j/" + m_board + "/quote/" + filename, /* async */ true);
+    req.open("GET", "/a/" + m_board + "/quote/" + filename, /* async */ true);
     req.send(/* no params */ null);
     
 }
 
-function m_do_reply(index) {
+function m_do_reply(index, xsrf_token ) {
     var i = m_entry_index_list.indexOf(index);
     var id = m_entry_id_list[i];
     var title_div = document.getElementById("entry-title-" + index);
@@ -262,7 +254,7 @@ function m_do_reply(index) {
     var content_area = document.getElementById("reply-content-" + index);
     var content = content_area.value;
     if (content == "") {
-	alert("ÄãÃ»ÌîÊ²Ã´ÄÚÈİà£¡£");
+	alert("ä½ æ²¡å¡«ä»€ä¹ˆå†…å®¹å•µã€‚");
 	return;
     }
     if (title.substr(0, 4) != "Re: " ) {
@@ -274,18 +266,21 @@ function m_do_reply(index) {
 	if (req.readyState == 4 /* complete */) {
 	    reply_div = document.getElementById('entry-info-' + index);
 	    if (req.status == 200) {
-		if (req.responseText == '1') {
-		    reply_div.innerHTML = "»Ø¸´³É¹¦..";
-		} else {
-		    reply_div.innerHTML = req.responseText;
-		}
+            resp = JSON.parse(req.responseText);
+            if (resp['success']) {
+                reply_div.innerHTML = "å›å¤æˆåŠŸ..";
+            } else {
+                reply_div.innerHTML = resp['content'];
+            }
 	    } else {
-		reply_div.innerHTML = "Î´Öª´íÎó..";
+		    reply_div.innerHTML = "æœªçŸ¥é”™è¯¯..";
 	    }
 	    m_toggle_reply(index);
 	}
     }
-    var arg = 'title=' + escape(encodeURI(title)) + '&content=' + escape(encodeURI(content)) + '&articleid=' + escape(encodeURI(id));
+    var arg = 'title=' + (encodeURI(title)) + '&content=' + (encodeURI(content)) + '&replyid=' + (encodeURI(index));
+    if (xsrf_token) arg +=  '&_xsrf=' + (encodeURI(xsrf_token));
+
     req.open("POST", "/a/" + m_board + "/post/", /* async */ true);
     req.setRequestHeader("Content-Type", "application/x-www-form-urlencoded");
     req.send(arg);
@@ -339,9 +334,9 @@ function init_brds() {
     }
 }
 
-function m_do_subject_reply(index) {
-   var id = parseInt(m_files[0].substring(2)); //
-   var filetime = parseInt(m_files[index].substring(2));
+function m_do_subject_reply(index, xsrf_token) {
+   var id = parseInt(m_files[0]); //
+   var replyid = parseInt(m_files[index]);
    var title_id = document.getElementById("subject-title-" + index);
    var title = title_id.innerText;
    var content_area = document.getElementById("reply-content-" + index);
@@ -354,11 +349,13 @@ function m_do_subject_reply(index) {
     var req = new XMLHttpRequest();
     req.onreadystatechange = function() {
         if (req.readyState == 4 /* complete */) {
-            var reply_div = document.getElementById('subject-custom-'+filetime); 
+            var reply_div = document.getElementById('subject-custom-'+index); 
             reply_div.innerHTML = "";
         }
     }
-    var arg = 'title=' + escape(encodeURI(title)) + '&content=' + escape(encodeURI(content)) + '&articleid=' + escape(encodeURI(id));
+    var arg = 'title=' + (encodeURI(title)) + '&content=' + (encodeURI(content)) + '&replyid=' + (encodeURI(replyid));
+    arg += '&_xsrf=' + encodeURI(xsrf_token);
+
     req.open("POST", "/a/" + m_board + "/post/", /* async */ true);
     req.setRequestHeader("Content-Type", "application/x-www-form-urlencoded");
     req.send(arg);
@@ -367,20 +364,22 @@ function m_do_subject_reply(index) {
 function m_subject_reply(index) //subject index,start from 0
 {
     var filename = m_files[index];
-    var filetime = parseInt(filename.substring(2));
-    var reply_div = document.getElementById('subject-custom-'+filetime); 
+    var reply_div = document.getElementById('subject-custom-'+index); 
 
     var req = new XMLHttpRequest();
     req.onreadystatechange = function() {
         if(req.readyState == 4) {
-            data_recv = eval('('+ req.responseText +')');
-            reply_div.innerHTML = '<textarea rows="5" id="reply-content-' + index + '">\n\n\n' + data_recv + '</textarea>';
-            reply_div.innerHTML += '<input type="button" value="È·¶¨" class="reply-submit" onclick="m_do_subject_reply(\'' + index + '\');" />';
-        }
+            data_recv = JSON.parse( req.responseText );
+            if (data_recv['success']) {
+            reply_div.innerHTML = '<textarea rows="5" id="reply-content-' + index + '">\n\n\n' + data_recv['content'] + '</textarea>';
+            reply_div.innerHTML += '<input type="button" value="ç¡®å®š" class="reply-submit" onclick="m_do_subject_reply(\'' + index + '\', \''+data_recv['_xsrf']+'\');" />';
+            } else{
+                alert(data_recv['content']);
+            }
+        } 
     }
-    req.open("GET", "/j/" + m_board + "/quote/" + filename, /* async */ true);
+    req.open("GET", "/a/" + m_board + "/quote/" + filename, /* async */ true);
     req.send(/* no params */ null);
-
 }
 
 function subject_read_next(index) {
@@ -390,39 +389,23 @@ function subject_read_next(index) {
 	read_more.className= '';
 	return;
     }
-
+    
     var req = new XMLHttpRequest();
     req.onreadystatechange = function() {
     	if (req.readyState == 4 /* complete */) {
 
-	    var data = req.responseText;
+	    var data = JSON.parse(req.responseText);
        
-	    var ret;
-	    ret = data.search("·¢ĞÅÈË");
-	    var author = ret > 0 ? data.substring(ret + 10, data.indexOf('&nbsp;(')) : 'unknown';
-	    ret = data.search("±ê&nbsp;&nbsp;Ìâ");
-	    var title = ret > 0 ? data.substring(ret + 21, data.indexOf('<br />·¢ĞÅÕ¾')) : 'Î´Öª±êÌâ';
-
-	    ret = data.search('·¢ĞÅÈË.*±ê&nbsp;&nbsp;Ìâ.*·¢ĞÅÕ¾');
-
-	    if (ret != -1) {
-            var sub_index = data.indexOf('<br /><br />');
-            var end_index = data.indexOf('<br />--<br />'); // not lastIndexOf
-
-            if (end_index != -1) {
-                data = data.substring(sub_index + 6, end_index + 8);
-            } else {
-                data = data.substring(sub_index + 6);
-            }
-	    }
-
-	    var filetime = parseInt(m_files[index].substring(2));
+        title = data['title'];
+        author = data['owner'];
+        posttime = data['posttime'];
+        content = data['content'];
 
 	    var inner_data = '<div class="subject-title" id="subject-title-'+index+'">' + title + '</div>';
-	    inner_data += '<div class="subject-author">- ' + author + ', ' + to_time_str(filetime) + '</div>';
-	    inner_data += '<div class="subject-content">' + '<font>' + data + '</font></div>';
-	    inner_data += '<div class="subject-reply" onclick="javascript:m_subject_reply('+index+')">»Ø¸´´ËÎÄ</div>';
-        inner_data += '<div class="entry-custom" id="subject-custom-'+ filetime +'"></div>';
+	    inner_data += '<div class="subject-author">- ' + author + ', ' + posttime + '</div>';
+	    inner_data += '<div class="subject-content">' + '<font>' + content + '</font></div>';
+	    inner_data += '<div class="subject-reply" onclick="javascript:m_subject_reply('+index+')">å›å¤æ­¤æ–‡</div>';
+        inner_data += '<div class="entry-custom" id="subject-custom-'+ index +'"></div>';
 	    inner_data += '<div class="clear"></div>';
 	    var content_div = document.getElementById('content-div');
 	    content_div.innerHTML += '<div class="subject-row">' + inner_data + '</div>';
@@ -432,12 +415,12 @@ function subject_read_next(index) {
         } else {
             if (index + 1 >= m_files.length) return;
             var read_more = document.getElementById('subject-more');
-            read_more.innerHTML = 'ÔÄ¶Á¸ü¶à';
+            read_more.innerHTML = 'é˜…è¯»æ›´å¤š';
             read_more.className= 'more';
         }
         }
     }
-    req.open("GET", "/m/a/" + m_board + "/" + m_files[index], /* async */ true);
+    req.open("GET", "/a/" + m_board + "/" + m_files[index], /* async */ true);
     req.send(/* no params */ null);
     
 }
@@ -481,17 +464,15 @@ function m_toggle_mail(index) {
     req.onreadystatechange = function() {
     	if (req.readyState == 4 /* complete */) {
 
-            alert(req.responseText);
-
-   	    var data_recv = eval('(' + req.responseText + ')');
-    	    content_div.innerHTML = data_recv;
+   	    var data_recv = JSON.parse( req.responseText );
+    	    content_div.innerHTML = data_recv['content'];
 	        m_collapse_all_mail();
     	    entry.className = entry.className.replace('mail-entry-collapse', 'mail-entry-expand');
 	    entry.className = entry.className.replace('mail-new', '');
     	    entry.scrollIntoView();
     	}
     }
-    req.open("GET", "/j/mail/" + index, /* async */ true);
+    req.open("GET", "/a/mail/" + index, /* async */ true);
     req.send(/* no params */ null);
 }
 
@@ -519,7 +500,9 @@ function check_mail() {
     var req = new XMLHttpRequest();
     req.onreadystatechange = function() {
     	if (req.readyState == 4 /* complete */) {
-    	    if (req.responseText == '0') {
+            res = JSON.parse(req.responseText);
+            
+    	    if ( res['content'] == '0') {
     		nav.className = nav.className.replace('mail-unread', 'mail-read');
 	    } else {
     		nav.className = nav.className.replace('mail-read', 'mail-unread');

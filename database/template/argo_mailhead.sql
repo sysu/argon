@@ -9,7 +9,7 @@ CREATE TABLE IF NOT EXISTS `argo_mailhead_${tableid}` (
     `attachidx` varchar(128),
 
     `tid` int(11) unsigned ,
-    `replyid` int(11) unsigned ,
+    `replyid` int(11) unsigned NOT NULL default 0,
     `title` varchar(60),
 
     `sendtime` timestamp NOT NULL default CURRENT_TIMESTAMP ,

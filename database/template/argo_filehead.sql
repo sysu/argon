@@ -7,7 +7,7 @@ CREATE TABLE IF NOT EXISTS `argo_filehead_${boardname}` (
     `title` varchar(60),
     `flag` int(11)  unsigned default 0,
     `tid` int(11) unsigned default 0,
-    `replyid` int(11) unsigned,
+    `replyid` int(11) unsigned default 0,
     `posttime` timestamp NOT NULL default CURRENT_TIMESTAMP on update CURRENT_TIMESTAMP,
     `attachidx` varchar(20),
 
