@@ -1,4 +1,4 @@
-#!/usr/bin/python2
+#!/usr/bin/env python
 # -*- coding: utf-8 -*-
 
 import model
@@ -7,7 +7,7 @@ import argo_conf as cc
 from argo_conf import ConfigTestDate as t
 
 manager = model.manager
-        
+
 def init_database():
     u'''
     初始化数据库。

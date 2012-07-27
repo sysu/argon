@@ -2,4 +2,4 @@
 
 # Just load the test admin.py
 
-python2 -i ./admin.py
+python -i ./admin.py

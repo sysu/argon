@@ -10,12 +10,8 @@ class ConfigBase:
         Basic config
     '''
     import os
-    if os.popen('whoami').read() == 'hbl\n':
-        base_dir = '/Users/hbl/source'
-    else:
-        base_dir = '/home/mo'
-
-    data_dir = ''
+    base_dir = os.path.dirname(os.path.abspath(__file__))
+    data_dir = os.path.join(base_dir, 'database/')
 
 class ConfigDB:
     '''

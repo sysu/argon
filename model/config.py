@@ -20,6 +20,5 @@ CPORT = ConfigCache.port
 
 ''' Other setting '''
 
-SQL_TPL_DIR = ConfigBase.base_dir + '/argon/database/'
+SQL_TPL_DIR = ConfigBase.data_dir
 BASE_TABLE = [ 'attachead','boardhead','sectionhead','user','userattr']
-
