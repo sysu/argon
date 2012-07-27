@@ -42,7 +42,7 @@ Overview
 >  ---------- ---------------
 >  |    Mysql | redis      |
 >  ------------------------
- 
+
 采用python实现。
 
 Dependencies
@@ -54,6 +54,7 @@ Dependencies
   * python-redis
   * eventlet
   * bcrypt
+  * chaofeng
 
 其中jinja2目前被telnet端使用，可能会被web端使用。
 
@@ -67,13 +68,13 @@ Install
 ### 获取本项目
 
 ```bash
-git clone https://github.com/argo-admin/argon.git
+git clone https://github.com/argolab/argon.git
 ```
 
 测试一下需要的依赖是否被满足:
 
 ```bash
-python -c 'import MySQLdb,eventlet,jinjia2,redis'
+python -c 'import MySQLdb,eventlet,jinja2,redis,bcrypt'
 ```
 
 应该没有任何异常输出。
@@ -110,7 +111,7 @@ class ConfigCache:
 
 ### 初始化数据库
 
-我们目前提供一个简单的python脚本:
+首选需要根据上面ConfigDB的配置创建数据库和用户，然后使用我们目前提供的一个简单的python脚本创建数据库表:
 
 ```bash
 ./admin.sh
@@ -152,4 +153,3 @@ $ telnet localhost 5000
 接口参加源代码。
 
 telnet端的更多说明见`telnet/README.md`。
-

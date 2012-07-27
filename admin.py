@@ -1,4 +1,4 @@
-#!/usr/bin/python2
+#!/usr/bin/env python
 # -*- coding: utf-8 -*-
 
 import model
@@ -7,8 +7,6 @@ import argo_conf as cc
 from argo_conf import ConfigTestDate as t
 
 manager = model.manager
-
-d = lambda : manager.userperm.get_board_ability('111', 'Test')
 
 def init_database():
     u'''
