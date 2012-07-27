@@ -8,7 +8,6 @@ from chaofeng.g import mark
 from libtelnet import zh_format,zh_format_d,zh_center
 from model import manager
 import chaofeng.ascii as ac
-import config
 
 from template import env
 

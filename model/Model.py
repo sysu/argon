@@ -3,11 +3,12 @@
 
 from globaldb import global_conn,global_cache
 from MySQLdb import ProgrammingError
-import error 
+from error import *
 import bcrypt,time
 from datetime import datetime
 import mode
 import random
+import perm
 
 class MetaModel(type):
 
@@ -414,17 +415,15 @@ class UserAuth(Model):
         
     def is_unvail_userid(self,userid):
         if userid in self.ban_userid :
-            return error.REG_BAN_ID
+            raise RegistedError(Registed.BAN_ID)
         elif len(userid) < 3 :
-            return error.REG_USERID_TOO_SHORT
+            raise RegistedError(Registed.USERID_TOO_SHORT)
         elif self.user_exists(userid) :
-            return error.REG_REGISTERED
-        return error.OK
+            raise RegistedError(Registed.REGISTERED)
 
     def is_unvail_passwd(self,passwd):
         if len(passwd) < 6 :
-            return error.REG_PASSWD_TOO_SHORT
-        return error.OK
+            return RegistedError(RegistedError.PASSWD_TOO_SHORT)
 
     def gen_passwd(self,passwd):
         return bcrypt.hashpw(passwd, bcrypt.gensalt(10))
@@ -457,17 +456,17 @@ class UserAuth(Model):
     def login(self,userid,passwd,host,session=True):
 
         if userid == 'guest':
-            return error.LOGIN_NO_SUCH_USER # Not such user self.get_guest()
+            raise LoginError(LoginError.NO_SUCH_USER) # Not such user self.get_guest()
 
         # user_exist
         code = self.table.select_attr(userid,"passwd")
         if code is None :
-            return error.LOGIN_NO_SUCH_USER # Not such user
+            raise LoginError(LoginError.NO_SUCH_USER) # Not such user
         code = code['passwd']
 
         #check_password
         if not self.check_passwd_match(passwd,code):
-            return error.LOGIN_WRONG_PASSWD
+            raise LoginError(LoginError.WRONG_PASSWD)
         self.table.update_user(userid,
                                lasthost=host,
                                lastlogin=datetime.now())
@@ -478,7 +477,7 @@ class UserAuth(Model):
             #set_state
             seid = self.online.login(userid)
             if seid is False :
-                return error.LOGIN_MAX_LOGIN
+                return LoginError(LoginError.MAX_LOGIN)
             res.seid = seid
             self.online.record_ip(userid,seid,host)
 
@@ -599,28 +598,107 @@ class Disgest(Model):
 
     _prefix = 'argo_annhead_'
 
-    def __(self,partition):
-        return self._prefix + partition
+    def __(self, boardname):
+        return self._prefix + boardname
 
-    def _create_table(self,partition,**kwargs):
+    def _create_table(self, boardname, **kwargs):
         import config
         from string import Template
         with open(config.SQL_TPL_DIR + 'template/argo_annhead.sql') as f :
             board_template = Template(f.read())
-            self.db.execute(board_template.safe_substitute(partition=partition))
+            self.db.execute(board_template.substitute(boardname=boardname))
 
-    def get_all_books(self,partname):
-        sql = "SELECT * FROM `%s`" % self.__(partname)
-        return self.db.query(sql)
+    def get_children(self, boardname, partent):
+        return self.db.query("SELECT * FROM `%s` WHERE pid=%%s ORDER BY rank " % self.__(boardname),
+                             partent)
 
-    def get_children(self,partname,pid):
-        sql = "SELECT * FROM `%s` WHERE pid = %%s" % self.__(partname)
-        return self.db.query(sql,pid)
+    def get_node(self, boardname, nodeid):
+        return self.db.get("SELECT * FROM `%s` WHERE id=%%s" % self.__(boardname),
+                           nodeid)
 
-    def get_node(self,partname,id):
-        sql = "SELECT * FROM `%s` WHERE id = %%s" % self.__(partname)
-        return self.db.get(sql,id)
-    
+    def get_children_and_tabs(self, boardname, partent):
+        children = self.get_children(boardname, partent)
+        for node in children:
+            if node.title == 'README':
+                return (children, node)
+        else:
+            return (children, None)
+
+    def get_max_rank(self, boardname, partent):
+        res = self.db.get("SELECT max(rank) FROM `%s` WHERE pid=%%s" % self.__(boardname),
+                           partent)
+        return res and (res['max(rank)'] or 0)
+
+    def add_node_r(self, boardname, partent, rank, **kwargs):
+        kwargs['pid'] = partent
+        kwargs['rank'] = rank
+        return self.table_insert(self.__(boardname), kwargs)
+
+    def add_node(self, boardname, partent, **kwargs):
+        rank = self.get_max_rank(boardname, partent) + 1
+        return self.add_node_r(boardname, partent, rank, **kwargs)
+
+    def delete_node(self, boardname, nodeid):
+        return self.table_delete_by_key(self.__(boardname), 'id', nodeid)
+
+    def swap_rank(self, boardname, node1, node2):
+        r1 = node1.rank
+        r2 = node2.rank
+        sql = "UPDATE `%s` SET rank=%%s WHERE id=%%s" % self.__(boardname)
+        return self.db.executemany(sql, ((r1, node2['id']), (r2, node1['id'])))
+
+    def get_node_cc(self, srcboard, nodeid):
+        return self.db.get("SELECT title,owner,flag,tags,content FROM %s WHERE id=%%s"%self.__(srcboard),
+                           nodeid)
+
+    # def walk_tree(self, boardname, nodeid):
+    #     acc = []
+    #     def walk(rootid):
+    #         acc.append(rootid)
+    #         children = self.db.get_children(boardname, rootid)
+    #         for child in children :
+    #             walk(child.id)
+    #     walk(nodeid)
+    #     return acc
+
+    # def get_tree(self, boardname, node):
+    #     def get_board_tree(node):
+    #         if node.flag == 1:
+    #             children = self.get_children(boardname, node['id'])
+    #             children_tree = map(get_board_tree, children)
+    #             return (node, children_tree)
+    #         else:
+    #             return (node, None)
+    #     return get_board_tree(node)
+
+    # def insert_tree(self, boardname, partentid, nodetree):
+    #     node, children = nodetree
+    #     res = self.add_node(boardname, partentid, **node)
+    #     if children :
+    #         for child in children:
+    #             self.insert_tree(boardname, node['id'], child)
+    #     return res
+
+    # def delete_tree(self, boardname, nodeid):
+    #     children = self.get_children(nodeid)
+    #     if children:
+    #         for child in children:
+    #             self.delete_tree(boardname, child)
+    #     self.delete_node(boardname, nodeid)
+
+    # def copy_node(self, srcboard, nodeid, descboard, partentid, **kwargs):
+    #     res = self.get_node_cc(srcboard, nodeid)
+    #     res['rank'] = self.get_max_rank(self.__(descboard), partentid)
+    #     res.update(kwargs)
+    #     new_nodeid = self.table_insert(self.__(descboard), res)
+
+    #     if res.flag == 1:
+    #         for child in self.get_children(srcboard, nodeid):
+    #             self.copy_node(srcboard, child.id,
+    #                            descboard, new_nodeid)            
+    #     else:
+    #         return new_nodeid
+
 class ReadMark(Model):
 
     keyf = "argo:readmark:%s:%s"
@@ -730,11 +808,11 @@ class Permissions(Model):
 
     # Global Permissions
 
-    def give_perm(self, teamname, perm):
-        self.ch.sadd(self.key_glb%perm, teamname)
+    def give_perm(self, perm, *teamname):
+        self.ch.sadd(self.key_glb%perm, *teamname)
 
-    def remove_perm(self, teamname, perm):
-        self.ch.srem(self.key_glb%perm, teamname)
+    def remove_perm(self, teamname, *perm):
+        self.ch.srem(self.key_glb%perm, *teamname)
 
     def check_perm(self, userid, perm):
         return self.ch.sinter(self.key_ust%userid, self.key_glb%perm)
@@ -744,18 +822,80 @@ class Permissions(Model):
 
     # Board Permissions
 
-    def give_boardperm(self, teamname, boardname, perm):
-        self.ch.sadd(self.key_brd%(boardname, perm), teamname)
+    def give_boardperm(self, boardname, perm, *teamname):
+        self.ch.sadd(self.key_brd%(boardname, perm), *teamname)
 
-    def remove_boardperm(self, teamname, boardname, perm):
-        self.ch.srem(self.key_brd%(boardname, perm), teamname)
+    def remove_boardperm(self, boardname, perm, *teamname):
+        self.ch.srem(self.key_brd%(boardname, perm), *teamname)
 
-    def check_boardperm(self, teamname, boardname, perm):
+    def check_boardperm(self, userid, boardname, perm):
         return self.ch.sinter(self.key_ust%userid,
                               self.key_brd%(boardname, perm))
 
-    def get_teams_with_boardperm(self, teamname, boardname, perm):
+    def checkmany_boardperm(self, userid, boardname, *perms):
+        key = self.key_ust%userid
+        return map(lambda p : bool(self.ch.sinter(key, self.key_brd%(boardname, p))),
+                   perms)
+
+    def get_teams_with_boardperm(self, boardname, perm):
         return self.ch.smembers(self.key_brd%(boardname, perm))
+
+class UserPerm(Model):
+
+    BOARD_DENY_NAME = '%sDeny'
+    BOARD_BM = '%sBM'
+
+    team_t_bm = perm.TEAM_T_BOARD_BM
+    team_t_deny = perm.TEAM_T_BOARD_DENY
+    team_deny_global = perm.TEAM_DENY_GLOBAL
+    team_user = perm.TEAM_USER
+    
+    def _bmteam(self, boardname):
+        return self.team_t_bm % boardname
+
+    def _denyteam(self, boardname):
+        return self.team_t_deny % boardname
+
+    def __init__(self, team, perm):
+        self.team = team
+        self.perm = perm
+
+    def get_board_ability(self, userid, boardname):
+        r,w,d,s = self.perm.checkmany_boardperm(userid, boardname,
+                                                perm.BOARD_READ, perm.BOARD_POST,
+                                                perm.BOARD_DENY, perm.BOARD_ADMIN)
+        return ( r and not d, r and not d and w, d, s)
+
+    def init_board_team_normal(self, boardname):
+        self.perm.give_boardperm(boardname, perm.BOARD_READ, *perm.DEFAULT_BOARD_R_TEAM)
+        self.perm.give_boardperm(boardname, perm.BOARD_POST, *perm.DEFAULT_BOARD_W_TEAM)
+        self.perm.give_boardperm(boardname, perm.BOARD_DENY,
+                                 self._denyteam(boardname),
+                                 *perm.DEAFULT_BOARD_D_TEAM)
+        self.perm.give_boardperm(boardname, perm.BOARD_ADMIN,
+                                 self._bmteam(boardname),
+                                 *perm.DEAFULT_BOARD_X_TEAM)
+
+    def set_board_bm(self, boardname, bm):
+        self.team.join_team(bm, self._bmteam(boardname))
+
+    def remove_board_bm(self, boardname, bm):
+        self.team.remove_team(bm, self._bmteam(boardname))
+
+    def set_deny(self, boardname, userid):
+        self.team.join_team(userid, self._denyteam(boardname))
+
+    def remove_deny(self, boardname, userid):
+        self.team.remove_team(userid, self._denyteam(boardname))
+
+    def set_deny_global(self, userid):
+        self.team.join_team(userid, self.team_deny_global)
+
+    def remove_deny_global(self, userid):
+        self.team.remove_team(userid, self.team_deny_global)
+
+    def set_user(self, userid):
+        self.team.join_team(userid, self.team_user)
 
     # # Teams Admin
 
@@ -910,6 +1050,33 @@ class Favourite(Model):
     def get_all(self, userid):
         key = self.keyf % userid
         return self.ch.smembers(key)
+
+class FreqControl(Model):
+
+    keyf = "argo:freqcontrol:%s"
+
+    per = 3
+    mid = 15
+    big = 120
+    
+    def _filter_freq(self, userid, fre):
+        key = self.keyf % fre
+        if self.ch.sismember(key, userid):
+            raise TooFrequentException
+        if self.ch.exists(key):
+            self.ch.sadd(key, userid)
+        else:
+            self.ch.sadd(key, userid)
+            self.ch.expire(key, fre)
+
+    def filter_freq_per(self, userid):
+        self._filter_freq(userid, self.per)
+
+    def filter_freq_mid(self, userid):
+        self._filter_freq(userid, self.mid)
+
+    def filter_freq_big(self, userid):
+        self._filter_freq(userid, self.big)
 
 class Manager:
 

@@ -74,9 +74,10 @@ class EditFrame(AuthedFrame):
     def show_help(self):
         self.suspend('help',page='edit')
 
-    def initialize(self, spoint=0, text=''):
+    def initialize(self, spoint=0, text=u''):
+        assert isinstance(text, unicode)
         self.e = self.load(Editor, height=23, hislen=5, dis=10)
-        self.e.set_text(self.u(text), spoint)
+        self.e.set_text(text, spoint)
         self.ugly = '' # 修复单字节发送的bug （sterm）
         self.restore_screen()
 

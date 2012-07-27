@@ -7,7 +7,9 @@ import argo_conf as cc
 from argo_conf import ConfigTestDate as t
 
 manager = model.manager
-        
+
+d = lambda : manager.userperm.get_board_ability('111', 'Test')
+
 def init_database():
     u'''
     初始化数据库。
@@ -26,6 +28,9 @@ def r():
     reload(model)
     global manager
     manager = model.manager
+
+def bpp(ll):
+    print '\n'.join(map(str, ll))
 
 print u'''\
 

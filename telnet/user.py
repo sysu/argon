@@ -72,12 +72,12 @@ class NickDataFrame(AuthedFrame):
         res = self.select(lambda o : self.write(ac.move2(12,1)+ ac.clear1+
                                                 unicode(self.session.user[o])+
                                                 ac.move2(10,6) + ac.kill_to_end +
-                                                config.options['nickdata'][o]),
+                                                config.user_setting['nickdata'][o]),
                           self.options)
         if res is not False:
             self.sel = self.options[res]
             self.suspend('edit_text', callback=self.save_text,
-                         filename=config.options['nickdata'][self.sel])
+                         filename=config.user_setting['nickdata'][self.sel])
         else:
             self.write(u'\r\n取消设置！')
             self.pause()

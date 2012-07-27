@@ -24,7 +24,7 @@ class CF:
     from globaldb import global_conn,global_cache
     from Model import Section,Online,UserInfo,UserAuth,\
         Board,Post,Action,ReadMark,Mail,Permissions,UserSign,\
-        Favourite, Clipboard
+        Favourite, Clipboard, Disgest,FreqControl, Team, UserPerm
     
     db = global_conn
     ch = global_cache
@@ -42,9 +42,13 @@ class CF:
     readmark  = ReadMark(post=post)
     favourite = Favourite()
     clipboard = Clipboard()
+    disgest   = Disgest()
+    freq      = FreqControl()
+    team      = Team()
+    userperm  = UserPerm(team, perm)
     
     loads = [section,online,userinfo,auth,board,post,readmark,mail,usersign,
-             favourite,clipboard]
+             favourite,clipboard,disgest,freq, perm, team, userperm]
 
     use = {
         "section":section,
@@ -60,6 +64,10 @@ class CF:
         "favourite":favourite,
         "mail":mail,
         "clipboard":clipboard,
+        "disgest":disgest,
+        "freq":freq,
+        "userperm":userperm,
+        "team":team,
         }
 
     @classmethod

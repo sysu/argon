@@ -8,10 +8,11 @@
     Find all of the children:
         select id from argo_annhead_xxx where pid = id
 */
-DROP TABLE IF EXISTS `argo_annhead_${partition}`;
-CREATE TABLE IF NOT EXISTS `argo_annhead_${partition}` (
+DROP TABLE IF EXISTS `argo_annhead_${boardname}`;
+CREATE TABLE IF NOT EXISTS `argo_annhead_${boardname}` (
     `id` int(11) unsigned NOT NULL auto_increment,
     `pid` int(11) unsigned NOT NULL default 0,
+    `rank` int(11) unsigned NOT NULL,
     `title` varchar(60),
     
     `owner` varchar(14),

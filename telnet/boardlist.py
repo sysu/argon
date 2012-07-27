@@ -286,6 +286,7 @@ class BoardFrame(BaseTableFrame):
         self.do_command(config.hotkeys['board'].get(data))
 
     def initialize(self, board):
+        # r,w,d,s = manager.
         self.board = board
         self.boardname = board['boardname']
         manager.action.enter_board(self.userid, self.seid, self.boardname)

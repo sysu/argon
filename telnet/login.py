@@ -23,7 +23,7 @@ class WelcomeFrame(BaseFrame):
 
     def try_login_iter(self):
         passwd_reader = self.load(Password)
-        with Timeout(config.max_try_login_time , EndInterrupt):
+        with Timeout(config.data['MAX_TRY_LOGIN_TIME'] , EndInterrupt):
             while True :
                 self.write(config.str['PROMPT_INPUT_USERID'])
                 userid = self.readline()
@@ -43,8 +43,8 @@ class WelcomeFrame(BaseFrame):
         authobj = manager.auth.login(userid,passwd,self.session.ip)
         if authobj :
             self.session.user = authobj
-            self.session.stack = deque(maxlen=config.max_stack_deep)  #!!!!
-            self.session.history = deque(maxlen=config.max_history_deep)
+            self.session.stack = deque(maxlen=config.data['MAX_STACK_DEEP'])  #!!!!
+            self.session.history = deque(maxlen=config.data['MAX_HISTORY_DEEP'])
             self.session.messages = [u'逸仙时空 argo.sysu.edu.cn']
         return authobj
                 
@@ -61,7 +61,7 @@ class RegisterFrame(BaseFrame):
     def initialize(self):
         self.render('register')
         passwd_reader = self.load(Password, prompt=config.str['PROMPT_INPUT_PASSWD_REG'])
-        with Timeout(config.max_try_register_time ,EndInterrupt) :
+        with Timeout(config.data['MAX_TRY_REGISTER_TIME'] ,EndInterrupt) :
             while True :
                 self.write(config.str["PROMPT_INPUT_USERID_REG"])
                 userid = self.readline()

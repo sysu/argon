@@ -1,85 +1,94 @@
 # -*- coding: utf-8 -*-
 from chaofeng import ascii as ac
+import yaml
 # from chaofeng.g import static
 # from template import load_jinjatxt,load_jinjatpl
 
 BBS_HOST_FULLNAME = u"逸仙时空 Yat-Sen Channel"
 BBS_HOST_DOMAIN = u"argo.sysu.edu.cn"
 
+template_file = [
+    'board-t', 'mail-t', 'post-t', 'user-t', 'history',
+    ]
 
-class Config(dict):
-    def __getattr__(self,key):
-        try:
-            return self[key]
-        except KeyError:
-            return dict()
+menu_background = {
+    'menu_user_space':u'个人资料设定的背景',
+    'menu_main':u'主菜单的背景',
+    'menu_mail':u'处理信笺区的背景',
+    }
 
-chaofeng = Config(
-    static={
-        "loader":{
-            # '.jtxt':load_jinjatxt,
-            # '.jtpl':load_jinjatpl,
-            }
-        }
-    )
-# static.config(**chaofeng.static)
+background_file = [
+    'active', 'edit_sign', 'welcome', 'edit_user_data',
+    'nickdata', 
+    ]
 
-for key in ['board','help','menu_sections','menu_board','view',
-             'boardlist','index','menu_main','testjump','edit'] :
-    # static.load('help/%s' % key)
-    pass
-
-root = 'welcome'
+letter = [
+    'register', 'register_succ',
+    ]
 
 # 菜单的设定
 # 第一项是一个字符串，将会显示到屏幕。第二项是跳转的页面的mark，和goto的参数。
 # 第三项是快捷键。第四项是显示的坐标，如果没有则是上一列x,y+1
 
-menu = {
-    "main":(
-        ( u'(E)Group       分类讨论区','sections','e',(13,5)),
-        # ( u'(D)igest       本站精华区',"undone",'d' ),
-        ( u'(F)avourite    个人收藏夹',"favourite",'f' ),
-        # ( u'(R)ecommend    推荐版面区',"undone",'r' ),
-        # ( u'(M)ail         处理信笺区',"undone",'m' ),
-        # ( u'(T)alk         谈天说地区',"undone",'t' ),
-        ( u'(I)nfoEdit   个人资料设定',"user_space",'i' ),
-        ( u'(F)ilm         电影放映室',"movie",'f' ),
-        ( u'(M)ail           处理信笺','mail_menu','m'),
-        # ( u'(S)ervice      特别服务区',"undone",'s' ),
-        # ( u'(C)onfig       系统信息区',"undone",'c' ),
-        # ( u'(P)ersonal     个人文集区',"undone",'p' ),
-        ( u'(H)elp           帮助中心',"help",'h'),
-        ( u'(G)oodbye    离开逸仙时空',"finish",'g' )
-        ),
-    "main_guest":(
-        ( u'(E)Group       分类讨论区','sections','e',(12,5)),
-        # ( u'(D)igest       本站精华区',"undone",'d' ),
-        # ( u'(R)ecommend    推荐版面区',"undone",'r' ),
-        # ( u'(T)alk         谈天说地区',"undone",'t' ),
-        # ( u'(C)onfig       系统信息区',"undone",'c' ),
-        # ( u'(P)ersonal     个人文集区',"undone",'p' ),
-        ( u'(G)oodbye    离开逸仙时空 ',"finish",'g' )
-        ),
-    "user_space":(
-        ( u'I) 设定个人资料','user_editdata','i',(12,6)),
-        ( u'P) 修改个人密码','user_change_passwd','p'),
-        ( u'W) 编修个人档案','user_nickdata','w'),
-        ( u'S) 修改签名档','user_edit_sign','s'),
-        ( u'U) 查看我的资料','query_user','u'),
-        ( u'E) 回到主选单','main','e'),),
-    "section":(
-        # dy + append
-        ( u"[1;32mA[0m) 所有讨论区 -- [ALL]",("boardlist",dict(sid=None)),'a',(11,41)),
-        ( u"[1;36mN[0m) 阅读新文章 -- [NEW]","undone",'n'),
-        ( u"[1;36mE[0m) 回到主选单 -- [EXIT]","main",'e'),
-        ),
-    "mail":(
-        ( u"(R)ead          览阅全部信笺", "get_mail", "r", (16,41)),
-        ( u"(S)end          发送站内信件", "send_mail", "s"),
-        ( u"(E)xit          回到主选单",   "main", "e"),
-        ),        
-}
+with open('data.yaml') as f:
+    data = yaml.load(f)
+
+with open('menu.yaml') as f:
+    menu = yaml.load(f)
+
+# data = {
+#     "MAX_TRY_LOGIN_TIME":50,
+#     "MAX_TRY_REGISTER_TIME":150,
+#     "MAX_STACK_DEEP":5,
+#     "MAX_HISTORY_DEEP":20,
+#     'ROOT':'welcome',
+#     }
+
+# menu = {
+#     "main":[
+#         [ u'(E)Group       分类讨论区','sections','e',[13,5]],
+#         # ( u'(D)igest       本站精华区',"undone",'d' ),
+#         [ u'(F)avourite    个人收藏夹',"favourite",'f' ],
+#         # ( u'(R)ecommend    推荐版面区',"undone",'r' ),
+#         # ( u'(M)ail         处理信笺区',"undone",'m' ),
+#         # ( u'(T)alk         谈天说地区',"undone",'t' ),
+#         [ u'(I)nfoEdit   个人资料设定',"user_space",'i' ],
+#         [ u'(F)ilm         电影放映室',"movie",'f' ],
+#         [ u'(M)ail           处理信笺','mail_menu','m'],
+#         # ( u'(S)ervice      特别服务区',"undone",'s' ),
+#         # ( u'(C)onfig       系统信息区',"undone",'c' ),
+#         # ( u'(P)ersonal     个人文集区',"undone",'p' ),
+#         [ u'(H)elp           帮助中心',"help",'h'],
+#         [ u'(G)oodbye    离开逸仙时空',"finish",'g' ]
+#         ],
+#     "main_guest":[
+#         [ u'(E)Group       分类讨论区','sections','e',[12,5]],
+#         # ( u'(D)igest       本站精华区',"undone",'d' ),
+#         # ( u'(R)ecommend    推荐版面区',"undone",'r' ),
+#         # ( u'(T)alk         谈天说地区',"undone",'t' ),
+#         # ( u'(C)onfig       系统信息区',"undone",'c' ),
+#         # ( u'(P)ersonal     个人文集区',"undone",'p' ),
+#         [ u'(G)oodbye    离开逸仙时空 ',"finish",'g' ]
+#         ],
+#     "user_space":[
+#         [ u'I) 设定个人资料','user_editdata','i',[12,6]],
+#         [ u'P) 修改个人密码','user_change_passwd','p'],
+#         [ u'W) 编修个人档案','user_nickdata','w'],
+#         [ u'S) 修改签名档','user_edit_sign','s'],
+#         [ u'U) 查看我的资料','query_user','u'],
+#         [ u'E) 回到主选单','main','e'],],
+#     "section":[
+#         # dy + append
+#         [ u"[1;32mA[0m) 所有讨论区 -- [ALL]",["boardlist",dict(sid=None)],'a',[11,41]],
+#         [ u"[1;36mN[0m) 阅读新文章 -- [NEW]","undone",'n'],
+#         [ u"[1;36mE[0m) 回到主选单 -- [EXIT]","main",'e'],
+#         ],
+#     "mail":[
+#         [ u"(R)ead          览阅全部信笺", "get_mail", "r", [16,41]],
+#         [ u"(S)end          发送站内信件", "send_mail", "s"],
+#         [ u"(E)xit          回到主选单",   "main", "e"],
+#         ],        
+# }
 
 key_maps = {
     "super_key": "a",
@@ -113,11 +122,6 @@ TABLE_KEY_MAPS = {
     }
 
 # userid_char =
-
-max_try_login_time = 50
-max_try_register_time = 150
-max_stack_deep = 5
-max_history_deep = 20
 
 have_help_page = set(("index","main","sections","board","boardlist","edit",
                       "view","help",'mail','testjump'))
@@ -297,7 +301,7 @@ hotkeys = {
         }
     }
 
-options = {
+user_options = {
     "nickdata":{
         "shai":u"晒一下",
         "contact":u"联系方式",
@@ -310,4 +314,3 @@ options = {
 
 data_pool = {
     }
-
