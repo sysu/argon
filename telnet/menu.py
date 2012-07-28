@@ -8,11 +8,11 @@ sys.path.append('../')
 from chaofeng.g import mark
 from chaofeng.ui import Animation,ColMenu
 import chaofeng.ascii as ac
-from argo_frame import AuthedFrame
+from libframe import BaseAuthedFrame
 from model import manager
 import config
 
-class BaseSelectFrame(AuthedFrame):
+class BaseSelectFrame(BaseAuthedFrame):
 
     menu_start_line = None  ### Should be num in subclass.
 

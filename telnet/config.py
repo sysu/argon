@@ -160,6 +160,8 @@ str = {
     'MSG_BOARD_MODE_TOPIC':u'只看主题贴',
     'MSG_BOARD_MODE_ONETO{IC':u'查看单一主题',
     'MSG_BOARD_MODE_AUTHOR':u'查看单一作者',
+    'FORM_QUICK_HELP':u'[0m返回[[1;32m←[0m,[1;32mq[0m] 修改[[1;32m→[0m,[1;32mRtn[0m] 选择[[1;32m↑[0m,[1;32m↓[0m] 求助[[1;32mh[0m][m',
+    'FORM_THEAD':u'[0;1;44m  项目名称                         项目属性                                   [m',
    }
 
 hotkeys = {
@@ -221,6 +223,9 @@ hotkeys = {
     "board_table":{
         "k":"move_up", "j":"move_down", "P":"page_up", "N":"page_down",
         ac.k_home:"goto_first", 
+        },
+    "form":{
+        ac.k_left:"submit",
         },
     "edit_2ndcmd_start": ac.k_ctrl_u,
     "edit_editor":{

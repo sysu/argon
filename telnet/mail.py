@@ -7,10 +7,8 @@ from chaofeng.g import mark
 from chaofeng.ui import TextEditor, ColMenu
 from model import manager
 from datetime import datetime
-from edit import EditFrame
-from boardlist import BaseTableFrame
+from libframe import BaseTableFrame, BaseTextBoxFrame, BaseEditFrame
 from menu import NormalMenuFrame
-from view import TextBoxFrame
 import config
 
 @mark('mail_menu')
@@ -72,7 +70,7 @@ class GetMailFrame(BaseTableFrame):
         self.suspend("reply_mail", mail=self.table.fetch())
 
 @mark('send_mail')
-class SendMailFrame(EditFrame):
+class SendMailFrame(BaseEditFrame):
 
     def initialize(self):
         self.cls()
@@ -105,7 +103,7 @@ class SendMailFrame(EditFrame):
         self.goto_back()
 
 @mark("reply_mail")
-class ReplyMailFrame(EditFrame):
+class ReplyMailFrame(BaseEditFrame):
 
     def initialize(self, mail):
         self.replymail = mail
@@ -133,7 +131,7 @@ class ReplyMailFrame(EditFrame):
         self.goto_back()
 
 @mark('view_mail')
-class ReadMailFrame(TextBoxFrame):
+class ReadMailFrame(BaseTextBoxFrame):
 
     def get_text(self):
         return self.render_str('mail-t', **self.mail)

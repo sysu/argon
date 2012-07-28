@@ -4,88 +4,13 @@ sys.path.append('../')
 
 from chaofeng import ascii as ac
 from chaofeng.g import mark
-from chaofeng.ui import TextEditor
 from model import manager
-from argo_frame import AuthedFrame
-from libtelnet import zh_format
+from libframe import BaseAuthedFrame,BaseEditFrame
 from datetime import datetime
 import config
 
-class Editor(TextEditor):
-
-    def bottom_bar(self,msg=''):
-        self.write(ac.move2(24,0))
-        self.frame.render('bottom_edit', message=msg, l=self.l, r=self.r)
-        self.fix_cursor()
-
-class EditFrame(AuthedFrame):
-
-    def finish(self):
-        raise NotImplementedError
-
-    def restore_screen(self):
-        self.e.do_editor_command("refresh")
-
-    def notify(self, msg):
-        pass ############           Not ImplamentedError
-
-    def restore(self):
-        self.e.do_editor_command("refresh")
-
-    def message(self,content):
-        self.e.bottom_bar(content[:40])
-        
-    def get(self,char):
-        if self.ugly :
-            char = self.ugly + char
-            self.ugly = ''
-        elif len(char) == 1 and ac.is_gbk_zh(char):
-            self.ugly = char
-            return
-            
-        if char in config.hotkeys['edit_editor'] :
-            self.e.do_editor_command( config.hotkeys['edit_editor'][char])
-        elif char == config.hotkeys['edit_2ndcmd_start'] :
-            x = self.read_secret()
-            if x in config.hotkeys['edit_editor_2nd']:
-                self.e.do_editor_command(config.hotkeys['edit_editor_2nd'][x])
-        elif char in config.hotkeys['edit']:
-            getattr(self, config.hotkeys['edit'][char])()
-        else:
-            self.e.safe_insert_iter(char)
-
-    def copy_to_superclip(self):
-        text = self.e.get_clipboard()
-        print text
-        manager.clipboard.append_clipboard(self.userid, value=text)
-
-    def insert_superclip(self):
-        clipboard = self.u(manager.clipboard.get_clipboard(self.userid))
-        print clipboard
-        self.e.insert_paragraph(clipboard)
-        self.restore()
-        
-    def quit_iter(self):
-        self.message(u'放弃本次编辑操作？')
-        d = self.readline()
-        if not d :
-            self.goto_back()
-
-    def show_help(self):
-        self.suspend('help',page='edit')
-
-    def initialize(self, spoint=0, text=u''):
-        assert isinstance(text, unicode)
-        self.e = self.load(Editor, height=23, hislen=5, dis=10)
-        self.e.set_text(text, spoint)
-        self.ugly = '' # 修复单字节发送的bug （sterm）
-        self.restore_screen()
-
-    def read_title(self, prompt='', prefix=''):
-        return self.readline(prompt=prompt, prefix=prefix, buf_size=40)
-
 @mark('new_post')
-class NewPostFrame(EditFrame):
+class NewPostFrame(BaseEditFrame):
 
     def initialize(self, board):
         self.boardname = board['boardname']
@@ -111,7 +36,7 @@ class NewPostFrame(EditFrame):
         self.goto_back()
 
 @mark('reply_post')
-class ReplyPostFrame(EditFrame):
+class ReplyPostFrame(BaseEditFrame):
 
     def initialize(self, boardname, post):
         self.cls()
@@ -135,7 +60,7 @@ class ReplyPostFrame(EditFrame):
         self.goto_back()
 
 @mark('edit_post')
-class EditPostFrame(EditFrame):
+class EditPostFrame(BaseEditFrame):
 
     def initialize(self, boardname, post):
         self.cls()
@@ -154,7 +79,7 @@ class EditPostFrame(EditFrame):
         self.goto_back()
 
 @mark('edit_text')
-class EditFileFrame(EditFrame):
+class EditFileFrame(BaseEditFrame):
 
     def initialize(self, filename, callback, text='', l=0, split=False):
         self.cls()
@@ -180,7 +105,7 @@ class EditFileFrame(EditFrame):
             self.goto_back()
 
 @mark('edit_clipboard')
-class EditorClipboardFrame(EditFrame):
+class EditorClipboardFrame(BaseEditFrame):
 
     def initialize(self):
         super(EditorClipboardFrame, self).initialize(text=self.get_text())

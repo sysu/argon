@@ -6,7 +6,7 @@ sys.path.append('../')
 
 from chaofeng import Server,g
 from chaofeng.g import mark
-import login, menu,boardlist,edit,view,user,mail,admin#,special_frame
+import login, menu,boardlist,edit,view,mail,admin#,user,#,special_frame
 import config
 # from model import db_orm
 
@@ -20,7 +20,8 @@ class LoginDebugFrame(login.WelcomeFrame):
         # self.goto('dd')
         # self.goto('post','Test1','3')
 
-#config.data['ROOT'] = 'debug'
+config.data['ROOT'] = 'sys_set_boardattr'
+# config.data['ROOT'] = 'debug'
 
 if __name__ == '__main__' :
     s = Server(mark[config.data['ROOT']])

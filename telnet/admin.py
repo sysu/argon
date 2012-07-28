@@ -6,9 +6,10 @@ import sys
 sys.path.append('../')
 
 from chaofeng.g import mark
-from chaofeng.ui import Animation,ColMenu
+from chaofeng.ui import Animation,ColMenu,VisableInput,EastAsiaTextInput,\
+    CheckBox, RadioButton
 import chaofeng.ascii as ac
-from argo_frame import AuthedFrame
+from libframe import BaseTableFrame
 from model import manager
 from menu import SelectFrame
 import config
@@ -36,15 +37,26 @@ class EditMenuBackgroundFrame(SelectFrame):
     def save_to_file(self, text):
         print text
 
-@mark('menu')
-class NewBoardFrame(AuthedFrame):
-    pass
-    # def initialize(self):
-    #     form = self.load(Form, buf, [
-    #             self.load(
+@mark('sys_set_boardattr')
+class FormFrame(BaseTableFrame):
 
-class TeamSelecter(BaseUI):
+    def top_bar(self):
+        raise NotImplementedError
 
-    def init(self, teams):
-        self.frame.cls()
-        self.
+    def quick_help(self):
+        raise NotImplementedError
+
+    def print_thead(self):
+        raise NotImplementedError
+
+    def notify(self, msg):
+        raise NotImplementedError
+
+    def get_default_index(self):
+        return 0
+
+    def get_data(self, start, limit):
+        raise NotImplementedError
+
+    def wrapper_li(self, li):
+        raise NotImplementedError

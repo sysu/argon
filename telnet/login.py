@@ -7,7 +7,7 @@ from chaofeng import EndInterrupt,Timeout,asynchronous
 from chaofeng.g import mark
 from chaofeng.ui import VisableInput,Password,DatePicker
 import chaofeng.ascii as ac
-from argo_frame import BaseFrame, AuthedFrame
+from libframe import BaseFrame, BaseAuthedFrame
 from model import manager
 from datetime import datetime
 import config
@@ -108,7 +108,7 @@ class RegisterFrame(BaseFrame):
             self.goto('welcome')
 
 @mark('first_login')
-class FirstLoginFrame(AuthedFrame):
+class FirstLoginFrame(BaseAuthedFrame):
 
     def initialize(self):
         self.goto('help','index')

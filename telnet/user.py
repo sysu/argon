@@ -27,17 +27,13 @@ class UserEditDataFrame(AuthedFrame):
         self.cls()
         self.render('edit_user_data')
         user = self.session.user
-        buf = [user.nickname, user.realname,
-               user.address, user.email,
-               user.birthday.strftime("%Y-%m-%d"),
-               'M' if user.gender else 'F']
-        form = self.load(Form, buf, [
-                self.load(EastAsiaTextInput), 
-                self.load(EastAsiaTextInput),
-                self.load(EastAsiaTextInput),
-                self.load(EastAsiaTextInput),
-                self.load(DatePicker),
-                self.load(VisableInput),
+        form = self.load(Form, [
+                self.load(EastAsiaTextInput).set_buf(user.nickname), 
+                self.load(EastAsiaTextInput).set_buf(user.realname),
+                self.load(EastAsiaTextInput).set_buf(user.address),
+                self.load(EastAsiaTextInput).set_buf(user.email),
+                self.load(DatePicker).set_buf(user.birthday.strftime("%Y-%m-%d")),
+                self.load(VisableInput).set_buf('M' if user.gender else 'F'),
                 ], 4, 24)
         form.restore_screen()
         data = form.read()
