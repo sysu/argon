@@ -1199,8 +1199,8 @@ class Query:
 
     def get_all_favourite(self, userid):
         bids = self.favourite.get_all(userid)
-        boards = map(lambda d: manager.board.get_board_by_id(d), bids)
-        return self._wrap_perm(boards)
+        boards = map(lambda d: self.board.get_board_by_id(d), bids)
+        return self._wrap_perm(userid, boards)
 
     def init_all(self, userid):
         self.favourite.init_user_favourite(userid)
@@ -1214,7 +1214,7 @@ class Query:
 
     def get_post(self, userid, board, pid):
         if board['perm'][0] :
-            self.post.get_post(board['boardname'], pid)
+            return self.post.get_post(board['boardname'], pid)
 
     def get_board(self, userid, boardname):
         return self.board.get_board(boardname)

@@ -11,6 +11,7 @@ from chaofeng.ui import TextEditor, LongTextBox, PagedTable, Animation, ColMenu,
     NullValueError
 import config
 from template import env
+from model import manager
 
 class BaseFrame(Frame):
 
@@ -708,7 +709,7 @@ class BaseTextBoxFrame(BaseAuthedFrame):
         
     def get(self,data):
         if data in ac.ks_finish:
-            self.finish()
+            self.finish(True)
         self.textbox.do_command(config.hotkeys['view_textbox'].get(data))
         self.do_command(config.hotkeys['view'].get(data))
         self.do_command(self.hotkeys.get(data))

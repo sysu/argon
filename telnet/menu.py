@@ -7,7 +7,7 @@ sys.path.append('../')
 from chaofeng.g import mark
 from chaofeng.ui import Animation,ColMenu
 import chaofeng.ascii as ac
-from libframe import BaseSelectFrame, BaseMenuFrame
+from libframe import BaseAuthedFrame, BaseSelectFrame, BaseMenuFrame
 from model import manager
 import config
 
@@ -105,28 +105,22 @@ class SectionMenuFrame(BaseMenuFrame):
 
 
 from chaofeng import sleep
+from libframe import tidy_anim
 
-# @mark('movie')
-# class PlayMovie(ArgoFrame):
+@mark('movie')
+class PlayMovie(BaseAuthedFrame):
 
-#     def initialize(self):
-#         for i in range(10,0,-1):
-#             sleep(1)
-#             self.write(ac.clear + ac.move2(12, 40) + str(i))
-#         self.write(ac.clear + ac.move2(12,40) + ac.blink + u'任意键继续')
-#         self.pause()
-#         anim = tidy_anim(self.render_str('movie'), 21)
-#         self.setup(anim)
-#         self.start()
-    
-#     def setup(self, data):
-#         self.cls()
-#         self.anim = self.load(Animation, data, start_line=1)
-#         self.anim.setup(playone=True)
+    def initialize(self):
+        for i in range(10,0,-1):
+            sleep(1)
+            self.write(ac.clear + ac.move2(12, 40) + str(i))
+        self.write(ac.clear + ac.move2(12,40) + ac.blink + u'任意键继续')
+        self.pause()
+        data = tidy_anim(self.render_str('movie'), 21)
+        self.anim = self.load(Animation, data, pause=self.pause,
+                              start_line=0,  callback=self.play_done)
+        self.anim.run(playone=True)
 
-#     def start(self):
-#         self.anim.launch()
-
-#     def play_done(self):
-#         self.pause()
-#         self.goto_back()
+    def play_done(self):
+        self.pause()
+        self.goto_back()
