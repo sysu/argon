@@ -225,7 +225,8 @@ hotkeys = {
         ac.k_home:"goto_first", 
         },
     "form":{
-        ac.k_left:"submit",
+        ac.k_right:"submit",
+        ac.k_left:"goto_back",
         },
     "edit_2ndcmd_start": ac.k_ctrl_u,
     "edit_editor":{

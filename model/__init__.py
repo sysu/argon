@@ -3,6 +3,7 @@ import cPickle
 import config
 
 from Model import Manager
+from error import *
 
 def init_database():
     for table_name in config.BASE_TABLE :
@@ -24,7 +25,8 @@ class CF:
     from globaldb import global_conn,global_cache
     from Model import Section,Online,UserInfo,UserAuth,\
         Board,Post,Action,ReadMark,Mail,Permissions,UserSign,\
-        Favourite, Clipboard, Disgest,FreqControl, Team, UserPerm
+        Favourite, Clipboard, Disgest,FreqControl, Team, UserPerm,\
+        Admin, Query
     
     db = global_conn
     ch = global_cache
@@ -46,9 +48,12 @@ class CF:
     freq      = FreqControl()
     team      = Team()
     userperm  = UserPerm(team, perm)
+    admin     = Admin(board, userperm, post, section)
+    query     = Query(board=board, userperm=userperm, perm=perm, favourite=favourite,
+                      section=section, post=post)
     
     loads = [section,online,userinfo,auth,board,post,readmark,mail,usersign,
-             favourite,clipboard,disgest,freq, perm, team, userperm]
+             favourite,clipboard,disgest,freq, perm, team, userperm, admin]
 
     use = {
         "section":section,
@@ -68,6 +73,8 @@ class CF:
         "freq":freq,
         "userperm":userperm,
         "team":team,
+        "admin":admin,
+        "query":query,
         }
 
     @classmethod

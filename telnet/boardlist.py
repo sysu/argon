@@ -1,10 +1,12 @@
+#!/usr/bin/python2
 # -*- coding: utf-8 -*-
+
 import sys
 sys.path.append('../')
 
 from chaofeng import ascii as ac
 from chaofeng.g import mark
-from chaofeng.ui import PagedTable#,HiddenInput#,AppendTable#SimpleTable,
+from chaofeng.ui import PagedTable, NullValueError #,HiddenInput#,AppendTable#SimpleTable,
 from model import manager
 from libframe import BaseBoardListFrame,BaseTableFrame,BaseTextBoxFrame
 from libtelnet import zh_format_d
@@ -20,11 +22,14 @@ class NormalBoardListFrame(BaseBoardListFrame):
         return self.boards[start:start+limit]
 
     def load_boardlist(self):
-        if self.sid is None:
-            self.boards = manager.board.get_all_boards()
-        else:
-            self.boards = manager.board.get_by_sid(self.sid)
+        self.boards = manager.query.get_boards(self.userid, self.sid)
         self.board_total = len(self.boards)
+
+    def catch_nodata(self, e):
+        self.cls()
+        self.writeln(u'没有讨论区！')
+        self.pause()
+        self.goto_back()
 
     def initialize(self, sid=None):
         self.sid = sid
@@ -35,14 +40,17 @@ class NormalBoardListFrame(BaseBoardListFrame):
 @mark('favourite')
 class FavouriteFrame(BaseBoardListFrame):
 
+    def catch_nodata(self, e):
+        self.cls()
+        self.writeln(u'没有收藏任何版块！')
+        self.pause()
+        self.goto_back()
+
     def get_default_index(self):
         return 0
 
     def get_data(self, start, limit):
-        data = manager.favourite.get_all(self.userid)
-        data = map(lambda d : manager.board.get_board_by_id(d),
-                   data)
-        return data
+        return manager.query.get_all_favourite(self.userid)
 
 @mark('board')
 class BoardFrame(BaseTableFrame):
@@ -77,19 +85,35 @@ class BoardFrame(BaseTableFrame):
         self.table.do_command(config.hotkeys['board_table'].get(data))
         self.do_command(config.hotkeys['board'].get(data))
 
+    def catch_nodata(self, e):
+        self.cls()
+        if self.readline_safe(prompt=u'没有文章，发表新文章？', buf_size=3) in ac.ks_yes :
+            self.new_post()
+        else:
+            self.goto_back()
+
     def initialize(self, board):
+        
+        if not board.perm[0] :
+            self.writeln(u'错误的讨论区或你无权力进入该版')
+            self.pause()
+            self.authed = False
+            self.goto_back()
+            
         # r,w,d,s = manager.
+        self.authed = True
         self.board = board
         self.boardname = board['boardname']
         manager.action.enter_board(self.userid, self.seid, self.boardname)
         self.session.lastboard = board
         self.set_view_mode(0)
         super(BoardFrame, self).initialize()
-
+                
     ##########
 
     def clear(self):
-        manager.action.exit_board(self.userid, self.seid, self.boardname)
+        if self.authed:
+            manager.action.exit_board(self.userid, self.seid, self.boardname)
 
     mode_thead = ['NORMAL', 'GMODE', 'MMODE', 'TOPIC', 'ONETOPIC', 'AUTHOR']
 
@@ -113,7 +137,7 @@ class BoardFrame(BaseTableFrame):
     def finish(self):
         pid = self.table.fetch()['pid']
         if pid is not None:
-            self.suspend('post', boardname=self.boardname, pid=pid)
+            self.suspend('post', board=self.board, pid=pid)
 
     #####################
 
@@ -200,14 +224,12 @@ class BoardFrame(BaseTableFrame):
 
     def set_g_mark(self):
         p = self.table.fetch()
-        p['flag'] = p['flag'] ^ 1
-        manager.post.update_post(self.boardname, p['pid'], flag=p['flag'])
+        p = manager.admin.set_g_mark(self.userid, self.board, self.post)
         self.set_hover_data(p)
 
-    def set_g_mark(self):
+    def set_m_mark(self):
         p = self.table.fetch()
-        p['flag'] = p['flag'] ^ 2
-        manager.post.update_post(self.boardname, p['pid'], flag=p['flag'])
+        p = manager.admin.set_m_mark(self.userid, self.board, self.post)
         self.set_hover_data(p)
 
     def query_author(self):

@@ -1,4 +1,6 @@
+#!/usr/bin/python2
 # -*- coding: utf-8 -*-
+
 from chaofeng.g import mark
 from chaofeng.ui import Animation,LongTextBox,TextEditor
 from chaofeng import ascii as ac
@@ -24,14 +26,14 @@ class ReadPostFrame(BaseTextBoxFrame):
     @classmethod
     def try_jump(self,args):
         try:
-            if manager.post.get_post(args[0],args[1]) :
+            if manager.query.get_post(self.userid, args[0], args[1]) :
                 return dict(boardname=args[0],
                             pid=args[1])
         except:
             return False
 
-    def get_post(self,boardname,pid):
-        return manager.post.get_post(boardname,pid)
+    def get_post(self, board, pid):
+        return manager.query.get_post(self.userid, board, pid)
 
     def wrapper_post(self,post):
         return self.render_str('post-t',post=post)
@@ -39,16 +41,23 @@ class ReadPostFrame(BaseTextBoxFrame):
     def get_text(self):
         return self.text
         
-    def initialize(self, boardname, pid):
-        self._read_post(boardname, pid)
+    def initialize(self, board, pid):
+
+        if not board['perm'][0] :
+            self.writeln(u"错误的讨论区或你没有权限！")
+            self.pause()
+            self.goto_back()
+
+        self.board = board
+        self._read_post(board['boardname'], pid)
         super(ReadPostFrame,self).initialize()
 
     def getdesc(self):
         return u'阅读文章            -- [%s](/p/%s/%s)' % (self.post['title'], self.boardname, self.pid)
 
-    def _read_post(self,boardname,pid):
+    def _read_post(self, boardname, pid):
         self.boardname, self.pid = boardname, pid
-        self.post = self.get_post(boardname,pid)
+        self.post = self.get_post(self.board, pid)
         self.session['lastboard'] = boardname
         self.session['lastpid'] = pid
         self.session['lasttid'] = self.post.tid
@@ -61,10 +70,10 @@ class ReadPostFrame(BaseTextBoxFrame):
             self.reset_text(self.text)
 
     def next_post(self):
-        return self.boardname,manager.post.next_post_pid(self.boardname,self.pid)
+        return self.boardname, manager.post.next_post_pid(self.boardname,self.pid)
 
     def prev_post(self):
-        return self.boardname,manager.post.prev_post_pid(self.boardname,self.pid)
+        return self.boardname, manager.post.prev_post_pid(self.boardname,self.pid)
 
     def finish(self,args=None):
         if args is True:

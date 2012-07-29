@@ -75,6 +75,9 @@ class Model:
                                (tablename,key),
                            value)
 
+    def execute_paragraph(self, para):
+        self.db.execute_paragraph(para)
+
     def table_insert(self,tablename,attr):
         names,values = zip(*attr.items())
         cols = ','.join(map(str,names))
@@ -100,6 +103,17 @@ class Model:
                                (what, tablename, key),
                            value)
 
+    def table_get_listattr(self, tablename, what, key, value):
+        res = self.db.get("SELECT %s FROM `%s` WHERE %s=%%s"%(what, tablename, key),
+                          value)
+        return res and ( (res[what] and res[what].split(':')) or [])
+
+    def table_update_listattr(self, tablename, what, listattr, key, value):
+        r = ':'.join(listattr)
+        return self.db.execute("UPDATE `%s` SET %s=%%s WHERE %s=%%s" % \
+                                   (tablename, what, key),
+                               r, value)
+
 class Section(Model):
 
     __ = 'argo_sectionhead'
@@ -107,14 +121,21 @@ class Section(Model):
     def get_all_section(self):
         return self.table_select_all(self.__)
 
+    def get_all_section_with_rownum(self):
+        d = self.get_all_section()
+        return with_index(d)
+
     def get_section(self,name):
         return self.table_get_by_key(self.__, 'sectionname', name)
+
+    def get_section_by_sid(self, sid):
+        return self.table_get_by_key(self.__, 'sid', sid)
 
     def add_section(self,**kwargs):
         return self.table_insert(self.__, kwargs)
     
-    def update_section(self,sid,**attr):
-        return self.table_update_by_key(self.__, 'sid', sid, attr)
+    def update_section(self, old_sid, **attr):
+        return self.table_update_by_key(self.__, 'sid', old_sid, attr)
     
     def del_section(self,sid):
         return self.table_delete_by_key(self.__, 'sid', sid)
@@ -126,6 +147,10 @@ class Section(Model):
     def id2name(self,sid):
         n = self.table_select_by_key(self.__, 'sectionname', 'sid', sid)
         return n and n['sectionname']
+
+    def get_max_sid(self):
+        n = self.db.get("SELECT max(sid) FROM %s" % self.__)
+        return n or 0
         
 class Board(Model):
 
@@ -177,11 +202,19 @@ class Board(Model):
     def update_attr_plus1(self,bid,key):
         return self.db.execute("UPDATE %s SET %s = %s +1 WHERE bid = %%s" % \
                                    (self.__, key, key),
-                               bid)                               
+                               bid)
+
+    def get_board_bm(self, boardname):
+        return self.table_get_listattr(self.__,  'bm', 'boardname', boardname)
+
+    def set_board_bm(self, boardname, bms):
+        return self.table_update_listattr(self.__, 'bm', bms, 'boardname', boardname)
 
 class Post(Model):
 
     _prefix = 'argo_filehead_'
+
+    lastp = 'argo:lastpost'
     
     def __(self,boardname):
         return self._prefix + boardname
@@ -191,7 +224,7 @@ class Post(Model):
         from string import Template
         with open(config.SQL_TPL_DIR + 'template/argo_filehead.sql') as f :
             board_template = Template(f.read())
-            self.db.executemany(board_template.safe_substitute(boardname=boardname))
+            self.execute_paragraph(board_template.safe_substitute(boardname=boardname))
 
     # def _get_posts_advan(self,boardname,order='pid',mark=None,sel='*'):
     #     cond = ''
@@ -279,7 +312,9 @@ class Post(Model):
         return res and res['pid']
 
     def add_post(self,boardname,**kwargs):
-        return self.table_insert(self.__(boardname), kwargs)
+        pid = self.table_insert(self.__(boardname), kwargs)
+        self.ch.hset(self.lastp, boardname, pid)               ###############
+        return pid
 
     def update_post(self,boardname,pid,**kwargs):
         return self.table_update_by_key(self.__(boardname), 'pid', pid, kwargs)
@@ -402,28 +437,11 @@ class AuthUser(dict):
 class UserAuth(Model):
     
     ban_userid = ['guest','new']
+    GUEST = AuthUser(userid='guest',is_first_login=None)
 
     def __init__(self,usertable,online):
         self.table = usertable
         self.online = online
-
-    def user_exists(self,userid):
-        try:
-            return bool(self.table.name2id(userid))
-        except:
-            return False
-        
-    def is_unvail_userid(self,userid):
-        if userid in self.ban_userid :
-            raise RegistedError(Registed.BAN_ID)
-        elif len(userid) < 3 :
-            raise RegistedError(Registed.USERID_TOO_SHORT)
-        elif self.user_exists(userid) :
-            raise RegistedError(Registed.REGISTERED)
-
-    def is_unvail_passwd(self,passwd):
-        if len(passwd) < 6 :
-            return RegistedError(RegistedError.PASSWD_TOO_SHORT)
 
     def gen_passwd(self,passwd):
         return bcrypt.hashpw(passwd, bcrypt.gensalt(10))
@@ -437,23 +455,33 @@ class UserAuth(Model):
         except:
             return False
 
-    def register(self,userid,passwd,**kwargs):
+    def user_exists(self,userid):
+        try:
+            return bool(self.table.name2id(userid))
+        except:
+            return False        
+
+    def check_userid(self, userid):
+        if userid in self.ban_userid :
+            raise RegistedError(u'此id禁止注册')
+        if len(userid) < 3:
+            raise RegistedError(u'此id过短，请至少3个字符以上')
+        if self.user_exists(userid):
+            raise RegistedError(u'此帐号已被使用')
+
+    def register(self, userid, passwd, **kwargs):
         self.table.add_user(
             userid=userid,
             passwd=self.gen_passwd(passwd),
             nickname=userid,
             **kwargs
             )
-        return True
-
-    GUEST = AuthUser(userid='guest',is_first_login=None)
+        self.init_user_team(userid)
+        
     def get_guest(self):
         return self.GUEST
 
-    def msg(self,string):
-        print string
-
-    def login(self,userid,passwd,host,session=True):
+    def login(self, userid, passwd, host, session=True):
 
         if userid == 'guest':
             raise LoginError(LoginError.NO_SUCH_USER) # Not such user self.get_guest()
@@ -461,12 +489,12 @@ class UserAuth(Model):
         # user_exist
         code = self.table.select_attr(userid,"passwd")
         if code is None :
-            raise LoginError(LoginError.NO_SUCH_USER) # Not such user
+            raise LoginError(u'没有该用户！')
         code = code['passwd']
 
         #check_password
         if not self.check_passwd_match(passwd,code):
-            raise LoginError(LoginError.WRONG_PASSWD)
+            raise LoginError(u'帐号和密码不匹配！')
         self.table.update_user(userid,
                                lasthost=host,
                                lastlogin=datetime.now())
@@ -477,7 +505,7 @@ class UserAuth(Model):
             #set_state
             seid = self.online.login(userid)
             if seid is False :
-                return LoginError(LoginError.MAX_LOGIN)
+                return LoginError(u'已达最大上线数！')
             res.seid = seid
             self.online.record_ip(userid,seid,host)
 
@@ -489,6 +517,9 @@ class UserAuth(Model):
 
         # print res.seid
         return res
+
+    def msg(self,string):
+        print string
 
     def logout(self,userid,seid):
         self.online.logout(userid,seid)
@@ -510,12 +541,13 @@ class Mail(Model):
         return int(uid) / 100
 
     def _create_table(self,tableid):
+        ###################################################################
         import config
         from string import Template
         with open(config.SQL_TPL_DIR + 'template/argo_mailhead.sql') as f :
             mail_template = Template(f.read())
             gentxt = mail_template.safe_substitute(tableid=tableid)
-            self.db.execute(gentxt)
+            self.execute_paragraph(gentxt)
 
     def send_mail(self, touid, **kwargs):
         try:
@@ -602,11 +634,12 @@ class Disgest(Model):
         return self._prefix + boardname
 
     def _create_table(self, boardname, **kwargs):
+        #################################
         import config
         from string import Template
         with open(config.SQL_TPL_DIR + 'template/argo_annhead.sql') as f :
             board_template = Template(f.read())
-            self.db.execute(board_template.substitute(boardname=boardname))
+            self.execute_paragraph(board_template.substitute(boardname=boardname))
 
     def get_children(self, boardname, partent):
         return self.db.query("SELECT * FROM `%s` WHERE pid=%%s ORDER BY rank " % self.__(boardname),
@@ -750,6 +783,7 @@ class UserSign(Model):
     keyf = "argo:usersign:%s"
 
     def set_sign(self,userid,data):
+        assert all(map(lambda x :isinstance(x, unicode), data))
         key = self.keyf % userid
         if len(data) >= 20 :
             data = data[:20]
@@ -758,7 +792,8 @@ class UserSign(Model):
 
     def get_all_sign(self,userid):
         key = self.keyf % userid
-        return self.ch.lrange(key,0,-1)
+        s = self.ch.lrange(key,0,-1)
+        return map(lambda x:unicode(x, 'utf8'), s)
 
     def get_sign(self,userid,index):
         key = self.keyf % userid
@@ -837,6 +872,9 @@ class Permissions(Model):
         return map(lambda p : bool(self.ch.sinter(key, self.key_brd%(boardname, p))),
                    perms)
 
+    def check_boardperm_team(self, teamname, boardname, perm):
+        return self.ch.sismember(self.key_brd%(boardname, perm), teamname)
+
     def get_teams_with_boardperm(self, boardname, perm):
         return self.ch.smembers(self.key_brd%(boardname, perm))
 
@@ -866,17 +904,11 @@ class UserPerm(Model):
                                                 perm.BOARD_DENY, perm.BOARD_ADMIN)
         return ( r and not d, r and not d and w, d, s)
 
-    def init_board_team_normal(self, boardname):
-        self.perm.give_boardperm(boardname, perm.BOARD_READ, *perm.DEFAULT_BOARD_R_TEAM)
-        self.perm.give_boardperm(boardname, perm.BOARD_POST, *perm.DEFAULT_BOARD_W_TEAM)
-        self.perm.give_boardperm(boardname, perm.BOARD_DENY,
-                                 self._denyteam(boardname),
-                                 *perm.DEAFULT_BOARD_D_TEAM)
-        self.perm.give_boardperm(boardname, perm.BOARD_ADMIN,
-                                 self._bmteam(boardname),
-                                 *perm.DEAFULT_BOARD_X_TEAM)
+    def is_open(self, boardname):
+        return (self.perm.check_boardperm_team(perm.TEAM_USER, boardname, perm.BOARD_READ),
+                self.perm.check_boardperm_team(perm.TEAM_USER, boardname, perm.BOARD_POST))
 
-    def set_board_bm(self, boardname, bm):
+    def join_board_bm(self, boardname, bm):
         self.team.join_team(bm, self._bmteam(boardname))
 
     def remove_board_bm(self, boardname, bm):
@@ -896,6 +928,25 @@ class UserPerm(Model):
 
     def set_user(self, userid):
         self.team.join_team(userid, self.team_user)
+
+    def init_board_team(self, boardname, is_open, is_openw):
+        if is_open :
+            self.perm.give_boardperm(boardname, perm.BOARD_READ, *perm.DEFAULT_BOARD_R_TEAM)
+        else:
+            self.perm.remove_boardperm(boardname, perm.BOARD_READ, *perm.DEFAULT_BOARD_R_TEAM)
+        if is_openw:
+            self.perm.give_boardperm(boardname, perm.BOARD_POST, *perm.DEFAULT_BOARD_W_TEAM)
+        else:
+            self.perm.remove_boardperm(boardname, perm.BOARD_POST, *perm.DEFAULT_BOARD_W_TEAM)
+        self.perm.give_boardperm(boardname, perm.BOARD_DENY,
+                                 self._denyteam(boardname),
+                                 *perm.DEAFULT_BOARD_D_TEAM)
+        self.perm.give_boardperm(boardname, perm.BOARD_ADMIN,
+                                 self._bmteam(boardname),
+                                 *perm.DEAFULT_BOARD_X_TEAM)
+
+    def init_user_team(self, userid):
+        self.team.join_team(userid, perm.TEAM_WELCOME)
 
     # # Teams Admin
 
@@ -963,7 +1014,6 @@ class Action(Model):
         self.post.update_post(boardname,pid,tid=pid)
         self.board.update_attr_plus1(bid,'total')
         self.board.update_attr_plus1(bid,'topic_total')
-        self.board.update_board(bid, lastpost=int(time.time()))
         return pid
 
     def reply_post(self,boardname,userid,title,content,addr,host,replyid):
@@ -981,7 +1031,6 @@ class Action(Model):
             tid=tid,
             )
         self.board.update_attr_plus1(bid,'total')
-        self.board.update_board(bid, lastpost = int(time.time()))
         return pid
 
     def update_post(self,boardname,userid,pid,content):
@@ -1032,12 +1081,17 @@ class Action(Model):
         touid = self.userinfo.name2id(userid)
         return self.mail.one_mail(userid, mid)        
 
-    def update_title(self,userid,boardname,pid,new_title):
-        return self.post.update_title(boardname,pid,new_title)
+    def update_title(self, userid, boardname, post, new_title):
+        if userid == post['owner'] :
+            return self.post.update_title(boardname, post['pid'], new_title)
 
 class Favourite(Model):
 
     keyf = "argo:favourite:%s"
+
+    def init_user_favourite(self, userid):
+        key = self.keyf % userid
+        self.ch.delete(key)
 
     def add(self, userid, boardname):
         key = self.keyf % userid
@@ -1050,6 +1104,126 @@ class Favourite(Model):
     def get_all(self, userid):
         key = self.keyf % userid
         return self.ch.smembers(key)
+
+class Admin(Model):
+
+    def __init__(self, board, userperm, post, section):
+        self.board = board
+        self.userperm = userperm
+        self.post = post
+        self.section = section
+
+    def add_board(self, userid, boardname, sid, description, is_open, is_openw):
+        self.board.add_board(boardname=boardname, description=description, sid=sid)
+        self.userperm.init_board_team(boardname, is_open, is_openw)
+        self.post._create_table(boardname)
+
+    def update_board(self, userid, bid, boardname, sid, description, is_open, is_openw):
+        self.board.update_board(bid, boardname=boardname,
+                                description=description, sid=sid)
+        self.userperm.init_board_team(boardname, is_open, is_openw)
+
+    def join_bm(self, userid, boardname):
+        bms = self.board.get_board_bm(boardname)
+        if userid in bms:
+            raise ValueError(u'%s已经是%s版主'%(userid, boardname))
+        bms.append(userid)
+        self.board.set_board_bm(boardname, bms)
+        self.userperm.join_board_bm(boardname, userid)
+
+    def remove_bm(self, userid, boardname):
+        bms = self.board.get_board_bm(boardname)
+        if userid not in bms:
+            raise ValueError(u'%s不是%s版主'%(userid, boardname))
+        bms.remove(userid)
+        self.board.set_board_bm(boardname, bms)
+        self.userperm.join_board_bm(boardname, userid)
+
+    def add_section(self, userid, sid, sectionname, description):
+        if sid is None:
+            self.section.add_section(sectionname=sectionname,
+                                     description=description)
+        else:
+            self.section.add_section(sid=sid, sectionname=sectionname,
+                                     description=description)
+
+    def update_section(self, userid, old_sid, sid, sectionname, description):
+        if sid is None:
+            self.section.update_section(old_sid, sectionname=sectionname,
+                                        description=description)
+        else:
+            self.section.update_section(old_sid, sid=sid, sectionname=sectionname,
+                                        description=description)
+
+    def set_g_mark(self, userid, board, post):
+        if board['perm'][3] :
+            post['flag'] = post['flag'] ^ 1
+            self.post.update_post(board['boardname'], post['pid'], flag=post['flag'])
+        return post
+
+    def set_m_mark(self, userid, board, post):
+        if board['perm'][3] :
+            post['flag'] = post['flag'] ^ 2
+            self.post.update_post(board['boardname'], post['pid'], flag=post['flag'])
+        return post
+
+    def is_open_board(self, userid, boardname):
+        return self.userperm.is_open(boardname)
+
+# class Manager:
+
+#     def __init__(self):
+#         self.db = connect_db()
+#         self.ch = connect_ch()
+
+class Query:
+
+    def __init__(self, **kwargs):
+        for k in kwargs:
+            setattr(self, k, kwargs[k])
+
+    def _wrap_perm(self, userid, boards):
+        rboards = []
+        for board in boards:
+            board['perm'] = self.userperm.get_board_ability(userid, board['boardname'])
+            if board.perm[0] :
+                rboards.append(board)
+        return rboards
+
+    def get_boards(self, userid, sid=None):
+        if sid is None :
+            boards = self.board.get_all_boards()
+        else:
+            boards = self.board.get_by_sid(sid)
+        return self._wrap_perm(userid, boards)
+
+    def get_all_favourite(self, userid):
+        bids = self.favourite.get_all(userid)
+        boards = map(lambda d: manager.board.get_board_by_id(d), bids)
+        return self._wrap_perm(boards)
+
+    def init_all(self, userid):
+        self.favourite.init_user_favourite(userid)
+        self.userperm.init_user_team(userid)
+
+    def get_section(self, sid):
+        return self.section.get_section_by_sid(sid)
+
+    def get_all_section(self):
+        return self.section.get_all_section()
+
+    def get_post(self, userid, board, pid):
+        if board['perm'][0] :
+            self.post.get_post(board['boardname'], pid)
+
+    def get_board(self, userid, boardname):
+        return self.board.get_board(boardname)
+
+    def get_all_section_with_rownum(self):
+        return self.section.get_all_section_with_rownum()
+
+    def get_user(self, userid, toquery):
+        return self.userinfo.get_user(toquery)
 
 class FreqControl(Model):
 
@@ -1091,3 +1265,8 @@ class Manager:
     def bind(self,**kwargs):
         for k in kwargs:
             setattr(self,k,kwargs[k])
+
+def with_index(d):
+    for index in range(len(d)):
+        d[index]['rownum'] = index
+    return d

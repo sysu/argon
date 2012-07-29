@@ -1,3 +1,4 @@
+#!/usr/bin/python2
 # -*- coding: utf-8 -*-
 
 import sys
@@ -8,7 +9,7 @@ from chaofeng.g import mark
 from chaofeng.ui import VisableInput,Password,DatePicker
 import chaofeng.ascii as ac
 from libframe import BaseFrame, BaseAuthedFrame
-from model import manager
+from model import manager, RegistedError, LoginError
 from datetime import datetime
 import config
 from collections import deque
@@ -17,6 +18,7 @@ from collections import deque
 class WelcomeFrame(BaseFrame):
 
     def initialize(self):
+        self.session.charset = 'gbk'
         print 'Connect :: %s : %s' % (self.session.ip, self.session.port)
         self.render('welcome')
         self.try_login_iter()
@@ -40,37 +42,41 @@ class WelcomeFrame(BaseFrame):
 
     @asynchronous
     def auth(self,userid,passwd):
-        authobj = manager.auth.login(userid,passwd,self.session.ip)
-        if authobj :
+        try:
+            authobj = manager.auth.login(userid,passwd,self.session.ip)
+        except LoginError as e:
+            self.writeln(e.message)
+            return False
+        else:
             self.session.user = authobj
             self.session.stack = deque(maxlen=config.data['MAX_STACK_DEEP'])  #!!!!
             self.session.history = deque(maxlen=config.data['MAX_HISTORY_DEEP'])
             self.session.messages = [u'逸仙时空 argo.sysu.edu.cn']
-        return authobj
+            return authobj
                 
     def try_login(self,userid,passwd):
         authobj = self.auth(userid,passwd)
         if authobj :
             self.goto('main')
-        else:
-            self.writeln(config.str['PROMPT_AUTH_FAILED'])
 
 @mark('register')
 class RegisterFrame(BaseFrame):
 
     def initialize(self):
         self.render('register')
-        passwd_reader = self.load(Password, prompt=config.str['PROMPT_INPUT_PASSWD_REG'])
+        passwd_reader = self.load(Password)
         with Timeout(config.data['MAX_TRY_REGISTER_TIME'] ,EndInterrupt) :
             while True :
                 self.write(config.str["PROMPT_INPUT_USERID_REG"])
                 userid = self.readline()
                 self.write('\r\n')
-                if self.check_userid(userid) : break
+                if self.check_userid(userid) :
+                    break
             while True :
-                passwd = passwd_reader.readln()
-                if self.check_passwd(passwd) : break
-        self.register(userid,passwd)
+                passwd = passwd_reader.readln(prompt=config.str['PROMPT_INPUT_PASSWD_REG'])
+                if self.check_passwd(passwd) : 
+                    self.register(userid,passwd)
+        self.close()
 
     code_zh = {
         0:"PROMPT_REG_SUCC",
@@ -81,25 +87,25 @@ class RegisterFrame(BaseFrame):
         }
 
     def check_userid(self,userid):
-        s = manager.auth.is_unvail_userid(userid)
-        if not s :
-            self.writeln(config.str[self.code_zh[s.key]])
+        try:
+            manager.auth.check_userid(userid)
+        except RegistedError as e:
+            self.writeln(e.message)
             return False
-        return True
+        else:
+            return True
     
     def check_passwd(self,passwd):
-        s = manager.auth.is_unvail_passwd(passwd)
-        if not s :
-            self.writeln(config.str[self.code_zh[s.key]])
+        if len(passwd) < 3 :
+            self.writeln(u'密码太短，请多于3个字符')
             return False
         return True
         
     def register(self,userid,passwd):
-        s = manager.auth.register(userid,passwd,firsthost=self.session.ip)
-        if s :
-            self.render('register_succ', userid=userid)
-            self.pause()
-            self.goto('welcome')
+        manager.auth.register(userid,passwd,firsthost=self.session.ip)
+        self.render('register_succ', userid=userid)
+        self.pause()
+        self.goto('welcome')
     
     def get(self,data):
         if data == ac.k_ctrl_c :

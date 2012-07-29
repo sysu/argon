@@ -1,3 +1,4 @@
+#!/usr/bin/python2
 # -*- coding: utf-8 -*-
 import sys
 sys.path.append('../')
@@ -13,6 +14,13 @@ import config
 class NewPostFrame(BaseEditFrame):
 
     def initialize(self, board):
+        
+        if not board['perm'][2] :
+            self.cls()
+            self.writeln('该版禁止回复或你没有相应的权限！')
+            self.pause()
+            self.goto_back()
+            
         self.boardname = board['boardname']
         self.cls()
         self.title = self.read_title(prompt=u'请输入标题：')
@@ -39,6 +47,13 @@ class NewPostFrame(BaseEditFrame):
 class ReplyPostFrame(BaseEditFrame):
 
     def initialize(self, boardname, post):
+
+        if not board['perm'][2] :
+            self.cls()
+            self.writeln('该版禁止回复或你没有相应的权限！')
+            self.pause()
+            self.goto_back()
+
         self.cls()
         self.boardname = boardname
         self.replyid = post['pid']
@@ -63,6 +78,13 @@ class ReplyPostFrame(BaseEditFrame):
 class EditPostFrame(BaseEditFrame):
 
     def initialize(self, boardname, post):
+
+        if not board['perm'][2] :
+            self.cls()
+            self.writeln('该版禁止回复或你没有相应的权限！')
+            self.pause()
+            self.goto_back()
+
         self.cls()
         self.boardname = boardname
         self.pid = post['pid']
@@ -92,9 +114,9 @@ class EditFileFrame(BaseEditFrame):
     def finish(self):
         self.message(u'修改档案结束!')
         if self.split:
-            self.callback(self.e.get_all_lines())
+            self.callback(filename=self.filename, text=self.e.get_all_lines())
         else:
-            self.callback(self.e.getall())
+            self.callback(filename=self.filename, text=self.e.getall())
         self.pause()
         self.goto_back()
 

@@ -5,11 +5,16 @@ import  dbapi
 from config import *
 import redis
 
+def connect_db():
+    return dbapi.Connection(host=HOST+':'+str(PORT), user=USER, password=PASSWD, database=DBNAME)
+
+def connect_ch():
+    return redis.Redis(host=CHOST, port=CPORT)
+
 class GlobalDB(object):
 
-    conn = dbapi.Connection(host=HOST+':'+str(PORT), user=USER, password=PASSWD, database=DBNAME)
-    cache = redis.Redis(host=CHOST, port=CPORT)
-
+    conn = connect_db()
+    cache = connect_ch()
 
 global_conn = GlobalDB.conn
 global_cache = GlobalDB.cache

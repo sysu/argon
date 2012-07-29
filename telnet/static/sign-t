@@ -1,0 +1,4 @@
+{% for sign in signs %}
+{{ sign }}
+{% endfor %}
+{{ '^E'|wrapper(green, bold) }} for Edit

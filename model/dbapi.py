@@ -214,6 +214,19 @@ class Connection(object):
             self.close()
             raise
 
+    ############  Add to support execute from files  ###########################
+    def execute_paragraph(self, para):
+        cursor = self._cursor()
+        try:
+            cursor.execute(para)
+            more = True
+            while more:
+                cursor.fetchall()
+                more = cursor.nextset()
+            return cursor.rowcount
+        finally:
+            cursor.close()
+
 class Row(dict):
     """A dict that allows for object-like property access syntax."""
     def __getattr__(self, name):

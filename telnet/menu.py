@@ -1,6 +1,5 @@
+#!/usr/bin/python2
 # -*- coding: utf-8 -*-
-
-__metaclass__ = type
 
 import sys
 sys.path.append('../')
@@ -8,69 +7,17 @@ sys.path.append('../')
 from chaofeng.g import mark
 from chaofeng.ui import Animation,ColMenu
 import chaofeng.ascii as ac
-from libframe import BaseAuthedFrame
+from libframe import BaseSelectFrame, BaseMenuFrame
 from model import manager
 import config
 
-class BaseSelectFrame(BaseAuthedFrame):
-
-    menu_start_line = None  ### Should be num in subclass.
-
-    def load_all(self):
-        raise NotImplementedError
-
-    def top_bar(self):
-        self.render('top')
-
-    def bottom_bar(self):
-        self.render('bottom')
-
-    def notify(self, msg):
-        self.write(ac.move2(0, 1))
-        self.render('top_msg', messages=msg)
-        self.menu.refresh_cursor_gently()
-
-    def message(self, msg):
-        self.write(ac.move2(24, 1))
-        self.render('bottom_msg', message=msg)
-        self.menu.refresh_cursor_gently()
-
-    def initialize(self):
-        super(BaseSelectFrame, self).initialize()
-        self.menu = self.load(ColMenu)
-        menu, height, background = self.load_all()
-        self.menu.setup(menu,
-                        height,
-                        ''.join((ac.move2(self.menu_start_line, 1) ,
-                                 background)))
-        self.restore()
-
-    def restore(self):
-        self.cls()
-        self.top_bar()
-        self.bottom_bar()
-        self.menu.restore()
-
-    def get(self,data):
-        if data in ac.ks_finish:
-            self.finish()
-        self.menu.send_shortcuts(data)
-        self.menu.do_command(config.hotkeys['menu_menu'].get(data))
-        self.do_command(config.hotkeys['menu'].get(data))
-        self.do_command(config.hotkeys['g'].get(data))
-
-    def right_or_finish(self):
-        if not self.menu.move_right():
-            self.finish()
-
-    def left_or_finish(self):
-        if not self.menu.move_left():
-            self.goto_back()
-
-    def finish(self):
-        raise NotImplementedError
-    
 class SelectFrame(BaseSelectFrame):
+
+    u'''
+    options = ( value1, value2, ...)
+    text = (text1, text2, ...)
+    spos = (startx, starty)
+    '''
 
     menu_start_line = 2
     
@@ -90,37 +37,6 @@ class SelectFrame(BaseSelectFrame):
 
     def finish(self):
         raise NotImplementedError
-    
-class BaseMenuFrame(BaseSelectFrame):
-
-    menu_start_line = 11
-    anim_start_line = 3
-
-    def load_all(self):
-        raise NotImplementedError
-
-    def initialize(self):
-        anim_data = self.get_anim_data()
-        self.anim = self.load(Animation, anim_data,
-                              start_line=self.anim_start_line)
-        super(BaseMenuFrame, self).initialize()
-
-    def restore(self):
-        self.cls()
-        self.top_bar()
-        self.bottom_bar()
-        self.anim.launch()
-        self.menu.restore()
-
-    def get_anim_data(self):
-        return tidy_anim(self.render_str('active'), 7)
-
-    def finish(self):
-        args = self.menu.fetch()
-        if isinstance(args,str):
-            self.suspend(args)
-        else:
-            self.suspend(args[0],**args[1])
 
 @mark('menu')
 class NormalMenuFrame(BaseMenuFrame):
@@ -151,6 +67,7 @@ class MainMenuFrame(BaseMenuFrame):
 
     def load_all(self):
         height = None
+        print config.menu['main'] + config.menu['main_admin']
         menu = ColMenu.tidy_data(config.menu['main'] + config.menu['main_admin'])
         background = self.render_str('menu_main')
         return (menu, height, background)
@@ -164,7 +81,12 @@ class SectionMenuFrame(BaseMenuFrame):
     second_start_point = (11,7)
 
     def load_all(self):
-        sections = manager.section.get_all_section()
+        sections = manager.query.get_all_section()
+        if not sections:
+            self.cls()
+            self.writeln(u'未设置分类讨论区！')
+            self.pause()
+            self.goto_back()            
         height = len(sections)
         sections_d = map(self.wrapper_li, enumerate(sections))
         if sections_d :
@@ -181,14 +103,6 @@ class SectionMenuFrame(BaseMenuFrame):
     # def show_help(self):
     #     self.suspend('help',page='sections')
 
-
-def chunks(data, height):
-    for i in xrange(0, len(data), height+1):
-        yield ('\r\n'.join(data[i:i+height]),int(data[height]))
-
-def tidy_anim(text, height):
-    l = text.split('\r\n')
-    return list(chunks(l, height))
 
 from chaofeng import sleep
 

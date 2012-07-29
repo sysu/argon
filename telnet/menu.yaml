@@ -34,10 +34,10 @@ user_space:
 
 sys_admin:
         - ["(P)icture    修改系统画面", [menu, {menuname: sys_static}], p, [14,20]]
-        - [(B)board     讨论区设定,  [menu, {menuname: sys_board}], b]
-        - [(U)serLevel  帐号管理,   [menu, {menuname: sys_level}], u]
-        - [(S)ysTeam    设定系统管理组,  sys_team, s]
-        - [(C)onfigure  系统参数设定, sys_conf, c]
+        - ["(B)board     讨论区设定",  [menu, {menuname: sys_board}], b]
+        # - [(U)serLevel  帐号管理,   [menu, {menuname: sys_level}], u]
+        # - [(S)ysTeam    设定系统管理组,  sys_team, s]
+        # - [(C)onfigure  系统参数设定, sys_conf, c]
 
 sys_static:
         - [1. 系统菜单背景 , sys_edit_menu_background, "1", [14,20]]
@@ -45,11 +45,14 @@ sys_static:
         - [3. 欢迎画面 ,     sys_edit_welcome, "3"]
 
 sys_board:
-        - [1. 开启新讨论区,   sys_new_board, "1", [14,20]]
-        - [2. 任命版主,       sys_add_bm, "2"]
-        - [3. 版主离任,       sys_remove_bm, "3"]
-        - [4. 修改讨论区设定, sys_set_boardattr, "4"]
-        - [4. 删除讨论区,     sys_remove_board, "5"]
+        - ["1. 开启新讨论区",   sys_new_board, "1", [14,20]]
+        - ["2. 修改讨论区设定", sys_set_boardattr, "2"]
+        - ["3. 任命版主",       sys_add_bm, "3"]
+        - ["4. 版主离任",       sys_remove_bm, "4"]
+        - ["5. 增加讨论区分区", sys_new_section, '5']
+        - ["6. 修改讨论区分区", sys_edit_section, '6']
+        # - [5. 讨论区组权限管理,   sys_board_team_manager, "5"]
+        # - [6. 删除讨论区,     sys_remove_board, "6"]
 
 sys_level:
         - [1. 修改帐号资料,   sys_edit_userattr, "1", [14,20]]
