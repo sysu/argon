@@ -4,7 +4,7 @@
 import sys
 sys.path.append('../')
 
-from chaofeng import Server, g, sleep, asynchronous
+from chaofeng import Server, g, sleep, asynchronous, Frame
 from chaofeng.g import mark
 import login, menu,boardlist,edit,view,mail,admin,user#,,special_frame
 import config
@@ -26,7 +26,12 @@ class LoginDebugFrame(login.WelcomeFrame):
         # self.goto('post','Test1','3')
         pass
 
-config.data['ROOT'] = 'debug'
+@mark('finish')
+class FinishFrame(Frame):
+    def finish(self):
+        raise BadEndInterrupt
+
+# config.data['ROOT'] = 'debug'
 
 if __name__ == '__main__' :
     s = Server(mark[config.data['ROOT']])

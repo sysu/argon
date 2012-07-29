@@ -439,15 +439,16 @@ class UserAuth(Model):
     ban_userid = ['guest','new']
     GUEST = AuthUser(userid='guest',is_first_login=None)
 
-    def __init__(self,usertable,online):
+    def __init__(self, usertable, online, userperm):
         self.table = usertable
         self.online = online
-
+        self.userperm = userperm
+        
     def gen_passwd(self,passwd):
         return bcrypt.hashpw(passwd, bcrypt.gensalt(10))
 
     def set_passwd(self, userid, passwd):
-        self.userinfo.update_user(userid, self.gen_passwd(passwd))
+        self.table.update_user(userid, passwd=self.gen_passwd(passwd))
 
     def check_passwd_match(self,passwd,code):
         try:
@@ -476,7 +477,7 @@ class UserAuth(Model):
             nickname=userid,
             **kwargs
             )
-        self.init_user_team(userid)
+        self.userperm.init_user_team(userid)
         
     def get_guest(self):
         return self.GUEST
@@ -902,6 +903,7 @@ class UserPerm(Model):
         r,w,d,s = self.perm.checkmany_boardperm(userid, boardname,
                                                 perm.BOARD_READ, perm.BOARD_POST,
                                                 perm.BOARD_DENY, perm.BOARD_ADMIN)
+        print r,w,d,s
         return ( r and not d, r and not d and w, d, s)
 
     def is_open(self, boardname):
@@ -1204,7 +1206,7 @@ class Query:
 
     def init_all(self, userid):
         self.favourite.init_user_favourite(userid)
-        self.userperm.init_user_team(userid)
+        self.team.init_user_team(userid)
 
     def get_section(self, sid):
         return self.section.get_section_by_sid(sid)
@@ -1270,3 +1272,4 @@ def with_index(d):
     for index in range(len(d)):
         d[index]['rownum'] = index
     return d
+

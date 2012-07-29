@@ -14,10 +14,12 @@ import config
 class NewPostFrame(BaseEditFrame):
 
     def initialize(self, board):
+
+        print board['perm']
         
-        if not board['perm'][2] :
+        if not board['perm'][1] :
             self.cls()
-            self.writeln('该版禁止回复或你没有相应的权限！')
+            self.writeln(u'该版禁止回复或你没有相应的权限！')
             self.pause()
             self.goto_back()
             
@@ -48,9 +50,9 @@ class ReplyPostFrame(BaseEditFrame):
 
     def initialize(self, boardname, post):
 
-        if not board['perm'][2] :
+        if not board['perm'][1] :
             self.cls()
-            self.writeln('该版禁止回复或你没有相应的权限！')
+            self.writeln(u'该版禁止回复或你没有相应的权限！')
             self.pause()
             self.goto_back()
 
@@ -79,9 +81,9 @@ class EditPostFrame(BaseEditFrame):
 
     def initialize(self, boardname, post):
 
-        if not board['perm'][2] :
+        if not board['perm'][1] :
             self.cls()
-            self.writeln('该版禁止回复或你没有相应的权限！')
+            self.writeln(u'该版禁止回复或你没有相应的权限！')
             self.pause()
             self.goto_back()
 

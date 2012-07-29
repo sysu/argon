@@ -35,7 +35,6 @@ class CF:
     online    = Online(max_login=9999)
     userinfo  = UserInfo()
     usersign  = UserSign()
-    auth      = UserAuth(userinfo,online)
     board     = Board()
     post      = Post()
     mail      = Mail()
@@ -48,9 +47,10 @@ class CF:
     freq      = FreqControl()
     team      = Team()
     userperm  = UserPerm(team, perm)
+    auth      = UserAuth(userinfo,online,userperm)
     admin     = Admin(board, userperm, post, section)
     query     = Query(board=board, userperm=userperm, perm=perm, favourite=favourite,
-                      section=section, post=post)
+                      section=section, post=post, userinfo=userinfo)
     
     loads = [section,online,userinfo,auth,board,post,readmark,mail,usersign,
              favourite,clipboard,disgest,freq, perm, team, userperm, admin]

@@ -132,10 +132,8 @@ class ChangePasswdFrame(BaseAuthedFrame):
             self.pause()
             self.goto_back()
         self.write(u'\r\n请设定新密码：')
-        ui_passwd.reset()
         pass1 = ui_passwd.readln()
         self.write(u'\r\n请重新输入新密码以确认:')
-        ui_passwd.reset()
         passwd = ui_passwd.readln()
         if pass1 != passwd :
             self.write(u'新密码确认失败, 无法设定新密码。')
@@ -188,7 +186,8 @@ class EditSignFrame(BaseTextBoxFrame):
 @mark('query_user')
 class QueryUserFrame(BaseTextBoxFrame):
 
-    def initialize(self, userid=None):
+    def initialize(self, user):
+        userid = user.get('userid')
         if userid is None:
             userid = self.userid
         self.query_user_normal(userid)

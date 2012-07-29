@@ -48,7 +48,7 @@ class BaseFrame(Frame):
         while len(buf) < buf_size:
             ds = self.read_secret()
             for d in ds :
-                if d == ac.k_backspace:
+                if d in ac.ks_delete:
                     if buf:
                         buf.pop()
                         self.write(ac.backspace)
@@ -179,7 +179,7 @@ class BaseAuthedFrame(BaseFrame):
             buf = []
         while True:
             char = self.read_secret()
-            if char == ac.k_backspace :
+            if char in ac.ks_delete :
                 if buf :
                     data = buf.pop()
                     self.write(ac.backspace * ac.srcwidth(data))

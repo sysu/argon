@@ -5,7 +5,7 @@ main:
         - [(P)layFilm     电影放映室, movie, p]
         - [(M)ail           处理信笺, mail_menu, m]
         - [(S)hoHelp        帮助中心, help, s]
-        - [(G)oodbye    离开逸仙时空, finish, g]
+        - [(G)oodbye    离开逸仙时空, undone, g]
         
 main_guest:
         - [(E)Group       分类讨论区, sections, e, [12, 5]]

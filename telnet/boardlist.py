@@ -234,7 +234,7 @@ class BoardFrame(BaseTableFrame):
 
     def query_author(self):
         user = self.table.fetch()
-        self.suspend('query_user', user)        
+        self.suspend('query_user', user=user)        
 
 @mark('query_board')
 class QueryBoardFrame(BaseTextBoxFrame):
