@@ -54,7 +54,12 @@ def v__(s,*args):
     return (s,) + args
 
 class Model:
-
+    
+    '''
+    A base class for a model. It implemented some common methods as well.
+    Basic useage read the Manage class.
+    '''
+    
     __metaclass__ = MetaModel
 
     def __init__(self):
@@ -116,6 +121,13 @@ class Model:
 
 class Section(Model):
 
+    '''
+    The module of sections opeartor. It's almost all deal with the
+    `argo_sectionhead` table in SQL database.
+
+    db: argo_sectionhead
+    '''
+
     __ = 'argo_sectionhead'
 
     def get_all_section(self):
@@ -126,6 +138,7 @@ class Section(Model):
         return with_index(d)
 
     def get_section(self,name):
+        ''' Get a section by sectionname.'''
         return self.table_get_by_key(self.__, 'sectionname', name)
 
     def get_section_by_sid(self, sid):
@@ -153,6 +166,15 @@ class Section(Model):
         return n or 0
         
 class Board(Model):
+
+    '''
+    The low level operation of boards. It just wrap up some opearator
+    with SQL database.
+    The recommend board was implemented here.
+
+    db:argo_boardhead
+       argo_recommend    
+    '''
 
     __ = 'argo_boardhead'
     _r = 'argo_recommend'
@@ -210,7 +232,44 @@ class Board(Model):
     def set_board_bm(self, boardname, bms):
         return self.table_update_listattr(self.__, 'bm', bms, 'boardname', boardname)
 
+class Favourite(Model):
+
+    '''
+    low level operation of user favourite.
+
+    ch:
+        {set} argo:favourite:$userid
+    '''
+
+    keyf = "argo:favourite:%s"
+
+    def init_user_favourite(self, userid):
+        key = self.keyf % userid
+        self.ch.delete(key)
+
+    def add(self, userid, boardname):
+        ''' Add an board into user's favourtie.'''
+        key = self.keyf % userid
+        self.ch.sadd(key, boardname)
+                      
+    def remove(self, userid, boardname):
+        key = self.keyf % userid
+        self.ch.srem(key, boardname)
+
+    def get_all(self, userid):
+        '''Return a set holds all board's name in user's favourte.'''
+        key = self.keyf % userid
+        return self.ch.smembers(key)
+
 class Post(Model):
+
+    '''
+    Low level operation of post.
+
+    db: argo_filehead_$boardname
+    ch: [hash] : argo_lastpost[boardname]
+    
+    '''
 
     _prefix = 'argo_filehead_'
 
@@ -345,6 +404,11 @@ class Post(Model):
 
 class UserInfo(Model):
 
+    u'''
+    Low level operation of user's info.
+    db: argo_user
+    '''
+
     __ = 'argo_user'
 
     def get_user(self,name):
@@ -376,26 +440,51 @@ class UserInfo(Model):
 
 class Online(Model):
 
+    '''
+    The module include some action about online status record.
+
+    Each connection has a unique (userid,sessionid) pair.
+    
+    Every login should first call the login() method to update
+    amount of the online , and it will return a number as the
+    sessionsid. After logout, logout() should be called to
+    clear this.
+
+    Every *session* has a status to holds the online status,
+    set_status , get_status, clear_status are about this.
+    
+    When it's enter/exit a board, enter_board/exit_board should
+    be called. 
+    
+    ch :
+       {hash} argo:user_status[userid] ==> status string
+       {hash} argo:user_sessions[userid] ==> userid login total number
+       {hash} argo:board_online[boardname] ==> board online total number
+       {hash}  argo:ip_online[userid+sessionid] ==> ip string
+    '''
+
     def __init__(self,max_login):
         self.max_login = max_login
 
     def bind(self,db=None,ch=None):
         super(Online,self).bind(db,ch)
         if ch is not None:
-            self.ch_status = Cacher('argo:user_statue',ch=self.ch)
+            self.ch_status = Cacher('argo:user_status',ch=self.ch)
             self.ch_sessions = Cacher('argo:user_sessions',ch=self.ch)
             self.ch_board_online = Cacher('argo:board_online',ch=self.ch)
             self.ch_user_ip = Cacher('argo:ip_online',ch=self.ch)
 
-    def login(self,userid):
+    def _record_ip(self,userid,sessionid,ip):
+        self.ch_user_ip.hmset({userid+sessionid:ip})
+
+    def login(self, userid, ip):
         d = self.ch_sessions.hget(userid)
         if d and (int(d) >= self.max_login) :
             return False
         self.ch_sessions.hincrby(userid)
-        return self.ch_sessions.hget(userid)
-
-    def record_ip(self,userid,sessionid,ip):
-        self.ch_user_ip.hmset({userid+sessionid:ip})
+        sessionid = self.ch_sessions.hget(userid)
+        self.record_ip(userid, sessionid, ip)
+        return sessionid
             
     def set_state(self,userid,session,value):
         return self.ch_status.hmset({
@@ -428,115 +517,20 @@ class Online(Model):
     def board_online(self,boardname):
         return self.ch.scard('argo:board_online:%s'%boardname)
 
-class AuthUser(dict):
-    def __getattr__(self, name):
-        return super(AuthUser,self).get(name)
-    def __setattr__(self,name,value):
-        self[name] = value
-
-class UserAuth(Model):
-    
-    ban_userid = ['guest','new']
-    GUEST = AuthUser(userid='guest',is_first_login=None)
-
-    def __init__(self, usertable, online, userperm):
-        self.table = usertable
-        self.online = online
-        self.userperm = userperm
-        
-    def gen_passwd(self,passwd):
-        return bcrypt.hashpw(passwd, bcrypt.gensalt(10))
-
-    def set_passwd(self, userid, passwd):
-        self.table.update_user(userid, passwd=self.gen_passwd(passwd))
-
-    def check_passwd_match(self,passwd,code):
-        try:
-            return bcrypt.hashpw(passwd, code) == code
-        except:
-            return False
-
-    def user_exists(self,userid):
-        try:
-            return bool(self.table.name2id(userid))
-        except:
-            return False        
-
-    def check_userid(self, userid):
-        if userid in self.ban_userid :
-            raise RegistedError(u'此id禁止注册')
-        if len(userid) < 3:
-            raise RegistedError(u'此id过短，请至少3个字符以上')
-        if self.user_exists(userid):
-            raise RegistedError(u'此帐号已被使用')
-
-    def register(self, userid, passwd, **kwargs):
-        self.table.add_user(
-            userid=userid,
-            passwd=self.gen_passwd(passwd),
-            nickname=userid,
-            **kwargs
-            )
-        self.userperm.init_user_team(userid)
-        
-    def get_guest(self):
-        return self.GUEST
-
-    def login(self, userid, passwd, host, session=True):
-
-        if userid == 'guest':
-            raise LoginError(LoginError.NO_SUCH_USER) # Not such user self.get_guest()
-
-        # user_exist
-        code = self.table.select_attr(userid,"passwd")
-        if code is None :
-            raise LoginError(u'没有该用户！')
-        code = code['passwd']
-
-        #check_password
-        if not self.check_passwd_match(passwd,code):
-            raise LoginError(u'帐号和密码不匹配！')
-        self.table.update_user(userid,
-                               lasthost=host,
-                               lastlogin=datetime.now())
-        res = self.table.get_user(userid)
-        res.is_first_login = res['firstlogin'] == 0
-
-        if session:
-            #set_state
-            seid = self.online.login(userid)
-            if seid is False :
-                return LoginError(u'已达最大上线数！')
-            res.seid = seid
-            self.online.record_ip(userid,seid,host)
-
-        if res['userid'] == 'argo' :
-            res['is_admin'] = True
-
-        self.msg('Coming :: %s,%s,%s' % (userid,passwd,host))
-        self.msg(datetime.now().ctime())
-
-        # print res.seid
-        return res
-
-    def msg(self,string):
-        print string
-
-    def logout(self,userid,seid):
-        self.online.logout(userid,seid)
-
-    def safe_logout(self,userid,seid):
-        try:
-            self.logout(userid,seid)
-        except:
-            pass
-
 class Mail(Model):
+
+    '''
+    low level operation of mail.
+    db: argo_mailhead_$groupid
+
+    :groupid :: uid//100
+    
+    '''
 
     _prefix = 'argo_mailhead_'
 
     def __(self,uid):
-        return self._prefix + str((int(uid) / 100))
+        return self._prefix + str((int(uid) // 100))
 
     def _tableid(self,uid):
         return int(uid) / 100
@@ -628,6 +622,11 @@ class Mail(Model):
         self.db.execute(sql, mid)
 
 class Disgest(Model):
+
+    '''
+    low level operation of disgest.
+    db : argo_annhead_$boardname
+    '''
 
     _prefix = 'argo_annhead_'
 
@@ -735,6 +734,15 @@ class Disgest(Model):
 
 class ReadMark(Model):
 
+    '''
+    Implement the read/unread mark.
+    It use a smart algorithm.
+
+        https://github.com/argolab/argon/wiki/%E7%89%9BB%E9%97%AA%E9%97%AA%E7%9A%84%E6%9C%AA%E8%AF%BB%E6%A0%87%E8%AE%B0%E7%9A%84%E5%AE%9E%E7%8E%B0
+
+    ch:  {order set} argo:readmark:%boardname:$userid [pid] ==> pid
+    '''
+
     keyf = "argo:readmark:%s:%s"
 
     limit_max = 200
@@ -781,6 +789,11 @@ class ReadMark(Model):
 
 class UserSign(Model):
 
+    '''
+    About user's Signature File.
+    ch : {list} argo:usersign:%userid
+    '''
+
     keyf = "argo:usersign:%s"
 
     def set_sign(self,userid,data):
@@ -812,6 +825,13 @@ class UserSign(Model):
 
 class Team(Model):
 
+    '''
+    About the team.
+
+    ch : {set} argo:team_ust:$userid ==> team set
+         {set} argo:team_tsm:$team ==> member set
+    '''
+
     key_ust = 'argo:team_ust:%s' # User's team
     key_tsm = 'argo:team_tsm:%s' # Team's member
 
@@ -837,9 +857,16 @@ class Team(Model):
 
 class Permissions(Model):
 
+    '''
+    About the Permissions.
+
+    ch : {set} argo:perm_glb:$permname ==> team set
+         {set} argo:perm_brd:$boardname:$permname ==> team set
+    '''
+    
     key_glb = 'argo:perm_glb:%s'    # Global Permissions
     key_brd = 'argo:perm_brd:%s:%s' # Board's Permissions
-    key_tsp = 'argo:perm_tsp:%s:%s' # Team's Permissions
+    # key_tsp = 'argo:perm_tsp:%s:%s' # Team's Permissions
     key_ust = Team.key_ust
 
     # Global Permissions
@@ -880,6 +907,13 @@ class Permissions(Model):
         return self.ch.smembers(self.key_brd%(boardname, perm))
 
 class UserPerm(Model):
+
+    '''
+    High level operation of User's Permissions.
+    Some const are include in model/perm.py
+
+    using module: team, perm
+    '''
 
     BOARD_DENY_NAME = '%sDeny'
     BOARD_BM = '%sBM'
@@ -967,6 +1001,12 @@ class UserPerm(Model):
 
 class Clipboard(Model):
 
+    '''
+    About the clipboard.
+
+    ch : argo:clipboard:%userid
+    '''
+
     keyf = 'argo:clipboard:%s'
     max_len = 100000
     
@@ -985,7 +1025,120 @@ class Clipboard(Model):
         key = self.keyf % userid
         return self.ch.get(key)
 
+class AuthUser(dict):
+    def __getattr__(self, name):
+        return super(AuthUser,self).get(name)
+    def __setattr__(self,name,value):
+        self[name] = value
+
+class UserAuth(Model):
+
+    '''
+    An high level module to deal with auth.
+
+    using mod:  userinfo, online, userperm
+    '''
+    
+    ban_userid = ['guest','new']
+    GUEST = AuthUser(userid='guest',is_first_login=None)
+
+    def __init__(self, usertable, online, userperm):
+        self.table = usertable
+        self.online = online
+        self.userperm = userperm
+        
+    def gen_passwd(self,passwd):
+        return bcrypt.hashpw(passwd, bcrypt.gensalt(10))
+
+    def set_passwd(self, userid, passwd):
+        self.table.update_user(userid, passwd=self.gen_passwd(passwd))
+
+    def check_passwd_match(self,passwd,code):
+        try:
+            return bcrypt.hashpw(passwd, code) == code
+        except:
+            return False
+
+    def user_exists(self,userid):
+        try:
+            return bool(self.table.name2id(userid))
+        except:
+            return False        
+
+    def check_userid(self, userid):
+        if userid in self.ban_userid :
+            raise RegistedError(u'此id禁止注册')
+        if len(userid) < 3:
+            raise RegistedError(u'此id过短，请至少3个字符以上')
+        if self.user_exists(userid):
+            raise RegistedError(u'此帐号已被使用')
+
+    def register(self, userid, passwd, **kwargs):
+        self.table.add_user(
+            userid=userid,
+            passwd=self.gen_passwd(passwd),
+            nickname=userid,
+            **kwargs
+            )
+        self.userperm.init_user_team(userid)
+        
+    def get_guest(self):
+        return self.GUEST
+
+    def login(self, userid, passwd, host, session=True):
+
+        if userid == 'guest':
+            raise LoginError(LoginError.NO_SUCH_USER) # Not such user self.get_guest()
+
+        # user_exist
+        code = self.table.select_attr(userid,"passwd")
+        if code is None :
+            raise LoginError(u'没有该用户！')
+        code = code['passwd']
+
+        #check_password
+        if not self.check_passwd_match(passwd,code):
+            raise LoginError(u'帐号和密码不匹配！')
+        self.table.update_user(userid,
+                               lasthost=host,
+                               lastlogin=datetime.now())
+        res = self.table.get_user(userid)
+        res.is_first_login = res['firstlogin'] == 0
+
+        if session:
+            #set_state
+            seid = self.online.login(userid, host)
+            if seid is False :
+                return LoginError(u'已达最大上线数！')
+            res.seid = seid
+
+        if res['userid'] == 'argo' :
+            res['is_admin'] = True
+
+        self.msg('Coming :: %s,%s,%s' % (userid,passwd,host))
+        self.msg(datetime.now().ctime())
+
+        # print res.seid
+        return res
+
+    def msg(self,string):
+        print string
+
+    def logout(self,userid,seid):
+        self.online.logout(userid,seid)
+
+    def safe_logout(self,userid,seid):
+        try:
+            self.logout(userid,seid)
+        except:
+            pass
+
 class Action(Model):
+
+    '''
+    High level operation about user's action.
+    using mod: board, online, post, mail, userinfo
+    '''
 
     def __init__(self,board,online,post,mail,userinfo):
         self.board = board
@@ -1087,27 +1240,12 @@ class Action(Model):
         if userid == post['owner'] :
             return self.post.update_title(boardname, post['pid'], new_title)
 
-class Favourite(Model):
-
-    keyf = "argo:favourite:%s"
-
-    def init_user_favourite(self, userid):
-        key = self.keyf % userid
-        self.ch.delete(key)
-
-    def add(self, userid, boardname):
-        key = self.keyf % userid
-        self.ch.sadd(key, boardname)
-                      
-    def remove(self, userid, boardname):
-        key = self.keyf % userid
-        self.ch.srem(key, boardname)
-
-    def get_all(self, userid):
-        key = self.keyf % userid
-        return self.ch.smembers(key)
-
 class Admin(Model):
+
+    '''
+    High level operation about content admin.
+    using mod: board, userperm, post, section
+    '''
 
     def __init__(self, board, userperm, post, section):
         self.board = board
@@ -1180,6 +1318,11 @@ class Admin(Model):
 
 class Query:
 
+    '''
+    High level operation about query content.
+    using mod: board, userperm, perm, favourite, section, post, userinfo
+    '''
+
     def __init__(self, **kwargs):
         for k in kwargs:
             setattr(self, k, kwargs[k])
@@ -1229,6 +1372,24 @@ class Query:
 
 class FreqControl(Model):
 
+    '''
+    Limit the user's action frequency.
+    Basic usage:
+
+    def action(userid, *args, **kwargs):
+        try:
+            filter_freq_per(userid)
+        except TooFrequentException:
+            do_no_thing()
+        else:
+            do_action(userid, *args, **kwargs)
+
+    Wrap as decorator may be good as well.
+
+    ch : {set} argo:freqcontrol:$userid ==> user set
+    
+    '''
+
     keyf = "argo:freqcontrol:%s"
 
     per = 3
@@ -1255,6 +1416,10 @@ class FreqControl(Model):
         self._filter_freq(userid, self.big)
 
 class Manager:
+
+    '''
+    Mix all model together.
+    '''
 
     @classmethod
     def configure(cls,config):
