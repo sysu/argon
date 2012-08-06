@@ -55,7 +55,7 @@ def v__(s,*args):
 
 class Model:
     
-    '''
+    u'''
     A base class for a model. It implemented some common methods as well.
     Basic useage read the Manage class.
     '''
@@ -121,7 +121,7 @@ class Model:
 
 class Section(Model):
 
-    '''
+    u'''
     The module of sections opeartor. It's almost all deal with the
     `argo_sectionhead` table in SQL database.
 
@@ -138,7 +138,7 @@ class Section(Model):
         return with_index(d)
 
     def get_section(self,name):
-        ''' Get a section by sectionname.'''
+        u''' Get a section by sectionname.'''
         return self.table_get_by_key(self.__, 'sectionname', name)
 
     def get_section_by_sid(self, sid):
@@ -167,7 +167,7 @@ class Section(Model):
         
 class Board(Model):
 
-    '''
+    u'''
     The low level operation of boards. It just wrap up some opearator
     with SQL database.
     The recommend board was implemented here.
@@ -234,7 +234,7 @@ class Board(Model):
 
 class Favourite(Model):
 
-    '''
+    u'''
     low level operation of user favourite.
 
     ch:
@@ -248,7 +248,7 @@ class Favourite(Model):
         self.ch.delete(key)
 
     def add(self, userid, boardname):
-        ''' Add an board into user's favourtie.'''
+        u''' Add an board into user's favourtie.'''
         key = self.keyf % userid
         self.ch.sadd(key, boardname)
                       
@@ -257,13 +257,13 @@ class Favourite(Model):
         self.ch.srem(key, boardname)
 
     def get_all(self, userid):
-        '''Return a set holds all board's name in user's favourte.'''
+        u'''Return a set holds all board's name in user's favourte.'''
         key = self.keyf % userid
         return self.ch.smembers(key)
 
 class Post(Model):
 
-    '''
+    u'''
     Low level operation of post.
 
     db: argo_filehead_$boardname
@@ -379,7 +379,7 @@ class Post(Model):
         return self.table_update_by_key(self.__(boardname), 'pid', pid, kwargs)
 
     def del_post(self,*args,**kwargs):
-        '''
+        u'''
         Never delete a post.
         '''
         pass
@@ -421,13 +421,13 @@ class UserInfo(Model):
         return self.table_update_by_key(self.__, 'userid', userid, kwargs)
 
     def del_user(self,userid):
-        '''
+        u'''
         Never delete a user.
         '''
         pass
 
     def name2id(self,userid):
-        '''
+        u'''
         Check if the userid is in database. Return the uid if so,
         or None if not.
         '''
@@ -440,7 +440,7 @@ class UserInfo(Model):
 
 class Online(Model):
 
-    '''
+    u'''
     The module include some action about online status record.
 
     Each connection has a unique (userid,sessionid) pair.
@@ -519,7 +519,7 @@ class Online(Model):
 
 class Mail(Model):
 
-    '''
+    u'''
     low level operation of mail.
     db: argo_mailhead_$groupid
 
@@ -623,7 +623,7 @@ class Mail(Model):
 
 class Disgest(Model):
 
-    '''
+    u'''
     low level operation of disgest.
     db : argo_annhead_$boardname
     '''
@@ -734,7 +734,7 @@ class Disgest(Model):
 
 class ReadMark(Model):
 
-    '''
+    u'''
     Implement the read/unread mark.
     It use a smart algorithm.
 
@@ -789,7 +789,7 @@ class ReadMark(Model):
 
 class UserSign(Model):
 
-    '''
+    u'''
     About user's Signature File.
     ch : {list} argo:usersign:%userid
     '''
@@ -825,7 +825,7 @@ class UserSign(Model):
 
 class Team(Model):
 
-    '''
+    u'''
     About the team.
 
     ch : {set} argo:team_ust:$userid ==> team set
@@ -857,7 +857,7 @@ class Team(Model):
 
 class Permissions(Model):
 
-    '''
+    u'''
     About the Permissions.
 
     ch : {set} argo:perm_glb:$permname ==> team set
@@ -908,7 +908,7 @@ class Permissions(Model):
 
 class UserPerm(Model):
 
-    '''
+    u'''
     High level operation of User's Permissions.
     Some const are include in model/perm.py
 
@@ -1001,7 +1001,7 @@ class UserPerm(Model):
 
 class Clipboard(Model):
 
-    '''
+    u'''
     About the clipboard.
 
     ch : argo:clipboard:%userid
@@ -1033,7 +1033,7 @@ class AuthUser(dict):
 
 class UserAuth(Model):
 
-    '''
+    u'''
     An high level module to deal with auth.
 
     using mod:  userinfo, online, userperm
@@ -1135,7 +1135,7 @@ class UserAuth(Model):
 
 class Action(Model):
 
-    '''
+    u'''
     High level operation about user's action.
     using mod: board, online, post, mail, userinfo
     '''
@@ -1242,7 +1242,7 @@ class Action(Model):
 
 class Admin(Model):
 
-    '''
+    u'''
     High level operation about content admin.
     using mod: board, userperm, post, section
     '''
@@ -1318,7 +1318,7 @@ class Admin(Model):
 
 class Query:
 
-    '''
+    u'''
     High level operation about query content.
     using mod: board, userperm, perm, favourite, section, post, userinfo
     '''
@@ -1372,7 +1372,7 @@ class Query:
 
 class FreqControl(Model):
 
-    '''
+    u'''
     Limit the user's action frequency.
     Basic usage:
 
@@ -1417,7 +1417,7 @@ class FreqControl(Model):
 
 class Manager:
 
-    '''
+    u'''
     Mix all model together.
     '''
 
