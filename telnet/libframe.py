@@ -626,7 +626,7 @@ class BaseEditFrame(BaseAuthedFrame):
 
     def fetch_all(self):
         text = self.e.fetch_all()
-        text = self.t2s.sub(lambda x: u'{%%%s%%' % x.group(1), text).replace('%*}', ac.reset)
+        text = self.t2s.sub(lambda x: u'{%%%s%%' % x.group(1), text)
         return text        
 
     def finish(self):
@@ -702,7 +702,7 @@ class BaseTextBoxFrame(BaseAuthedFrame):
 
     def tidy_text(self, text):
         return self.s2t.sub(lambda x: '\x1b[%sm' % x.group(1),
-                            text)
+                            text).replace('%*}', ac.reset)
 
     def get_text(self):
         raise NotImplementedError
