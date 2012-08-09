@@ -218,7 +218,14 @@ class Connection(object):
     def execute_paragraph(self, para):
         cursor = self._cursor()
         try:
-            cursor.execute(para)
+            try:
+                cursor.execute(para)
+            except MySQLdb.ProgrammingError as e:
+                if e.args[0] == 2014:
+                    print e.message
+                    pass
+                else:
+                    raise e
             more = True
             while more:
                 cursor.fetchall()

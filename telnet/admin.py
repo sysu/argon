@@ -94,7 +94,7 @@ class UpdateSectionFormFrame(BaseEditSectionFormFrame):
 
     def handle_submit(self):
         manager.admin.update_section(self.userid,
-                                     old_sid=self.section['sid'], 
+                                     old_sid=self.section['sid'], sid=None,
                                      sectionname=self.form['sectionname'],
                                      description=self.form['description'])
         

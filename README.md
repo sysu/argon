@@ -74,7 +74,7 @@ git clone https://github.com/argolab/argon.git
 测试一下需要的依赖是否被满足:
 
 ```bash
-python -c 'import MySQLdb,eventlet,jinja2,redis,bcrypt'
+python -c 'import MySQLdb,eventlet,jinja2,redis,bcrypt,yaml'
 ```
 
 应该没有任何异常输出。

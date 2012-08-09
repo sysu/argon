@@ -91,7 +91,7 @@ class BoardFrame(BaseTableFrame):
     def catch_nodata(self, e):
         self.cls()
         if self.readline_safe(prompt=u'没有文章，发表新文章？', buf_size=3) in ac.ks_yes :
-            self.new_post()
+            self.goto('new_post', board=self.board)
         else:
             self.goto_back()
 
