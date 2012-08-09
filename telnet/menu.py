@@ -70,8 +70,10 @@ class MainMenuFrame(BaseMenuFrame):
 
     def load_all(self):
         height = None
-        print config.menu['main'] + config.menu['main_admin']
-        menu = ColMenu.tidy_data(config.menu['main'] + config.menu['main_admin'])
+        if self.userid == 'admin' :
+            menu = ColMenu.tidy_data(config.menu['main'] + config.menu['main_admin'])
+        else:
+            menu = ColMenu.tidy_data(config.menu['main'])
         background = self.render_str('menu_main')
         return (menu, height, background)
 
