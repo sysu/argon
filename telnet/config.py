@@ -197,6 +197,7 @@ hotkeys = {
         'X':'set_readonly',
         ac.k_ctrl_e:'change_board_attr',
         # jump
+        "h":"show_help",
         },
     "boardlist_jump":{
         "u":"query_user_iter",
@@ -218,7 +219,8 @@ hotkeys = {
         ac.k_ctrl_u:"goto_author",
         "c":"clear_readmark", "K":"set_read", ac.k_ctrl_a:"query_author",
         ac.k_end:"goto_last", "$":"goto_last",
-        "T":"edit_title"
+        "T":"edit_title",
+        "h":"show_help",
         },
     "board_table":{
         "k":"move_up", "j":"move_down", "P":"page_up", "N":"page_down",
@@ -247,7 +249,7 @@ hotkeys = {
         ac.k_ctrl_t:"move_end_of_file",
         ac.k_ctrl_u:"exchange_pos",
         ac.k_ctrl_d:"remove_area",
-        ac.esc:"insert_style",
+        ac.esc:"insert_esc",
         ac.k_ctrl_b:"page_up",      ac.k_page_up:"page_up",
         ac.k_ctrl_f:"page_down",    ac.k_page_down:"page_down",
         },

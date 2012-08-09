@@ -110,3 +110,6 @@ class TutorialFrame(BaseTextBoxFrame):
     def get_text(self):
         print self.page
         return self.render_str('help/%s' % self.page)
+
+    def finish(self,args=None):
+        self.goto_back()

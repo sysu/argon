@@ -545,6 +545,9 @@ class BaseBoardListFrame(BaseTableFrame):
         manager.favourite.remove(self.userid, self.table.fetch()[u'bid'])
         self.message(u'取消预定版块成功！')
 
+    def show_help(self):
+        self.suspend('help', page='boardlist')
+
 class BaseFormFrame(BaseTableFrame):
 
     def get_data_index(self, index):
@@ -619,6 +622,13 @@ class Editor(TextEditor):
 
 class BaseEditFrame(BaseAuthedFrame):
 
+    t2s = re.compile(r'\*\[((\d+)(;\d+)*)m')
+
+    def fetch_all(self):
+        text = self.e.fetch_all()
+        text = self.t2s.sub(lambda x: u'{%%%s%%' % x.group(1), text).replace('%*}', ac.reset)
+        return text        
+
     def finish(self):
         raise NotImplementedError
 
@@ -680,12 +690,19 @@ class BaseTextBoxFrame(BaseAuthedFrame):
 
     hotkeys = {}
 
+    # s2t = re.compile(r'{%((\d+)(;\d+)*)% (.*) %}')
+    s2t = re.compile(r'{%((\d+)(;\d+)*)%')
+
     u'''
     Inherit this class and rewirte the `get_text` method
     to display the text.
     It's useful to copy the `key_maps` and `textbox_cmd`
     and add new key/value into them.
     '''
+
+    def tidy_text(self, text):
+        return self.s2t.sub(lambda x: '\x1b[%sm' % x.group(1),
+                            text)
 
     def get_text(self):
         raise NotImplementedError
@@ -695,7 +712,7 @@ class BaseTextBoxFrame(BaseAuthedFrame):
         self.textbox.fix_bottom()
 
     def reset_text(self, text):
-        self.textbox.set_text(text)
+        self.textbox.set_text(self.tidy_text(self.get_text()))
         self.restore()
 
     def message(self,msg):
@@ -713,7 +730,7 @@ class BaseTextBoxFrame(BaseAuthedFrame):
         
     def initialize(self):
         super(BaseTextBoxFrame, self).initialize()
-        self.textbox = self.load(TextBox, self.get_text(), self.finish)
+        self.textbox = self.load(TextBox, self.tidy_text(self.get_text()), self.finish)
         self.restore()
 
     def _go_link(self,line):

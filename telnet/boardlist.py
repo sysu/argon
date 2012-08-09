@@ -37,9 +37,6 @@ class NormalBoardListFrame(BaseBoardListFrame):
         self.sort_mode = 0
         super(NormalBoardListFrame, self).initialize()
 
-    def show_help(self):
-        self.suspend('help', page='boardlist')
-
 @mark('favourite')
 class FavouriteFrame(BaseBoardListFrame):
 

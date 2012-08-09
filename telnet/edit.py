@@ -38,7 +38,7 @@ class NewPostFrame(BaseEditFrame):
         manager.action.new_post(self.boardname,
                                 self.userid,
                                 self.title,
-                                self.e.fetch_all(),
+                                self.fetch_all(),
                                 self.session.ip,
                                 config.BBS_HOST_FULLNAME)
         self.message(u'发表文章成功！')
@@ -68,7 +68,7 @@ class ReplyPostFrame(BaseEditFrame):
             self.boardname,
             self.userid,
             self.title,
-            self.e.fetch_all(),
+            self.fetch_all(),
             self.session.ip,
             config.BBS_HOST_FULLNAME,
             self.replyid)
@@ -81,7 +81,11 @@ class EditPostFrame(BaseEditFrame):
 
     def initialize(self, boardname, post):
 
-        if not board['perm'][1] :
+        print boardname
+
+        r,w,d,s = manager.userperm.get_board_ability(self.userid, boardname)
+
+        if not w :
             self.cls()
             self.writeln(u'该版禁止回复或你没有相应的权限！')
             self.pause()
@@ -97,7 +101,7 @@ class EditPostFrame(BaseEditFrame):
         manager.action.update_post(self.boardname,
                                    self.userid,
                                    self.pid,
-                                   self.e.fetch_all())
+                                   self.fetch_all())
         self.message(u'编辑文章成功！')
         self.pause()
         self.goto_back()
@@ -116,9 +120,9 @@ class EditFileFrame(BaseEditFrame):
     def finish(self):
         self.message(u'修改档案结束!')
         if self.split:
-            self.callback(filename=self.filename, text=self.e.fetch_lines())
+            self.callback(filename=self.filename, text=self.fetch_lines())
         else:
-            self.callback(filename=self.filename, text=self.e.fetch_all())
+            self.callback(filename=self.filename, text=self.fetch_all())
         self.pause()
         self.goto_back()
 
@@ -135,7 +139,7 @@ class EditorClipboardFrame(BaseEditFrame):
         super(EditorClipboardFrame, self).initialize(text=self.get_text())
 
     def finish(self):
-        manager.clipboard.set_clipboard(self.userid, self.e.fetch_all())
+        manager.clipboard.set_clipboard(self.userid, self.fetch_all())
         self.message(u'更新暂存档成功！')
         self.pause()
         self.goto_back()

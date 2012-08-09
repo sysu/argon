@@ -21,7 +21,7 @@ class LoginDebugFrame(login.WelcomeFrame):
         # self.auth('123','123456')
         # self.goto('add_board')
         # self.goto('user_editdata')
-        self.try_login('123','123456')
+        self.try_login('test','123456')
         # self.goto('dd')
         # self.goto('post','Test1','3')
         pass
@@ -31,7 +31,7 @@ class FinishFrame(Frame):
     def finish(self):
         raise BadEndInterrupt
 
-# config.data['ROOT'] = 'debug'
+config.data['ROOT'] = 'debug'
 
 if __name__ == '__main__' :
     s = Server(mark[config.data['ROOT']])
