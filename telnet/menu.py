@@ -11,6 +11,9 @@ from libframe import BaseAuthedFrame, BaseSelectFrame, BaseMenuFrame
 from model import manager
 import config
 
+from chaofeng import sleep
+from libframe import tidy_anim
+
 class SelectFrame(BaseSelectFrame):
 
     u'''
@@ -72,9 +75,9 @@ class MainMenuFrame(BaseMenuFrame):
         background = self.render_str('menu_main')
         return (menu, height, background)
 
-    # def show_help(self):
-    #     self.suspend('help',page='main')
-
+    def show_help(self):
+        self.suspend('help',page='menu_main')
+        
 @mark('sections')
 class SectionMenuFrame(BaseMenuFrame):
 
@@ -100,12 +103,8 @@ class SectionMenuFrame(BaseMenuFrame):
                 ('boardlist', {"sid":x[1]['sid']}),
                 str(x[0]))
 
-    # def show_help(self):
-    #     self.suspend('help',page='sections')
-
-
-from chaofeng import sleep
-from libframe import tidy_anim
+    def show_help(self):
+        self.suspend('help',page='sections')
 
 @mark('movie')
 class PlayMovie(BaseAuthedFrame):
@@ -124,3 +123,7 @@ class PlayMovie(BaseAuthedFrame):
     def play_done(self):
         self.pause()
         self.goto_back()
+
+    def get(self, data):
+        if data in ac.k_ctrl_c:
+            self.goto_back()

@@ -18,6 +18,7 @@ from collections import deque
 class WelcomeFrame(BaseFrame):
 
     def initialize(self):
+        self.write(ac.clear)
         self.session.charset = 'gbk'
         print 'Connect :: %s : %s' % (self.session.ip, self.session.port)
         self.render('welcome')
@@ -30,6 +31,8 @@ class WelcomeFrame(BaseFrame):
                 self.write(config.str['PROMPT_INPUT_USERID'])
                 userid = self.readline()
                 self.write('\r\n')
+                if not userid:
+                    continue
                 if userid == 'new' :
                     self.goto('register')
                 elif userid == 'guest':
@@ -69,22 +72,18 @@ class RegisterFrame(BaseFrame):
             while True :
                 self.write(config.str["PROMPT_INPUT_USERID_REG"])
                 userid = self.readline()
+                if userid is False:
+                    self.cancel()
                 self.write('\r\n')
                 if self.check_userid(userid) :
                     break
             while True :
                 passwd = passwd_reader.readln(prompt=config.str['PROMPT_INPUT_PASSWD_REG'])
+                if passwd is False:
+                    self.cancel()
                 if self.check_passwd(passwd) : 
                     self.register(userid,passwd)
         self.close()
-
-    code_zh = {
-        0:"PROMPT_REG_SUCC",
-        1:"PROMPT_REG_CANNOT_USE",
-        2:"PROMPT_REG_USERID_TOO_SHORT",
-        3:"PROMPT_REG_REGISTERED",
-        4:"PROMPT_REG_PASSWD_TOO_SHORT",
-        }
 
     def check_userid(self,userid):
         try:
@@ -96,7 +95,7 @@ class RegisterFrame(BaseFrame):
             return True
     
     def check_passwd(self,passwd):
-        if len(passwd) < 3 :
+        if (not passwd) or (len(passwd) < 3):
             self.writeln(u'密码太短，请多于3个字符')
             return False
         return True
@@ -107,11 +106,10 @@ class RegisterFrame(BaseFrame):
         self.pause()
         self.goto('welcome')
     
-    def get(self,data):
-        if data == ac.k_ctrl_c :
-            self.write(config.str["PROMPT_CANCEL"])
-            self.pause()
-            self.goto('welcome')
+    def cancel(self):
+        self.write(config.str["PROMPT_CANCEL"])
+        self.pause()
+        self.goto('welcome')
 
 @mark('first_login')
 class FirstLoginFrame(BaseAuthedFrame):

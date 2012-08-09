@@ -7,8 +7,8 @@ import re
 
 from chaofeng import Frame
 import chaofeng.ascii as ac
-from chaofeng.ui import TextEditor, LongTextBox, PagedTable, Animation, ColMenu,\
-    NullValueError
+from chaofeng.ui import TextEditor, PagedTable, Animation, ColMenu,\
+    NullValueError, SimpleTextBox
 import config
 from template import env
 from model import manager
@@ -66,6 +66,10 @@ class BaseFrame(Frame):
         self.write(self.render_str(filename, **kwargs))
 
 class BaseAuthedFrame(BaseFrame):
+
+    # def write(self, data):
+    #     super(BaseFrame, self).write(self.read())
+    #     super(BaseFrame, self).write(data)
 
     def get_pipe(self):
         return self.session[u'_$$pipe$$']
@@ -448,7 +452,7 @@ class BaseBoardListFrame(BaseTableFrame):
     boards = []
 
     def top_bar(self):
-        self.render(u'top')
+        self.render('top')
         self.writeln()
         
     def quick_help(self):
@@ -601,55 +605,50 @@ class BaseFormFrame(BaseTableFrame):
 
 class Editor(TextEditor):
 
+    def insert_esc(self):
+        self.insert_char(u'*')
+
     def bottom_bar(self,msg=u''):
         self.write(ac.move2(24,0))
-        self.frame.render(u'bottom_edit', message=msg, l=self.l, r=self.r)
+        self.frame.render(u'bottom_edit', message=msg, l=self._hover_col, r=self._hover_row)
         self.fix_cursor()
+
+    def do_command(self, cmd):
+        getattr(self, cmd)()
+        self.bottom_bar()
 
 class BaseEditFrame(BaseAuthedFrame):
 
     def finish(self):
         raise NotImplementedError
 
-    def restore_screen(self):
-        self.e.do_editor_command(u"refresh")
+    def restore(self):
+        self.e.restore_screen()
+
+    restore_screen = restore
 
     def notify(self, msg):
         pass ############           Not ImplamentedError
-
-    def restore(self):
-        self.e.do_editor_command(u"refresh")
 
     def message(self,content):
         self.e.bottom_bar(content[:40])
         
     def get(self,char):
-        # if self.ugly :
-            # char = self.ugly + char
-            # self.ugly = u''
-        # elif len(char) == 1 and ac.is_gbk_zh(char):
-            # self.ugly = char
-            # return
-            
         if char in config.hotkeys['edit_editor'] :
-            self.e.do_editor_command( config.hotkeys['edit_editor'][char])
-        elif char == config.hotkeys['edit_2ndcmd_start'] :
-            x = self.read_secret()
-            if x in config.hotkeys['edit_editor_2nd']:
-                self.e.do_editor_command(config.hotkeys['edit_editor_2nd'][x])
+            self.e.do_command(config.hotkeys['edit_editor'][char])
         elif char in config.hotkeys['edit']:
             getattr(self, config.hotkeys['edit'][char])()
         else:
-            self.e.safe_insert_iter(char)
+            self.e.insert_char(char)
 
-    def copy_to_superclip(self):
-        text = self.e.get_clipboard()
-        manager.clipboard.append_clipboard(self.userid, value=text)
+    # def copy_to_superclip(self):
+    #     text = self.e.remove_area()
+    #     manager.clipboard.append_clipboard(self.userid, value=text)
 
-    def insert_superclip(self):
-        clipboard = self.u(manager.clipboard.get_clipboard(self.userid))
-        self.e.insert_paragraph(clipboard)
-        self.restore()
+    # def insert_superclip(self):
+    #     clipboard = self.u(manager.clipboard.get_clipboard(self.userid))
+    #     self.e.insert_paragraph(clipboard)
+    #     self.restore()
         
     def quit_iter(self):
         self.message(u'放弃本次编辑操作？')
@@ -662,19 +661,17 @@ class BaseEditFrame(BaseAuthedFrame):
 
     def initialize(self, spoint=0, text=u''):
         assert isinstance(text, unicode)
-        self.e = self.load(Editor, height=23, hislen=5, dis=10)
-        self.e.set_text(text, spoint)
-        self.ugly = u'' # 修复单字节发送的bug （sterm）
-        self.restore_screen()
+        self.e = self.load(Editor, text, spoint)
+        self.e.reset(text, spoint)
 
     def read_title(self, prompt=u'', prefix=u''):
         return self.readline(prompt=prompt, prefix=prefix, buf_size=40)
 
-class TextBox(LongTextBox):
+class TextBox(SimpleTextBox):
 
     def message(self, message):
-        self.write(ac.move2(24,1))
-        self.frame.render(u'bottom_view', message=message, s=self.s, maxs=self.max)
+        self.frame.write(ac.move2(24,1))
+        self.frame.render(u'bottom_view', message=message, s=self.s, maxs=self.h)
 
     def fix_bottom(self):
         self.message(u'')
@@ -694,7 +691,7 @@ class BaseTextBoxFrame(BaseAuthedFrame):
         raise NotImplementedError
 
     def restore(self):
-        self.textbox.refresh_all()
+        self.textbox.restore_screen()
         self.textbox.fix_bottom()
 
     def reset_text(self, text):
@@ -718,11 +715,6 @@ class BaseTextBoxFrame(BaseAuthedFrame):
         super(BaseTextBoxFrame, self).initialize()
         self.textbox = self.load(TextBox, self.get_text(), self.finish)
         self.restore()
-
-    def set_text(self,text):
-        self.textbox.set_text(text)
-        self.textbox.refresh_all()
-        self.textbox.fix_bottom()
 
     def _go_link(self,line):
         s = line.split()

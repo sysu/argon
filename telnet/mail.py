@@ -71,6 +71,9 @@ class GetMailFrame(BaseTableFrame):
     def reply(self):
         self.suspend("reply_mail", mail=self.table.fetch())
 
+    # def catch_nodata(self):
+    #     self.writeln(u"
+
 @mark('send_mail')
 class SendMailFrame(BaseEditFrame):
 

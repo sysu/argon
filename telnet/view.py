@@ -92,28 +92,21 @@ class ViewClipboardFrame(BaseTextBoxFrame):
     def finish(self, a=None):
         self.goto_back()
 
-# def goto_link(mark):    
+@mark('help')
+class TutorialFrame(BaseTextBoxFrame):
 
-# @mark('help')
-# class TutorialFrame(TextBoxFrame):
+    @classmethod
+    def try_jump(cls,args):
+        if args[0] in config.have_help_page :
+            return dict(page=args[0])
 
-#     @classmethod
-#     def try_jump(cls,args):
-#         print args[0]
-#         if args[0] in config.have_help_page :
-#             return dict(page=args[0])
+    def getdesc(self):
+        return u'查看帮助            -- [](/h/%s)' % self.page
 
-#     def getdesc(self):
-#         return u'查看帮助            -- [](/h/%s)' % self.page
-    
-#     def initialize(self,page='index'):
-#         super(TutorialFrame,self).initialize()
-#         self.setup()
-#         self.page = page
-#         self.set_text(self.render_str('help/%s'%page))
+    def initialize(self,page='index'):
+        self.page = page
+        super(TutorialFrame,self).initialize()
 
-#     def finish(self,args=None):
-#         self.goto_back()
-
-#     def show_help(self):
-#         self.suspend('help',page='help')
+    def get_text(self):
+        print self.page
+        return self.render_str('help/%s' % self.page)

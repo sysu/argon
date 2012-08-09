@@ -37,6 +37,9 @@ class NormalBoardListFrame(BaseBoardListFrame):
         self.sort_mode = 0
         super(NormalBoardListFrame, self).initialize()
 
+    def show_help(self):
+        self.suspend('help', page='boardlist')
+
 @mark('favourite')
 class FavouriteFrame(BaseBoardListFrame):
 
@@ -51,6 +54,9 @@ class FavouriteFrame(BaseBoardListFrame):
 
     def get_data(self, start, limit):
         return manager.query.get_all_favourite(self.userid)
+
+    def show_help(self):
+        self.suspend('help', page='boardlist')
 
 @mark('board')
 class BoardFrame(BaseTableFrame):
@@ -235,6 +241,9 @@ class BoardFrame(BaseTableFrame):
     def query_author(self):
         user = self.table.fetch()
         self.suspend('query_user', user=user)        
+
+    def show_help(self):
+        self.suspend('help', page='board')
 
 @mark('query_board')
 class QueryBoardFrame(BaseTextBoxFrame):

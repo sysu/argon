@@ -483,7 +483,7 @@ class Online(Model):
             return False
         self.ch_sessions.hincrby(userid)
         sessionid = self.ch_sessions.hget(userid)
-        self.record_ip(userid, sessionid, ip)
+        self._record_ip(userid, sessionid, ip)
         return sessionid
             
     def set_state(self,userid,session,value):
@@ -1066,10 +1066,10 @@ class UserAuth(Model):
             return False        
 
     def check_userid(self, userid):
-        if userid in self.ban_userid :
-            raise RegistedError(u'此id禁止注册')
         if len(userid) < 3:
             raise RegistedError(u'此id过短，请至少3个字符以上')
+        if userid in self.ban_userid :
+            raise RegistedError(u'此id禁止注册')
         if self.user_exists(userid):
             raise RegistedError(u'此帐号已被使用')
 
