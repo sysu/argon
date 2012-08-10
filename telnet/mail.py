@@ -45,12 +45,13 @@ class GetMailFrame(BaseTableFrame):
     def wrapper_li(self, d):
         return self.render_str('mail-li', **d)
 
+    def catch_nodata(self, e):
+        self.write(u'你没有信笺哟！')
+        self.pause()
+        self.goto_back()
+
     def initialize(self):
         super(GetMailFrame, self).initialize()
-        if self.table.is_empty() :
-            self.write(u'你没有信笺哟！')
-            self.pause()
-            self.goto_back()
         self.restore()
 
     def get(self, data):

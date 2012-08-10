@@ -186,7 +186,9 @@ class EditSignFrame(BaseTextBoxFrame):
 @mark('query_user')
 class QueryUserFrame(BaseTextBoxFrame):
 
-    def initialize(self, user):
+    def initialize(self, user=None):
+        if user is None:
+            user = self.user
         userid = user.get('userid')
         if userid is None:
             userid = self.userid

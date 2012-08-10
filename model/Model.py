@@ -308,7 +308,7 @@ class Post(Model):
             cond = []
         if num is not None:
             cond.insert(0,"pid%s%s" % (
-                    '>=' if limit > 0 else '<=',
+                    '>' if limit > 0 else '<=',  ##### ugly :: notice, num is (0, +oo)
                     num,
                     ))
         if cond :
@@ -329,7 +329,7 @@ class Post(Model):
             sql = "SELECT %s FROM `%s` %s ORDER BY %s LIMIT %%s"%\
                 (sel,self.__(boardname),cond,order)
             return self.db.query(sql, limit)
-        
+
     def get_posts_list(self,boardname,pids):
         return map(lambda x:self.get_post(boardname,x),
                    pids)

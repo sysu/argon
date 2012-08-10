@@ -6,6 +6,7 @@ import functools
 import re
 
 from chaofeng import Frame
+from chaofeng.g import mark
 import chaofeng.ascii as ac
 from chaofeng.ui import TextEditor, PagedTable, Animation, ColMenu,\
     NullValueError, SimpleTextBox
@@ -359,7 +360,7 @@ class BaseTableFrame(BaseAuthedFrame):
         try:
             return self.load(PagedTable, self.get_data, self.wrapper_li,
                              self.get_default_index(),
-                             start_line=4, page_limit=20)
+                             start_line=4, height=20)
         except NullValueError as e:
             self.catch_nodata(e)
             self.goto_back()
@@ -367,7 +368,7 @@ class BaseTableFrame(BaseAuthedFrame):
     def initialize(self):
         super(BaseTableFrame, self).initialize()
         self.table = self.load_table()
-        self.restore()
+        self.init_screen()
 
     def bottom_bar(self):
         self.render(u'bottom')
@@ -377,15 +378,18 @@ class BaseTableFrame(BaseAuthedFrame):
         self.write(ac.move2(24, 1))
         self.render(u'bottom_msg', message=msg)
         self.table.restore_cursor_gently()
-
-    def restore(self):
+        
+    def init_screen(self):
         self.cls()
         self.top_bar()
         self.quick_help()
         self.print_thead()
         self.bottom_bar()
-        self.table.reload()        ###############   Ugly!!!
         self.table.restore_screen()
+
+    def restore(self):
+        self.table.reload()        ###############   Ugly!!!
+        self.init_screen()
 
     def get(self, data):
         if data in ac.ks_finish:
@@ -394,6 +398,9 @@ class BaseTableFrame(BaseAuthedFrame):
         self.do_command(config.hotkeys['table'].get(data))
 
     def read_lbd(self, reader):
+        u'''
+        Wrapper real read function.
+        '''
         self.write(u''.join((ac.move2(24,1),  ac.kill_line)))
         res = reader()
         self.write(u'\r')
@@ -410,7 +417,7 @@ class BaseTableFrame(BaseAuthedFrame):
     def readnum(self, prompt=u''):
         no = self.readline(acceptable=lambda x:x.isdigit(),
                            buf_size=8,  prompt=prompt)
-        if no is not False :
+        if no :
             return int(no) - 1
         else :
             return False
@@ -628,6 +635,9 @@ class BaseEditFrame(BaseAuthedFrame):
         text = self.e.fetch_all()
         text = self.t2s.sub(lambda x: u'{%%%s%%' % x.group(1), text)
         return text        
+
+    def fetch_lines(self):
+        return self.fetch_all().split('\r\n')
 
     def finish(self):
         raise NotImplementedError
