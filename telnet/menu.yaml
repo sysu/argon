@@ -33,7 +33,7 @@ user_space:
         - [(E) 回到主选单, main, e]
 
 sys_admin:
-        - ["(P)icture    修改系统画面", [menu, {menuname: sys_static}], p, [14,20]]
+        - ["(P)icture    修改系统画面", sys_edit_system_file_frame, p, [14,20]]
         - ["(B)board     讨论区设定",  [menu, {menuname: sys_board}], b]
         # - [(U)serLevel  帐号管理,   [menu, {menuname: sys_level}], u]
         # - [(S)ysTeam    设定系统管理组,  sys_team, s]

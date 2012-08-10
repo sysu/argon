@@ -59,7 +59,7 @@ class NormalMenuFrame(BaseMenuFrame):
     def load_all(self):
         height = None
         menu = ColMenu.tidy_data(config.menu[self.menuname])
-        if self.menuname in config.background_file:
+        if ('menu_%s' % self.menuname) in config.all_static_file:
             background = self.render_str('menu_%s' % self.menuname)
         else:
             background = ''
@@ -78,7 +78,7 @@ class MainMenuFrame(BaseMenuFrame):
         return (menu, height, background)
 
     def show_help(self):
-        self.suspend('help',page='menu_main')
+        self.suspend('help',page='main_menu')
         
 @mark('sections')
 class SectionMenuFrame(BaseMenuFrame):

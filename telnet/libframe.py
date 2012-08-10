@@ -13,6 +13,7 @@ from chaofeng.ui import TextEditor, PagedTable, Animation, ColMenu,\
 import config
 from template import env
 from model import manager
+from libformat import telnet2style, style2telnet
 
 class BaseFrame(Frame):
 
@@ -238,6 +239,12 @@ class BaseSelectFrame(BaseAuthedFrame):
     menu_start_line = None  ### Should be num in subclass.
 
     def load_all(self):
+        '''
+        return (menu, height, background)
+        where menu :: (real, pos, shortcuts, text)
+        it may be useful Colmenu.tiday to tida such a list:
+           [  (desc, real, shortcuts, [pos]) ... ]
+        '''
         raise NotImplementedError
 
     def top_bar(self):
@@ -629,11 +636,9 @@ class Editor(TextEditor):
 
 class BaseEditFrame(BaseAuthedFrame):
 
-    t2s = re.compile(r'\*\[((\d+)(;\d+)*)m')
-
     def fetch_all(self):
         text = self.e.fetch_all()
-        text = self.t2s.sub(lambda x: u'{%%%s%%' % x.group(1), text)
+        text = telnet2style(text)
         return text        
 
     def fetch_lines(self):
@@ -680,10 +685,13 @@ class BaseEditFrame(BaseAuthedFrame):
         self.suspend(u'help',page='edit')
 
     def initialize(self, spoint=0, text=u''):
-        assert isinstance(text, unicode)
+        assert isinstance(text, unicode) or (isinstance(text, list) and\
+                                                 all( isinstance(x, list) for x in text) and\
+                                                 all( all(isinstance(char, unicode) for char in line)
+                                                      for line in text))
         self.e = self.load(Editor, text, spoint)
-        self.e.reset(text, spoint)
-
+        self.restore_screen()
+        
     def read_title(self, prompt=u'', prefix=u''):
         return self.readline(prompt=prompt, prefix=prefix, buf_size=40)
 
@@ -700,9 +708,6 @@ class BaseTextBoxFrame(BaseAuthedFrame):
 
     hotkeys = {}
 
-    # s2t = re.compile(r'{%((\d+)(;\d+)*)% (.*) %}')
-    s2t = re.compile(r'{%((\d+)(;\d+)*)%')
-
     u'''
     Inherit this class and rewirte the `get_text` method
     to display the text.
@@ -711,8 +716,7 @@ class BaseTextBoxFrame(BaseAuthedFrame):
     '''
 
     def tidy_text(self, text):
-        return self.s2t.sub(lambda x: '\x1b[%sm' % x.group(1),
-                            text).replace('%*}', ac.reset)
+        return style2telnet(text)
 
     def get_text(self):
         raise NotImplementedError

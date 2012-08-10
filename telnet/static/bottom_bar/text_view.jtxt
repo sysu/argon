@@ -1,1 +1,0 @@
-{{ o_o(bg_blue,yellow,bold) }} 帮助 {{ o_o(red) }}h{{ o_o(yellow) }} │ {{ o_o(green) }}%4s{{ o_o(yellow) }}/%4s │                               [{{ o_o(green) }}%s{{ o_o(yellow) }}]{{ ac.move2(24,25) }}{{ o_o(bold,cyan) }}%s

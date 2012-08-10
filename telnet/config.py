@@ -7,20 +7,24 @@ import yaml
 BBS_HOST_FULLNAME = u"逸仙时空 Yat-Sen Channel"
 BBS_HOST_DOMAIN = u"argo.sysu.edu.cn"
 
-template_file = [
-    'board-t', 'mail-t', 'post-t', 'user-t', 'history',
-    ]
-
-menu_background = {
-    'menu_user_space':u'个人资料设定的背景',
-    'menu_main':u'主菜单的背景',
-    'menu_mail':u'处理信笺区的背景',
+all_static_file = {
+    "test":u"测试编辑系统档案",
+    "active":u"活动看板",
+    "board-t":u"查询版块显示模板",
+    "history":u"查询历史显示模板",
+    "mail-t":u"站内信显示模板",
+    "menu_mail":u"站内信菜单背景",
+    "menu_mail":u"主菜单背景",
+    "menu_section":u"分类讨论区菜单背景",
+    "menu_user_space":u"修改个人资料菜单背景",
+    "movie":u"电影放映",
+    "post-t":u"文章显示模板",
+    "register":u"注册前画面",
+    "register_succ":u"注册成功画面",
+    "sign-t":u"查询签名显示模板",
+    "user-t":u"查询用户显示模板",
+    "welcome":u"欢迎画面",
     }
-
-background_file = [
-    'active', 'edit_sign', 'welcome', 'edit_user_data',
-    'nickdata', 
-    ]
 
 letter = [
     'register', 'register_succ',
@@ -123,8 +127,8 @@ TABLE_KEY_MAPS = {
 
 # userid_char =
 
-have_help_page = set(("index","main","sections","board","boardlist","edit",
-                      "view","help",'mail','testjump'))
+have_help_page = set(("main_menu", "sectons", "boardlist", "board", "edit", "history",
+                      "help", "index", "mail", "main", "view"))
 
 str = {
     "PROMPT_INPUT_PASSWD":u"请输入密码：",

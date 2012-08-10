@@ -15,32 +15,31 @@ from model import manager
 from menu import SelectFrame
 import config
 import codecs
+from libformat import style2telnet
 
-@mark('sys_edit_menu_background')
-class EditMenuBackgroundFrame(SelectFrame):
+@mark('sys_edit_system_file_frame')
+class EditSystemFileFrame(SelectFrame):
 
     def initialize(self):
-        self.write(u'Unfinish!')
+        filenames = config.all_static_file.keys()
+        texts = config.all_static_file.values()
+        super(EditSystemFileFrame, self).initialize(filenames, texts, (3, 5))
+
+    def finish(self):
+        filename = self.menu.fetch()
+        with codecs.open('static/%s' % filename, encoding="utf8") as f:
+            text = map(list, f.read().replace(u'\x1b', u'*').split('\n'))
+        self.suspend('edit_text', filename=self.menu.fetch(), text=text,
+                     callback=self.save_to_file)
+
+    def save_to_file(self, filename, text):
+        text = style2telnet(text).replace('\r\n', '\n')
+        with codecs.open('static/%s' % filename, "w", encoding="utf8") as f:
+            f.write(text)
+        self.message(u'修改系统档案成功！')
         self.pause()
         self.goto_back()
-    #     real = config.menu_background.keys()
-    #     text = config.menu_background.values()
-    #     super(EditMenuBackgroundFrame, self).initialize(real, text, (3,10))
-
-    # def finish(self):
-    #     hover = self.menu.fetch()
-    #     self.suspend('edit_text', filename=hover, callback=self.save_to_file,
-    #                  text=self.get_background(hover))
-
-    # def get_background(self, hover):
-    #     with codecs.open('static/%s' % hover, 'r', 'utf8') as f:
-    #         buf = f.readlines()
-    #         text = u'\r\n'.join(buf)
-    #     return text
-
-    # def save_to_file(self, text):
-    #     print text
-
+        
 class BaseEditSectionFormFrame(BaseFormFrame):
 
     attr = ['sectionname', 'description']
