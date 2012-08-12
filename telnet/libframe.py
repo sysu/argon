@@ -159,6 +159,8 @@ class BaseAuthedFrame(BaseFrame):
     
     def get(self,data):
         raise NotImplementedError, u"How to reation in `%` ?" % self.__mark__
+
+    check_perm = NotImplementedError
     
     def is_finish(self,data):
         return data in ac.ks_finish
@@ -751,7 +753,7 @@ class BaseTextBoxFrame(BaseAuthedFrame):
         s = line.split()
         if (len(s) > 0) and (s[0] in self.jump_marks) :
             m = s[0]
-            status = mark[m].try_jump(s)
+            status = mark[m].try_jump(self, s)
             if status :
                 self.suspend(m,**status)            
 
@@ -780,7 +782,7 @@ class BaseTextBoxFrame(BaseAuthedFrame):
 
     def check_jump(self):
         n = self.jump_marks[self.links_args[0]]
-        r = mark[n].try_jump(self.links_args[1])
+        r = mark[n].try_jump(self, self.links_args[1])
         if r :
             self.suspend(n,**r)
         else:

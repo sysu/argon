@@ -7,6 +7,7 @@ from chaofeng import ascii as ac
 from libframe import BaseAuthedFrame,BaseTextBoxFrame
 from model import manager
 from datetime import datetime
+from libdecorator import need_perm
 import config
 import re
 
@@ -23,7 +24,7 @@ class ViewTextFrame(BaseTextBoxFrame):
 @mark('post')
 class ReadPostFrame(BaseTextBoxFrame):
 
-    @classmethod
+    # @classmethod
     def try_jump(self,args):
         try:
             if manager.query.get_post(self.userid, args[0], args[1]) :
@@ -40,14 +41,13 @@ class ReadPostFrame(BaseTextBoxFrame):
 
     def get_text(self):
         return self.text
-        
+
+    def check_perm(self, board, pid):
+        r = manager.query.get_board_ability(self.session.user.userid, board['boardname'])[0]
+        return r or u"错误的讨论区或你没有权限！"
+
+    @need_perm
     def initialize(self, board, pid):
-
-        if not board['perm'][0] :
-            self.writeln(u"错误的讨论区或你没有权限！")
-            self.pause()
-            self.goto_back()
-
         self.board = board
         self._read_post(board['boardname'], pid)
         super(ReadPostFrame,self).initialize()
@@ -95,7 +95,7 @@ class ViewClipboardFrame(BaseTextBoxFrame):
 @mark('help')
 class TutorialFrame(BaseTextBoxFrame):
 
-    @classmethod
+    # @classmethod
     def try_jump(cls,args):
         if args[0] in config.have_help_page :
             return dict(page=args[0])

@@ -6,7 +6,7 @@ sys.path.append('../')
 
 from chaofeng import Server, g, sleep, asynchronous, Frame
 from chaofeng.g import mark
-import login, menu,boardlist,edit,view,mail,admin,user#,,special_frame
+import login, menu,boardlist,edit,view,mail,admin,user,game#,,special_frame
 import config
 # from model import db_orm
 from model import dbapi

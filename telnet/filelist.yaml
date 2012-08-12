@@ -1,0 +1,18 @@
+test : 测试编辑系统档案
+test : 测试编辑系统档案
+active : 活动看板
+board-t : 查询版块显示模板
+history : 查询历史显示模板
+mail-t : 站内信显示模板
+menu_mail : 站内信菜单背景
+menu_mail : 主菜单背景
+menu_section : 分类讨论区菜单背景
+menu_user_space : 修改个人资料菜单背景
+movie : 电影放映
+post-t : 文章显示模板
+register : 注册前画面
+register_succ : 注册成功画面
+sign-t : 查询签名显示模板
+user-t : 查询用户显示模板
+welcome : 欢迎画面
+

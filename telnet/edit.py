@@ -9,20 +9,17 @@ from model import manager
 from libframe import BaseAuthedFrame,BaseEditFrame
 from datetime import datetime
 import config
+from libdecorator import need_perm
 
 @mark('new_post')
 class NewPostFrame(BaseEditFrame):
 
-    def initialize(self, board):
+    def check_perm(self, board):
+        _,w,_,_ = manager.query.get_board_ability(self.session.user.userid, board['boardname'])
+        return w or u'该版禁止发文或你没有相应的权限！'
 
-        print board['perm']
-        
-        if not board['perm'][1] :
-            self.cls()
-            self.writeln(u'该版禁止回复或你没有相应的权限！')
-            self.pause()
-            self.goto_back()
-            
+    @need_perm
+    def initialize(self, board):
         self.boardname = board['boardname']
         self.cls()
         self.title = self.read_title(prompt=u'请输入标题：')
@@ -48,18 +45,19 @@ class NewPostFrame(BaseEditFrame):
 @mark('reply_post')
 class ReplyPostFrame(BaseEditFrame):
 
-    def initialize(self, boardname, post):
+    def check_perm(self, board, post):
+        _,w,_,_ = manager.query.get_board_ability(self.session.user.userid, board['boardname'])
+        return w or u'该版禁止发文或你没有相应的权限！'
 
-        if not board['perm'][1] :
-            self.cls()
-            self.writeln(u'该版禁止回复或你没有相应的权限！')
-            self.pause()
-            self.goto_back()
-
+    @need_perm
+    def initialize(self, board, post):
         self.cls()
-        self.boardname = boardname
+        self.boardname = board['boardname']
         self.replyid = post['pid']
-        title = 'Re: %s' % post['title']
+        if post['title'].startswith('Re:'):
+            title = post['title']
+        else:
+            title = 'Re: %s' % post['title']
         self.title = self.read_title(prompt=u'请输入标题：',prefix=title)
         super(ReplyPostFrame,self).initialize()
 
@@ -79,20 +77,14 @@ class ReplyPostFrame(BaseEditFrame):
 @mark('edit_post')
 class EditPostFrame(BaseEditFrame):
 
-    def initialize(self, boardname, post):
+    def check_perm(self):
+        _,w,_,_ = manager.query.get_board_ability(self.session.user.userid, board['boardname'])
+        return w or u'该版禁止发文或你没有相应的权限！'
 
-        print boardname
-
-        r,w,d,s = manager.userperm.get_board_ability(self.userid, boardname)
-
-        if not w :
-            self.cls()
-            self.writeln(u'该版禁止回复或你没有相应的权限！')
-            self.pause()
-            self.goto_back()
-
+    @need_perm
+    def initialize(self, board, post):
         self.cls()
-        self.boardname = boardname
+        self.boardname = board['boardname']
         self.pid = post['pid']
         super(EditPostFrame, self).initialize(text=post['content'])
         self.message(u'开始编辑文章')

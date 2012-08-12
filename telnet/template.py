@@ -14,7 +14,7 @@ def ascii_format(source,background=None,font=None):
                        ac.font[font],source,ac.reset)
 
 def ascii_width(source,width):
-    return ('%*s' % (width, str(source).encode('gbk'))).decode('gbk')
+    return ('%*s' % (width, source.encode('gbk'))).decode('gbk')
 
 def ascii_wrapper(source,*wrapper):
     return '\x1b[%sm%s\x1b[0m' % (';'.join(wrapper),source)

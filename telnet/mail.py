@@ -101,7 +101,7 @@ class SendMailFrame(BaseEditFrame):
     def finish(self):
         manager.action.send_mail(fromuserid=self.userid,
                                  touserid=self.touserid,
-                                 content=self.e.getall(),
+                                 content=self.e.fetch_all(),
                                  title=self.title,
                                  fromaddr=self.session.ip)
         self.message(u'发送成功！')
@@ -128,7 +128,7 @@ class ReplyMailFrame(BaseEditFrame):
     def finish(self):
         manager.action.reply_mail(self.userid,
                                   self.replymail,
-                                  content=self.e.getall(),
+                                  content=self.e.fetch_all(),
                                   title=self.title,
                                   fromaddr=self.session.ip)
         manager.mail.set_reply(self.session.user['uid'], self.replymail['mid'])

@@ -147,8 +147,8 @@ class Section(Model):
     def add_section(self,**kwargs):
         return self.table_insert(self.__, kwargs)
     
-    def update_section(self, old_sid, **attr):
-        return self.table_update_by_key(self.__, 'sid', old_sid, attr)
+    def update_section(self, sid, **attr):
+        return self.table_update_by_key(self.__, 'sid', sid, attr)
     
     def del_section(self,sid):
         return self.table_delete_by_key(self.__, 'sid', sid)
@@ -557,11 +557,16 @@ class Mail(Model):
     def _query_mail(self, touid, touserid, limit, cond):
         try:
             if limit > 0:
+                # sql = "SELECT mid,fromuserid,touserid,attachidx,tid,replyid,"\
+                #     "title,sendtime,fromaddr,readmark,content,quote,signature, "\
+                #     "count(*)as num FROM `%s` WHERE touserid=%%s %s ORDER BY mid LIMIT %%s"%\
+                #     (self.__(touid), cond)#'AND %s'%cond if cond else '')
                 sql = "SELECT * FROM `%s` WHERE touserid=%%s %s ORDER BY mid LIMIT %%s"%\
-                    (self.__(touid), cond)#'AND %s'%cond if cond else '')
+                    (self.__(touid), cond)
             else:
                 sql = "SELECT * FROM `%s` WHERE touserid=%%s %s ORDER BY mid DESC LIMIT %%s"%\
                     (self.__(touid), cond)#'AND %s'%cond if cond else '')
+            print ('sql', sql, touserid, limit)
             return self.db.query(sql, touserid, abs(limit))
         except ProgrammingError as e:
             if e.args[0] == 1146 : # Table NOT EXIST
@@ -1334,6 +1339,9 @@ class Query:
             if board.perm[0] :
                 rboards.append(board)
         return rboards
+
+    def get_board_ability(self, userid, boardname):
+        return self.userperm.get_board_ability(userid, boardname)
 
     def get_boards(self, userid, sid=None):
         if sid is None :

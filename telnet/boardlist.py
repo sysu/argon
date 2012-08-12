@@ -10,6 +10,7 @@ from chaofeng.ui import PagedTable, NullValueError #,HiddenInput#,AppendTable#Si
 from model import manager
 from libframe import BaseBoardListFrame,BaseTableFrame,BaseTextBoxFrame
 from libtelnet import zh_format_d
+from libdecorator import need_perm
 import config
 
 @mark('boardlist')
@@ -36,6 +37,9 @@ class NormalBoardListFrame(BaseBoardListFrame):
         self.load_boardlist()
         self.sort_mode = 0
         super(NormalBoardListFrame, self).initialize()
+
+    def change_board_attr(self):
+        self.suspend('sys_set_boardattr', board=self.table.fetch())
 
 @mark('favourite')
 class FavouriteFrame(BaseBoardListFrame):
@@ -95,16 +99,13 @@ class BoardFrame(BaseTableFrame):
         else:
             self.goto_back()
 
+    def check_perm(self, board):
+        r = manager.query.get_board_ability(self.session.user.userid, board['boardname'])[0]
+        self.authed = r
+        return r or u'错误的讨论区或你无权力进入该版'
+
+    @need_perm
     def initialize(self, board):
-        
-        if not board.perm[0] :
-            self.writeln(u'错误的讨论区或你无权力进入该版')
-            self.pause()
-            self.authed = False
-            self.goto_back()
-            
-        # r,w,d,s = manager.
-        self.authed = True
         self.board = board
         self.boardname = board['boardname']
         manager.action.enter_board(self.userid, self.seid, self.boardname)
@@ -171,16 +172,15 @@ class BoardFrame(BaseTableFrame):
     ###############
 
     def new_post(self):
-        # if manager.perm.has_new_post_perm(self.userid, self.boardname):
         self.suspend('new_post', board=self.board)
 
     def reply_post(self):
         p = self.table.fetch()
-        self.suspend('reply_post', boardname=self.boardname, post=p)
+        self.suspend('reply_post', board=self.board, post=p)
 
     def edit_post(self):
         p = self.table.fetch()
-        self.suspend('edit_post', boardname=self.boardname, post=p)
+        self.suspend('edit_post', board=self.board, post=p)
 
     def edit_title(self):
         p = self.table.fetch()

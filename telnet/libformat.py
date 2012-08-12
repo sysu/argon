@@ -5,7 +5,7 @@ t2s = re.compile(r'\*\[((\d+)(;\d+)*)m')
 s2t = re.compile(r'\[#((\d+)(;\d+)*)%\]')
     
 def telnet2style(text):
-    return t2s.sub(lambda x: u'[#%s%%]' % x.group(1), text)
+    return t2s.sub(lambda x: u'[#%s%%]' % x.group(1), text).replace('*[m', ac.reset)
 
 # s2t = re.compile(r'{%((\d+)(;\d+)*)% (.*) %}')
 def style2telnet(text):

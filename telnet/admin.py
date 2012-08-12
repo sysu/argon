@@ -42,10 +42,11 @@ class EditSystemFileFrame(SelectFrame):
         
 class BaseEditSectionFormFrame(BaseFormFrame):
 
-    attr = ['sectionname', 'description']
-    attrzh = [u'分区名称', u'分区描述']
+    attr = ['sid', 'sectionname', 'description']
+    attrzh = [u'讨论区区号', u'分区名称', u'分区描述']
 
-    inputers = [lambda x:x.readline(prompt=u'分区名称：', prefix=x.form.get('sectionname')),
+    inputers = [lambda x:x.readline(prompt=u'分区号：', acceptable=ac.isdigit, prefix=x.form.get('sid')),
+                lambda x:x.readline(prompt=u'分区名称：', prefix=x.form.get('sectionname')),
                 lambda x:x.readline(prompt=u'分区描述：', prefix=x.form.get('description'))]
 
     def get_default_values(self):
@@ -78,8 +79,8 @@ class BaseEditSectionFormFrame(BaseFormFrame):
 class NewSectionFormFrame(BaseEditSectionFormFrame):
 
     def handle_submit(self):
-        manager.admin.add_section(self.userid,
-                                  sid=None, sectionname=self.form['sectionname'],
+        manager.admin.add_section(self.userid, sid=self.form['sid'],
+                                  sectionname=self.form['sectionname'],
                                   description=self.form['description'])
 
     def initialize(self, section=None):
@@ -93,7 +94,7 @@ class UpdateSectionFormFrame(BaseEditSectionFormFrame):
 
     def handle_submit(self):
         manager.admin.update_section(self.userid,
-                                     old_sid=self.section['sid'], sid=None,
+                                     sid=self.section['sid'], 
                                      sectionname=self.form['sectionname'],
                                      description=self.form['description'])
         
@@ -217,6 +218,10 @@ class AddBoardFrame(BaseEditBoardFormFrame):
 @mark('sys_set_boardattr')
 class UpdateBoardFrame(BaseEditBoardFormFrame):
 
+    '''
+    Update board attr.
+    '''
+
     def handle_submit(self):
         manager.admin.update_board(self.userid,
                                    boardname=self.form['boardname'], bid=self.board['bid'],
@@ -226,7 +231,11 @@ class UpdateBoardFrame(BaseEditBoardFormFrame):
         self.message(u'操作成功！')
 
 
-    def initialize(self, board=None):
+    def initialize(self, board):
+        '''
+        board is dict then should holds bid, boardname, description, sid,
+        is_openw key, and update by bid.
+        '''
         if board is None:
             board = self.get_board_iter()
         super(UpdateBoardFrame, self).initialize(board)
