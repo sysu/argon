@@ -52,7 +52,7 @@ def _import(mod, handler):
 
 urls = [
             
-           (r"/", _import("comm.comm","HomeHandler")),
+           (r"/", _import("pybbs.index","PIndexHandler")),
             
             # ajax
            (r"/a/checkmail/?", _import("comm.ajax","CommAjaxCheckMailHandler")),
