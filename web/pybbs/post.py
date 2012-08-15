@@ -9,12 +9,6 @@ from comm.urls import mark,BaseHandler
 from base import *
 from comm.funcs import *
 
-@mark('PIndexHandler')
-class PIndexHandler(PBaseHandler):
-
-    def get(self):
-        self.mrender('index.html')
-
 @mark('PPostHandler')
 class PPostHandler(PBaseHandler):
 
