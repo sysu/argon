@@ -10,6 +10,9 @@ BBS_HOST_DOMAIN = u"argo.sysu.edu.cn"
 with open("filelist.yaml") as f:
     all_static_file = yaml.load(f)
 
+with open("filelist_help.yaml") as f:
+    all_help_file = yaml.load(f)
+
 letter = [
     'register', 'register_succ',
     ]
@@ -111,9 +114,6 @@ TABLE_KEY_MAPS = {
 
 # userid_char =
 
-have_help_page = set(("main_menu", "sectons", "boardlist", "board", "edit", "history",
-                      "help", "index", "mail", "view"))
-
 str = {
     "PROMPT_INPUT_PASSWD":u"请输入密码：",
     "PROMPT_INPUT_USERID":u"请输入帐号：",
@@ -146,7 +146,7 @@ str = {
     'MSG_BOARD_MODE_GMODE':u'阅读带g标记的文章',
     'MSG_BOARD_MODE_MMODE':u'阅读带m标记的文章',
     'MSG_BOARD_MODE_TOPIC':u'只看主题贴',
-    'MSG_BOARD_MODE_ONETO{IC':u'查看单一主题',
+    'MSG_BOARD_MODE_ONETOPIC':u'查看单一主题',
     'MSG_BOARD_MODE_AUTHOR':u'查看单一作者',
     'FORM_QUICK_HELP':u'[0m返回[[1;32m←[0m,[1;32mq[0m] 修改[[1;32m→[0m,[1;32mRtn[0m] 选择[[1;32m↑[0m,[1;32m↓[0m] 求助[[1;32mh[0m][m',
     'FORM_THEAD':u'[0;1;44m  项目名称                         项目属性                                   [m',
@@ -185,10 +185,12 @@ hotkeys = {
         'X':'set_readonly',
         ac.k_ctrl_e:'change_board_attr',
         # jump
-        "h":"show_help",
+        "h":"show_help", 
         },
     "boardlist_jump":{
         "u":"query_user_iter",
+        "l":"get_mail",
+        "!":"goodbye",
         },
     "boardlist_table":{
         "k":"move_up",        "j":"move_down",
@@ -203,7 +205,7 @@ hotkeys = {
         ac.k_ctrl_t:"change_mode",
         'g':"set_g_mark",        'm':"set_m_mark",
         ac.k_ctrl_l:"restore",
-        "=":"goto_tid", "/":"goto_tid", ac.k_ctrl_s :"goto_tid", "p":"goto_tid",
+        "=":"goto_tid", "\\":"goto_tid", ac.k_ctrl_s :"goto_tid", "p":"goto_tid",
         ac.k_ctrl_u:"goto_author",
         "c":"clear_readmark", "K":"set_read", ac.k_ctrl_a:"query_author",
         ac.k_end:"goto_last", "$":"goto_last",

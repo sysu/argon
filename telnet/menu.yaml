@@ -6,7 +6,7 @@ main:
         - [(M)ail           处理信笺, mail_menu, m]
         - [(S)hoHelp        帮助中心, help, s]
         # - [(N)GuessNumber 猜数字游戏, game_guess_number, n]
-        - [(G)oodbye    离开逸仙时空, undone, g]
+        - [(G)oodbye    离开逸仙时空, goodbye, g]
         
 main_guest:
         - [(E)Group       分类讨论区, sections, e, [12, 5]]
@@ -34,7 +34,8 @@ user_space:
         - [(E) 回到主选单, main, e]
 
 sys_admin:
-        - ["(P)icture    修改系统画面", sys_edit_system_file_frame, p, [14,20]]
+        - ["(P)icture    修改系统画面", sys_edit_system_file, p, [14,20]]
+        - ["(E)HelpPage  修改帮助画面", sys_edit_help_file, h,]
         - ["(B)board     讨论区设定",  [menu, {menuname: sys_board}], b]
         # - [(U)serLevel  帐号管理,   [menu, {menuname: sys_level}], u]
         # - [(S)ysTeam    设定系统管理组,  sys_team, s]

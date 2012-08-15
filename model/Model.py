@@ -303,54 +303,29 @@ class Post(Model):
     #         (sel,self.__(boardname),cond,order)
     #     return sql
 
-    def _query_posts_filter(self,boardname,num,limit,cond=None,order='pid',sel='*'):
-        if cond is None:
-            cond = []
-        if num is not None:
-            cond.insert(0,"pid%s%s" % (
-                    '>' if limit > 0 else '<=',  ##### ugly :: notice, num is (0, +oo)
-                    num,
-                    ))
-        if cond :
-            cond = 'WHERE %s' % ' AND '.join(cond)
-        else : cond = ''
-        
-        if limit is None: # No limit
-            sql = "SELECT %s FROM `%s` %s ORDER BY %s "%\
-                (sel, self.__(boardname), cond, order)
-            return self.db.query(sql)
-        elif limit<0:
-            sql = "SELECT %s FROM `%s` %s ORDER BY %s DESC LIMIT %%s"%\
-                (sel,self.__(boardname),cond,order)
-            res = self.db.query(sql, -limit)
-            res.reverse()
-            return res
-        else: 
-            sql = "SELECT %s FROM `%s` %s ORDER BY %s LIMIT %%s"%\
-                (sel,self.__(boardname),cond,order)
-            return self.db.query(sql, limit)
-
-    def get_posts_list(self,boardname,pids):
-        return map(lambda x:self.get_post(boardname,x),
-                   pids)
-
-    def get_posts(self,boardname,num,limit):
-        return self._query_posts_filter(boardname,num,limit)
+    def get_posts(self, boardname, num, limit):
+        return self.db.query("SELECT * FROM `%s` ORDER BY pid LIMIT %%s,%%s" % self.__(boardname),
+                             num, limit)
 
     def get_posts_g(self,boardname,num,limit):
-        return self._query_posts_filter(boardname,num,limit,cond=['flag & 1'])
+        return self.db.query("SELECT * FROM `%s` WHERE flag & 1 ORDER BY pid LIMIT %%s,%%s" %\
+                                 self.__(boardname), num, limit)
 
     def get_posts_m(self,boardname,num,limit):
-        return self._query_posts_filter(boardname,num,limit,cond=['flag & 2'])
+        return self.db.query("SELECT * FROM `%s` WHERE flag & 2 ORDER BY pid LIMIT %%s,%%s" %\
+                                 self.__(boardname), num, limit)
 
     def get_posts_topic(self,boardname,num,limit):
-        return self._query_posts_filter(boardname,num,limit,cond=['replyid=0'])
+        return self.db.query("SELECT * FROM `%s` WHERE replyid=0 ORDER BY pid LIMIT %%s,%%s" %\
+                                 self.__(boardname), num, limit)
 
     def get_posts_onetopic(self,tid,boardname,num,limit):
-        return self._query_posts_filter(boardname,num,limit,cond=['tid=%s'%tid])
+        return self.db.query("SELECT * FROM `%s` WHERE tid=%%s ORDER BY pid LIMIT %%s,%%s" %\
+                                 self.__(boardname), tid, num, limit)
 
     def get_posts_owner(self,author,boardname,num,limit):
-        return self._query_posts_filter(boardname,num,limit,cond=['owner=%s'%author])
+        return self.db.query("SELECT * FROM `%s` WHERE owner=%%s ORDER BY pid LIMIT %%s,%%s" %\
+                                 self.__(boardname), author, num, limit)
 
     def get_last_pid(self,boardname):
         res = self.db.get("SELECT pid FROM `%s` ORDER BY pid DESC LIMIT 1" % \
@@ -385,7 +360,7 @@ class Post(Model):
         pass
 
     def get_board_total(self,boardname):
-        res = self.db.get("SELECT count(pid) as total FROM `%s`%s" % (self._prefix,boardname))
+        res = self.db.get("SELECT count(pid) as total FROM `%s`" % self.__(boardname))
         r = res.get('total')
         return (r and int(r)) or 0
 

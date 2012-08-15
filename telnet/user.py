@@ -189,21 +189,9 @@ class QueryUserFrame(BaseTextBoxFrame):
     def initialize(self, user=None):
         if user is None:
             user = self.user
-        userid = user.get('userid')
-        if userid is None:
-            userid = self.userid
-        self.query_user_normal(userid)
+        print 'user', user
+        self.text = self.render_str('user-t',**user)
         super(QueryUserFrame,self).initialize()
-
-    def query_user_normal(self, userid):
-        user = manager.userinfo.get_user(userid)
-        if user is None :
-            self.write(u'没有该用户！')
-            self.pause()
-            self.goto_back()
-        else:
-            self.query_user = user
-            self.text = self.render_str('user-t',**user)
 
     def finish(self,a):
         self.goto_back()
@@ -217,5 +205,19 @@ class QueryUserIterFrame(QueryUserFrame):
     def initialize(self):
         self.write(ac.clear + u'要查询谁？')
         userid = self.readline(acceptable=ac.is_alnum)
-        print repr(userid)
-        super(QueryUserIterFrame,self).initialize(userid)
+        if userid :
+            user = self.query_user_normal(userid)
+            super(QueryUserIterFrame,self).initialize(user)
+        else:
+            self.write(u'\r\n取消查询！')
+            self.pause()
+            self.goto_back()
+
+    def query_user_normal(self, userid):
+        user = manager.userinfo.get_user(userid)
+        if user is None :
+            self.write(u'没有该用户！')
+            self.pause()
+            self.goto_back()
+        else:
+            return user

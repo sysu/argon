@@ -10,7 +10,7 @@
 */
 DROP TABLE IF EXISTS `argo_annhead_${boardname}`;
 CREATE TABLE IF NOT EXISTS `argo_annhead_${boardname}` (
-    `id` int(11) unsigned NOT NULL auto_increment,
+    `id` int(11) unsigned NOT NULL auto_increment default 0,
     `pid` int(11) unsigned NOT NULL default 0,
     `rank` int(11) unsigned NOT NULL,
     `title` varchar(60),
@@ -26,4 +26,3 @@ CREATE TABLE IF NOT EXISTS `argo_annhead_${boardname}` (
 
     PRIMARY KEY (`id`)
 ) ENGINE=InnoDB  DEFAULT CHARSET=UTF8;
-

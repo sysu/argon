@@ -17,13 +17,12 @@ import config
 import codecs
 from libformat import style2telnet
 
-@mark('sys_edit_system_file_frame')
-class EditSystemFileFrame(SelectFrame):
+class BaseEditSystemFileFrame(SelectFrame):
 
-    def initialize(self):
-        filenames = config.all_static_file.keys()
-        texts = config.all_static_file.values()
-        super(EditSystemFileFrame, self).initialize(filenames, texts, (3, 5))
+    def initialize(self, filelist):
+        filenames = filelist.keys()
+        texts = filelist.values()
+        super(BaseEditSystemFileFrame, self).initialize(filenames, texts, (3, 5))
 
     def finish(self):
         filename = self.menu.fetch()
@@ -39,7 +38,19 @@ class EditSystemFileFrame(SelectFrame):
         self.message(u'修改系统档案成功！')
         self.pause()
         self.goto_back()
-        
+
+@mark('sys_edit_system_file')
+class EditSystemFileFrame(BaseEditSystemFileFrame):
+
+    def initialize(self):
+        super(EditSystemFileFrame, self).initialize(config.all_static_file)
+
+@mark('sys_edit_help_file')
+class EditHelpFileFrame(BaseEditSystemFileFrame):
+
+    def initialize(self):
+        super(EditHelpFileFrame, self).initialize(config.all_help_file)
+
 class BaseEditSectionFormFrame(BaseFormFrame):
 
     attr = ['sid', 'sectionname', 'description']

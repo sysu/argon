@@ -178,6 +178,9 @@ class BaseAuthedFrame(BaseFrame):
             getattr(self, command)()
 
     def readline(self,acceptable=ac.is_safe_char,finish=ac.ks_finish,buf_size=20, prompt=u'', prefix=u''):
+        '''
+        Return the string when `finish` key recv, return False while recv a k_ctrl_c
+        '''
         if prompt :
             self.write(prompt)
         if prefix :
@@ -438,7 +441,7 @@ class BaseTableFrame(BaseAuthedFrame):
             self.write(prompt)
         buf = []
         while len(buf) < buf_size:
-            ds = self.read_secret(2)
+            ds = self.read_secret()
             ds = ds or ds[0]
             if ds == ac.k_backspace:
                 if buf:
@@ -497,7 +500,9 @@ class BaseBoardListFrame(BaseTableFrame):
         self.table.do_command(config.hotkeys['g_table'].get(data))
         self.table.do_command(config.hotkeys['boardlist_table'].get(data))
         self.do_command(config.hotkeys['boardlist'].get(data))
-
+        if data in config.hotkeys['boardlist_jump']:
+            self.suspend(config.hotkeys['boardlist_jump'][data])
+            
     def finish(self):
         self.suspend(u'board', board=self.table.fetch())
 
@@ -516,8 +521,9 @@ class BaseBoardListFrame(BaseTableFrame):
 
     def goto_with_prefix(self,prefix):  # // Ugly but work.
         data = self.boards
+        prefix = prefix.lower()
         for index,item in enumerate(data):
-            if item[u'boardname'].startswith(prefix):
+            if item[u'boardname'].lower().startswith(prefix):
                 self.write(ac.save)
                 self.table.restore_cursor_gently()
                 self.table.goto(index)

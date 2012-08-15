@@ -97,7 +97,7 @@ class TutorialFrame(BaseTextBoxFrame):
 
     # @classmethod
     def try_jump(cls,args):
-        if args[0] in config.have_help_page :
+        if args[0] in config.all_help_file :
             return dict(page=args[0])
 
     def getdesc(self):

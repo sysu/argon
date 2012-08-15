@@ -77,7 +77,7 @@ class ReplyPostFrame(BaseEditFrame):
 @mark('edit_post')
 class EditPostFrame(BaseEditFrame):
 
-    def check_perm(self):
+    def check_perm(self, board, post):
         _,w,_,_ = manager.query.get_board_ability(self.session.user.userid, board['boardname'])
         return w or u'该版禁止发文或你没有相应的权限！'
 

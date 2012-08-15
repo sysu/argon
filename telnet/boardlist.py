@@ -6,7 +6,7 @@ sys.path.append('../')
 
 from chaofeng import ascii as ac
 from chaofeng.g import mark
-from chaofeng.ui import PagedTable, NullValueError #,HiddenInput#,AppendTable#SimpleTable,
+from chaofeng.ui import PagedTable, NullValueError, TableLoadNoDataError
 from model import manager
 from libframe import BaseBoardListFrame,BaseTableFrame,BaseTextBoxFrame
 from libtelnet import zh_format_d
@@ -86,6 +86,7 @@ class BoardFrame(BaseTableFrame):
         return self.render_str('board-li', **li)
 
     def get(self, data):
+        print repr(data),data==ac.k_home
         if data in ac.ks_finish:
             self.finish()
         self.table.do_command(config.hotkeys['g_table'].get(data))
@@ -110,7 +111,7 @@ class BoardFrame(BaseTableFrame):
         self.boardname = board['boardname']
         manager.action.enter_board(self.userid, self.seid, self.boardname)
         self.session.lastboard = board
-        self.set_view_mode(0)
+        self._set_view_mode(0)
         super(BoardFrame, self).initialize()
                 
     ##########
@@ -121,7 +122,7 @@ class BoardFrame(BaseTableFrame):
 
     mode_thead = ['NORMAL', 'GMODE', 'MMODE', 'TOPIC', 'ONETOPIC', 'AUTHOR']
 
-    def set_view_mode(self, mode):
+    def _set_view_mode(self, mode):
         if mode == 1:
             data_loader = lambda o,l : manager.post.get_posts_g(self.boardname, o, l)
         elif mode == 2:
@@ -137,6 +138,19 @@ class BoardFrame(BaseTableFrame):
         self.data_loader = data_loader
         self.thead = config.str['BOARD_THEAD_%s' % self.mode_thead[mode]]
         self.mode = mode
+
+    def set_view_mode(self, mode):
+        self._set_view_mode(mode)
+        try:
+            self.table.load_data(0)
+        except TableLoadNoDataError:
+            self._set_view_mode(0)
+            self.table.reload()
+            self.restore()
+        else:
+            self.table.reload()
+            self.restore()
+            self.message(config.str['MSG_BOARD_MODE_%s' % self.mode_thead[self.mode]])
 
     def finish(self):
         pid = self.table.fetch()['pid']
@@ -156,16 +170,18 @@ class BoardFrame(BaseTableFrame):
     def get_last_pid(self):
         return manager.post.get_last_pid(self.boardname)
 
+    def get_total(self):
+        return manager.post.get_board_total(self.boardname)
+
     def goto_last(self):
-        self.table.goto(self.get_last_pid())
+        self.table.goto(self.get_total() -1)
 
     def change_mode(self):
         if self.mode >=3 : mode=0
         else : mode = self.mode+1
         self.set_view_mode(mode)
-        self.table.goto(0)  #!!!  Ugly but work.
-        self.restore()
-        self.message(config.str['MSG_BOARD_MODE_%s' % self.mode_thead[self.mode]])
+        # self.table.goto(0)  #!!!  Ugly but work.
+        # self.restore()
 
     ###############
     # Edit/Reply  #
@@ -199,19 +215,19 @@ class BoardFrame(BaseTableFrame):
     def goto_tid(self):
         self.tid = self.table.fetch()['tid']
         self.set_view_mode(4)
-        self.table.goto(0)    #!!!! ugly too.
-        self.restore()
+        # self.table.goto(0)    #!!!! ugly too.
+        # self.restore()
 
     def goto_author(self):
         self.author = self.table.fetch()['owner']
         self.set_view_mode(5)
-        self.table.goto(0)    #!!!! ugly too.
-        self.restore()
+        # self.table.goto(0)    #!!!! ugly too.
+        # self.restore()
 
     def goto_back(self):
         if self.mode != 0 :
             self.set_view_mode(0)
-            self.restore()
+            # self.restore()
             return
         super(BoardFrame, self).goto_back()
 
@@ -236,7 +252,8 @@ class BoardFrame(BaseTableFrame):
         self.set_hover_data(p)
 
     def query_author(self):
-        user = self.table.fetch()
+        userid = self.table.fetch()['owner']
+        user = manager.query.get_user(self.userid, userid)
         self.suspend('query_user', user=user)        
 
     def show_help(self):
