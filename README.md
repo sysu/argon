@@ -55,6 +55,8 @@ Dependencies
   * eventlet
   * bcrypt
   * chaofeng
+  * tornado
+  * bootstrap
 
 其中jinja2目前被telnet端使用，可能会被web端使用。
 

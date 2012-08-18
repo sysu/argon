@@ -46,14 +46,15 @@ class Proxy(dict):
 mark = Proxy()
 
 def _import(mod, handler):
-        
+
     __import__(name=mod, fromlist=handler, level=0)
     return mark[handler]
 
 urls = [
-            
+
            (r"/", _import("pybbs.index","PIndexHandler")),
-            
+           (r"/post/", _import("pybbs.post","PPostHandler")),
+
             # ajax
            (r"/a/checkmail/?", _import("comm.ajax","CommAjaxCheckMailHandler")),
            (r"/a/mail/(\d{1,10})/?", _import("comm.ajax","CommAjaxGetMailHandler")),
@@ -61,7 +62,7 @@ urls = [
            (r"/a/(\w{2,16})/(\d{1,10})/?", _import("comm.ajax","CommAjaxGetPostHandler")),
            (r"/a/(\w{2,16})/quote/(\d{1,10})/?", _import("comm.ajax","CommAjaxGetQuoteHandler")),
            (r"/a/(\w{2,16})/post/?", _import("comm.ajax","CommAjaxNewPostHandler")),
-            
+
             # mobile
            (r"/m/?$", _import("mobile.m_main","MobileIndexHandler")),
            (r"/m/login/?$", _import("mobile.m_main","MobileLoginHandler")),
@@ -76,7 +77,7 @@ urls = [
            (r"/m/(\w{2,16})/?(-?\d{1,10})?/?", _import("mobile.m_main","MobilePostHandler")),
            (r"/m/(\w{2,16})/post/?", _import("mobile.m_main","MobileNewPostHandler")),
            (r"/m/(\w{2,16})/thread/(\d{1,10})/?", _import("mobile.m_main","MobileThreadHandler")),
-           
+
         ]
 
 
