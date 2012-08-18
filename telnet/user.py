@@ -186,12 +186,17 @@ class EditSignFrame(BaseTextBoxFrame):
 @mark('query_user')
 class QueryUserFrame(BaseTextBoxFrame):
 
-    def initialize(self, user=None):
-        if user is None:
-            user = self.user
-        print 'user', user
-        self.text = self.render_str('user-t',**user)
-        super(QueryUserFrame,self).initialize()
+    def initialize(self, userid=None):
+        if userid is None:
+            userid = self.userid
+        user = manager.query.get_user(self.userid, userid)
+        if user :
+            self.text = self.render_str('user-t',**user)
+            super(QueryUserFrame,self).initialize()
+        else:
+            self.write(u'\r\n无此id！')
+            self.pause()
+            self.goto_back()
 
     def finish(self,a):
         self.goto_back()
@@ -206,8 +211,7 @@ class QueryUserIterFrame(QueryUserFrame):
         self.write(ac.clear + u'要查询谁？')
         userid = self.readline(acceptable=ac.is_alnum)
         if userid :
-            user = self.query_user_normal(userid)
-            super(QueryUserIterFrame,self).initialize(user)
+            super(QueryUserIterFrame,self).initialize(userid)
         else:
             self.write(u'\r\n取消查询！')
             self.pause()

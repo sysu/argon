@@ -242,7 +242,7 @@ class UpdateBoardFrame(BaseEditBoardFormFrame):
         self.message(u'操作成功！')
 
 
-    def initialize(self, board):
+    def initialize(self, board=None):
         '''
         board is dict then should holds bid, boardname, description, sid,
         is_openw key, and update by bid.

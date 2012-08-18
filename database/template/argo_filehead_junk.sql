@@ -1,6 +1,8 @@
-DROP TABLE IF EXISTS `argo_filehead_${boardname}`;
-CREATE TABLE IF NOT EXISTS `argo_filehead_${boardname}` ( 
-    `pid` int(11) unsigned NOT NULL auto_increment,
+DROP TABLE IF EXISTS `argo_filehead_${boardname}_junk`;
+CREATE TABLE IF NOT EXISTS `argo_filehead_${boardname}_junk` ( 
+    `jid` int(11) unsigned NOT NULL auto_increment,
+
+    `pid` int(11) unsigned NOT NULL,
     `bid` int(11) unsigned NOT NULL,
     `owner` varchar(14),
     `realowner` varchar(14),
@@ -25,5 +27,5 @@ CREATE TABLE IF NOT EXISTS `argo_filehead_${boardname}` (
     `originalfilename` varchar(32), /* M.123456789.A */
     `replyable` boolean NOT NULL,
 
-    PRIMARY KEY (`pid`)
+    PRIMARY KEY (`jid`)
 ) ENGINE=InnoDB  DEFAULT CHARSET=UTF8;

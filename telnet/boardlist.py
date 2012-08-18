@@ -107,13 +107,14 @@ class BoardFrame(BaseTableFrame):
 
     @need_perm
     def initialize(self, board):
+        self.perm = manager.query.get_board_ability(self.userid, board['boardname'])
         self.board = board
         self.boardname = board['boardname']
-        manager.action.enter_board(self.userid, self.seid, self.boardname)
+        manager.action.enter_board(self.userid, self.seid, self.boardname)  ### aother entance in view.py/51
         self.session.lastboard = board
         self._set_view_mode(0)
         super(BoardFrame, self).initialize()
-                
+
     ##########
 
     def clear(self):
@@ -135,27 +136,27 @@ class BoardFrame(BaseTableFrame):
             data_loader = lambda p,l : manager.post.get_posts_owner(self.author, self.boardname,p,l)
         else :
             data_loader = lambda o,l : manager.post.get_posts(self.boardname, o, l)
+            mode = 0
         self.data_loader = data_loader
         self.thead = config.str['BOARD_THEAD_%s' % self.mode_thead[mode]]
         self.mode = mode
 
     def set_view_mode(self, mode):
+        old_mode = self.mode
         self._set_view_mode(mode)
         try:
             self.table.load_data(0)
         except TableLoadNoDataError:
-            self._set_view_mode(0)
-            self.table.reload()
-            self.restore()
+            self._set_view_mode(old_mode)
         else:
-            self.table.reload()
+            # self.table.reload()
             self.restore()
             self.message(config.str['MSG_BOARD_MODE_%s' % self.mode_thead[self.mode]])
 
     def finish(self):
         pid = self.table.fetch()['pid']
         if pid is not None:
-            self.suspend('post', board=self.board, pid=pid)
+            self.suspend('post', boardname=self.board.boardname, pid=pid)
 
     #####################
 
@@ -176,13 +177,25 @@ class BoardFrame(BaseTableFrame):
     def goto_last(self):
         self.table.goto(self.get_total() -1)
 
+    input_mode_map = {
+        "1":1, "2":2, "3":3, "0":0,
+        }
     def change_mode(self):
-        if self.mode >=3 : mode=0
-        else : mode = self.mode+1
-        self.set_view_mode(mode)
+        s = self.readline(prompt=u'0)一般模式 1) 文摘 2)被m文章 3)同主题折叠 ', acceptable=ac.isdigit)
+        if s in self.input_mode_map :
+            self.set_view_mode(self.input_mode_map[s])
         # self.table.goto(0)  #!!!  Ugly but work.
         # self.restore()
 
+    def set_g_mode(self):
+        self.set_view_mode(1)
+
+    def set_onetopic_mode(self):
+        self.set_view_mode(0 if self.mode else 3)
+
+    def goto_bye(self):
+        self.goto('finish')
+        
     ###############
     # Edit/Reply  #
     ###############
@@ -190,9 +203,17 @@ class BoardFrame(BaseTableFrame):
     def new_post(self):
         self.suspend('new_post', board=self.board)
 
-    def reply_post(self):
+    def reply_to_author(self):
         p = self.table.fetch()
-        self.suspend('reply_post', board=self.board, post=p)
+        self.suspend('send_mail', touserid=p['owner'])
+
+    def set_replyable(self):
+        p = self.table.fetch()
+        if p.owner == self.userid :   ######### check perm
+            p['replyable'] = not p['replyable']
+            manager.admin.set_post_replyattr(self.userid, self.boardname,
+                                             p.pid, p.replyable)
+            self.table.set_hover_data(p)            
 
     def edit_post(self):
         p = self.table.fetch()
@@ -200,15 +221,46 @@ class BoardFrame(BaseTableFrame):
 
     def edit_title(self):
         p = self.table.fetch()
-        title = self.readline(prompt=u'新标题：',prefix=p['title'])
-        p['title'] = title
-        manager.action.update_title(self.userid,self.boardname,
-                                    p['pid'], title)
-        self.table.set_hover_data(p)
-        
-#     def del_post(self):
-#         pass
+        if p.owner == self.userid :  #######  need to check perm
+            title = self.readline(prompt=u'新标题：',prefix=p['title'])
+            p['title'] = title
+            manager.action.update_title(self.userid,self.boardname,
+                                        p['pid'], title)
+            self.table.set_hover_data(p)
+        else:
+            self.message(u'你没有该权限！')
 
+    def del_post(self):
+        p = self.table.fetch()
+        if p['owner'] == self.userid :
+            if self.readline(buf_size=1,prompt=u"删除你的文章?[y/n] ") in ac.ks_yes : 
+                manager.admin.remove_post_personal(self.userid, self.boardname, p['pid'])
+                self.restore()
+                self.message(u'自删成功')
+        elif self.perm[3] :
+            if self.readline(buf_size=1,prompt=u'将文章放入废纸篓？[y/n] ') in ac.ks_yes :
+                manager.admin.remove_post_junk(self.userid, self.boardname, p['pid'])
+                self.restore()
+                self.message(u'删贴成功')
+
+    def del_post_range(self):
+        if self.perm[3] :
+            start = self.readline(prompt=u'首篇文章编号: ')
+            if start.isdigit() :
+                end = self.readline(prompt=u'末篇文章编号：')
+                if end.isdigit() :
+                    start_num = manager.query.post_index2pid(self.boardname, int(start)-1)
+                    end_num = manager.query.post_index2pid(self.boardname, int(end))
+                    if start_num >= end_num :
+                        self.message(u'错误的区间')
+                        return
+                    manager.admin.remove_post_junk_range(self.userid, self.boardname, start_num, end_num)
+                    self.restore()
+                else:
+                    self.message(u'错误的输入')
+            else:
+                self.message(u'错误的输入')
+        
 #     def reproduced(self):
 #         pass
 
@@ -241,20 +293,22 @@ class BoardFrame(BaseTableFrame):
         manager.readmark.set_read(self.userid, self.boardname, p['pid'])
         self.table.set_hover_data(p)
 
+    def check_admin_perm(self):
+        pass
+
     def set_g_mark(self):
         p = self.table.fetch()
-        p = manager.admin.set_g_mark(self.userid, self.board, self.post)
-        self.set_hover_data(p)
+        p = manager.admin.set_g_mark(self.userid, self.board, p)
+        self.table.set_hover_data(p)
 
     def set_m_mark(self):
         p = self.table.fetch()
-        p = manager.admin.set_m_mark(self.userid, self.board, self.post)
-        self.set_hover_data(p)
+        p = manager.admin.set_m_mark(self.userid, self.board, p)
+        self.table.set_hover_data(p)
 
     def query_author(self):
         userid = self.table.fetch()['owner']
-        user = manager.query.get_user(self.userid, userid)
-        self.suspend('query_user', user=user)        
+        self.suspend('query_user', userid=userid)        
 
     def show_help(self):
         self.suspend('help', page='board')

@@ -271,12 +271,24 @@ class Post(Model):
     
     '''
 
-    _prefix = 'argo_filehead_'
-
+    _prefix = 'argo_filehead_%s'
+    _table_junk = 'argo_filehead_%s_junk'
+    _person_junk = 'argo_filehead_JUNK'
+    
     lastp = 'argo:lastpost'
+
+    all_attrs = ['pid', 'bid' ,'owner' ,'realowner' ,'title' ,'flag' ,
+                 'tid' ,'replyid' ,'posttime' ,'attachidx' ,'fromaddr' ,
+                 'fromhost' ,'content' ,'quote' ,'signature' ,'agree' ,
+                 'disagree' ,'credit' ,'originalfilename' ,'replyable']
+
+    all_attrs_str = ','.join(all_attrs)
     
     def __(self,boardname):
-        return self._prefix + boardname
+        return self._prefix % boardname
+
+    def _get_junk_table(self, boardname):
+        return self._table_junk % boardname        
 
     def _create_table(self,boardname,**kwargs):
         import config
@@ -285,47 +297,101 @@ class Post(Model):
             board_template = Template(f.read())
             self.execute_paragraph(board_template.safe_substitute(boardname=boardname))
 
-    # def _get_posts_advan(self,boardname,order='pid',mark=None,sel='*'):
-    #     cond = ''
-    #     if mark:
-    #         buf = []
-    #         'g' in mark and buf.append('flag & 1')
-    #         'm' in mark and buf.append('flag & 2')
-    #         't' in mark and buf.append('tid = 0')
-    #         if buf:
-    #             cond = 'WHERE ' + ' AND '.join(buf)
-    #     # if offset is None :
-    #     #     sql = "SELECT * FROM `%s` ORDER BY %s %s %s LIMIT %%S" %\
-    #     #         (self.__(boardname),order,cond,'DESC' if limit < 0 else '')
-    #     #     return self.db.query(sql,abs(limit))
-    #     # else:
-    #     sql = "SELECT %s FROM `%s` WHERE %s ORDER BY %s LIMIT %%s,%%s" % \
-    #         (sel,self.__(boardname),cond,order)
-    #     return sql
+    def _create_table_junk(self, boardname, **kwargs):
+        import config
+        from string import Template
+        with open(config.SQL_TPL_DIR + 'template/argo_filehead_junk.sql') as f :
+            board_template = Template(f.read())
+            self.execute_paragraph(board_template.safe_substitute(boardname=boardname))
 
+    def _move_post(self, tablename, pid, new_tablename):
+        self.db.execute("INSERT INTO `%s` (%s) "
+                        "SELECT %s "
+                        "FROM `%s` "
+                        "WHERE pid=%%s" % (new_tablename, self.all_attrs_str,
+                                           self.all_attrs_str, tablename),
+                        pid)
+        return self.db.execute("DELETE FROM %s "
+                               "WHERE pid=%%s" % tablename, pid)
+
+    def _move_post_range(self, tablename, new_tablename, start, end):
+        self.db.execute("INSERT INTO `%s` (%s) "
+                        "SELECT %s "
+                        "FROM `%s` "
+                        "WHERE pid>=%%s AND pid<%%s" % (new_tablename, self.all_attrs_str,
+                                                        self.all_attrs_str, tablename),
+                        start, end)
+        print ('move_range', tablename, start, end)
+        return self.db.execute("DELETE FROM %s "
+                               "WHERE pid>=%%s AND pid<%%s" % tablename, start, end)
+
+    def _move_post_many(self, tablename, new_tablename, pids):
+        self.db.executemany("INSERT INTO `%s` (%s) "
+                            "SELECT %s "
+                            "FROM `%s` "
+                            "WHERE pid=%%s" % (new_tablename, self.all_attrs_str,
+                                               self.all_attrs_str, tablename),
+                            pids)
+        return self.db.executemany("DELETE FROM %s "
+                                   "WHERE pid=%%s" % tablename, pids)
+
+    def remove_post_junk(self, boardname, pid):
+        return self._move_post(self.__(boardname), pid,
+                               self._get_junk_table(boardname))
+
+    def remove_post_junk_range(self, boardname, start, end):
+        return self._move_post_range(self.__(boardname), self._get_junk_table(boardname),
+                                     start, end)
+
+    def remove_post_personal(self, boardname, pid):
+        return self._move_post(self.__(boardname), pid,
+                               self._person_junk)
+
+    def get_junk_posts(self, boardname, num, limit):
+        return self.db.query("SELECT * FROM `%s` ORDER BY jid LIMIT %%s,%%s" % \
+                                 self._get_junk_table(boardname), num, limit)
+
+    def get_personal_junk(self, boardname, author):
+        return self.db.query("SELECT * FROM `%s` WHERE owner=%s" % \
+                                 self._person_junk,  author)
+
+    def clear_personal_junk(self):
+        return self.db.execute("TRUNCATE TABLE %s" % self._person_junk)
+
+    def _wrap_index(self, data, num):
+        for index in range(len(data)):
+            data[index]['index'] = num + index
+        return data
+    
     def get_posts(self, boardname, num, limit):
-        return self.db.query("SELECT * FROM `%s` ORDER BY pid LIMIT %%s,%%s" % self.__(boardname),
-                             num, limit)
+        res = self.db.query("SELECT * FROM `%s` ORDER BY pid LIMIT %%s,%%s" %\
+                            self.__(boardname), num, limit)
+        return self._wrap_index(res, num)
 
     def get_posts_g(self,boardname,num,limit):
-        return self.db.query("SELECT * FROM `%s` WHERE flag & 1 ORDER BY pid LIMIT %%s,%%s" %\
-                                 self.__(boardname), num, limit)
+        res = self.db.query("SELECT * FROM `%s` WHERE flag & 1 ORDER BY pid LIMIT %%s,%%s" %\
+                                self.__(boardname), num, limit)
+        return self._wrap_index(res, num)
 
     def get_posts_m(self,boardname,num,limit):
-        return self.db.query("SELECT * FROM `%s` WHERE flag & 2 ORDER BY pid LIMIT %%s,%%s" %\
-                                 self.__(boardname), num, limit)
+        res = self.db.query("SELECT * FROM `%s` WHERE flag & 2 ORDER BY pid LIMIT %%s,%%s" %\
+                                       self.__(boardname), num, limit)
+        return self._wrap_index(res, num)
 
     def get_posts_topic(self,boardname,num,limit):
-        return self.db.query("SELECT * FROM `%s` WHERE replyid=0 ORDER BY pid LIMIT %%s,%%s" %\
-                                 self.__(boardname), num, limit)
+        res = self.db.query("SELECT * FROM `%s` WHERE replyid=0 ORDER BY pid LIMIT %%s,%%s" %\
+                                self.__(boardname), num, limit)
+        return self._wrap_index(res, num)      
 
     def get_posts_onetopic(self,tid,boardname,num,limit):
-        return self.db.query("SELECT * FROM `%s` WHERE tid=%%s ORDER BY pid LIMIT %%s,%%s" %\
-                                 self.__(boardname), tid, num, limit)
+        res = self.db.query("SELECT * FROM `%s` WHERE tid=%%s ORDER BY pid LIMIT %%s,%%s" %\
+                                self.__(boardname), tid, num, limit)
+        return self._wrap_index(res, num)
 
     def get_posts_owner(self,author,boardname,num,limit):
-        return self.db.query("SELECT * FROM `%s` WHERE owner=%%s ORDER BY pid LIMIT %%s,%%s" %\
-                                 self.__(boardname), author, num, limit)
+        res = self.db.query("SELECT * FROM `%s` WHERE owner=%%s ORDER BY pid LIMIT %%s,%%s" %\
+                                self.__(boardname), author, num, limit)
+        return self._wrap_index(res, num)
 
     def get_last_pid(self,boardname):
         res = self.db.get("SELECT pid FROM `%s` ORDER BY pid DESC LIMIT 1" % \
@@ -376,6 +442,15 @@ class Post(Model):
         res = self.table_select_by_key(self.__(boardname),
                                        'title','pid',pid)
         return res and res['title']
+
+    def index2pid(self, boardname, index):
+        if index <=0 : return 0
+        res = self.db.get("SELECT pid FROM `%s` ORDER BY pid LIMIT %%s,1" % self.__(boardname),
+                          index)
+        if res :
+            return res['pid']
+        else:
+            return self.get_last_pid(boardname) +1 
 
 class UserInfo(Model):
 
@@ -1134,7 +1209,7 @@ class Action(Model):
     def exit_board(self,userid,sessionid,boardname):
         self.online.exit_board(boardname,userid,sessionid)
 
-    def new_post(self,boardname,userid,title,content,addr,host):
+    def new_post(self,boardname,userid,title,content,addr,host,replyable):
         bid = self.board.name2id(boardname)
         pid = self.post.add_post(
             boardname,
@@ -1145,13 +1220,14 @@ class Action(Model):
             replyid=0,
             fromaddr=addr,
             fromhost=host,
+            replyable=replyable
             )
         self.post.update_post(boardname,pid,tid=pid)
         self.board.update_attr_plus1(bid,'total')
         self.board.update_attr_plus1(bid,'topic_total')
         return pid
 
-    def reply_post(self,boardname,userid,title,content,addr,host,replyid):
+    def reply_post(self,boardname,userid,title,content,addr,host,replyid,replyable):
         tid = self.post.pid2tid(boardname,replyid)
         bid = self.board.name2id(boardname)
         pid = self.post.add_post(
@@ -1164,6 +1240,7 @@ class Action(Model):
             fromaddr=addr,
             fromhost=host,
             tid=tid,
+            replyable=replyable
             )
         self.board.update_attr_plus1(bid,'total')
         return pid
@@ -1216,9 +1293,12 @@ class Action(Model):
         touid = self.userinfo.name2id(userid)
         return self.mail.one_mail(userid, mid)        
 
-    def update_title(self, userid, boardname, post, new_title):
-        if userid == post['owner'] :
-            return self.post.update_title(boardname, post['pid'], new_title)
+    def update_title(self, userid, boardname, pid, new_title):
+        return self.post.update_title(boardname, pid, new_title)
+
+    def has_edit_title_perm(self, userid, boardname, pid):
+        post = self.post.get_post(boardname, pid)
+        return post['owner'] == userid            
 
 class Admin(Model):
 
@@ -1233,6 +1313,9 @@ class Admin(Model):
         self.post = post
         self.section = section
 
+    def set_post_replyattr(self,userid, boardname, pid, replyable):
+        self.post.update_post(boardname, pid, replyable=replyable)
+
     def add_board(self, userid, boardname, sid, description, is_open, is_openw):
         self.board.add_board(boardname=boardname, description=description, sid=sid)
         self.userperm.init_board_team(boardname, is_open, is_openw)
@@ -1243,7 +1326,7 @@ class Admin(Model):
                                 description=description, sid=sid)
         self.userperm.init_board_team(boardname, is_open, is_openw)
 
-    def join_bm(self, userid, boardname):
+    def join_bm(self, owner, userid, boardname):
         bms = self.board.get_board_bm(boardname)
         if userid in bms:
             raise ValueError(u'%s已经是%s版主'%(userid, boardname))
@@ -1251,7 +1334,7 @@ class Admin(Model):
         self.board.set_board_bm(boardname, bms)
         self.userperm.join_board_bm(boardname, userid)
 
-    def remove_bm(self, userid, boardname):
+    def remove_bm(self, owner, userid, boardname):
         bms = self.board.get_board_bm(boardname)
         if userid not in bms:
             raise ValueError(u'%s不是%s版主'%(userid, boardname))
@@ -1289,6 +1372,15 @@ class Admin(Model):
 
     def is_open_board(self, userid, boardname):
         return self.userperm.is_open(boardname)
+    
+    def remove_post_personal(self, userid, boardname, pid):
+        self.post.remove_post_personal(boardname, pid)
+
+    def remove_post_junk(self, userid, boardname, pid):
+        self.post.remove_post_junk(boardname, pid)
+
+    def remove_post_junk_range(self, userid, boardname, start, end):
+        self.post.remove_post_junk_range(boardname, start, end)
 
 # class Manager:
 
@@ -1325,6 +1417,9 @@ class Query:
             boards = self.board.get_by_sid(sid)
         return self._wrap_perm(userid, boards)
 
+    def get_board_by_name(self, userid, boardname):
+        return self._wrap_perm(self.board.get_board(boardname))    
+
     def get_all_favourite(self, userid):
         bids = self.favourite.get_all(userid)
         boards = map(lambda d: self.board.get_board_by_id(d), bids)
@@ -1340,10 +1435,6 @@ class Query:
     def get_all_section(self):
         return self.section.get_all_section()
 
-    def get_post(self, userid, board, pid):
-        if board['perm'][0] :
-            return self.post.get_post(board['boardname'], pid)
-
     def get_board(self, userid, boardname):
         return self.board.get_board(boardname)
 
@@ -1351,7 +1442,13 @@ class Query:
         return self.section.get_all_section_with_rownum()
 
     def get_user(self, userid, toquery):
-        return self.userinfo.get_user(toquery)
+        base = self.userinfo.get_user(toquery)
+        if base :
+            base['teams'] = self.team.user_teams(userid)
+        return base
+
+    def post_index2pid(self, boardname, index):
+        return self.post.index2pid(boardname, index)
 
 class FreqControl(Model):
 
@@ -1421,3 +1518,34 @@ def with_index(d):
         d[index]['rownum'] = index
     return d
 
+def add_column(coldef,after,*tables):
+    for table in tables:
+        try:
+            global_conn.execute("ALTER TABLE `%s` "
+                                "ADD COLUMN %s AFTER `%s`" %\
+                                    (table, coldef, after))
+        except Exception as e:
+            print e.message
+
+def update_all(setsql, *tables):
+    for table in tables:
+        global_conn.execute("UPDATE `%s` "
+                            "SET %s" % (table, setsql))
+
+def sql_all_boards(sql):
+    d = Board()
+    d.bind(global_conn)
+    for table in map(lambda x : 'argo_filehead_%s' % x['boardname'],
+                     d.get_all_boards()):
+        try:
+            global_conn.execute(sql % table)
+        except Exception as e:
+            print '[FAIL] %s' % e.message
+        else:
+            print '[SUCC] %s' % (sql % table)
+
+def foreach_board(f):
+    d = Board()
+    d.bind(global_conn)
+    for board in d.get_all_boards():
+        f(board)

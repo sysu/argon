@@ -78,9 +78,10 @@ class GetMailFrame(BaseTableFrame):
 @mark('send_mail')
 class SendMailFrame(BaseEditFrame):
 
-    def initialize(self):
+    def initialize(self, touserid=None):
         self.cls()
-        touserid = self.read_title(prompt=u'收信人：')
+        if touserid is None:
+            touserid = self.read_title(prompt=u'收信人：')
         if touserid is False :
             self.writeln(u'取消写信！')
             self.pause()

@@ -27,7 +27,7 @@ class NewPostFrame(BaseEditFrame):
             super(NewPostFrame, self).initialize()
             self.message(u'写新文章 -- %s' % self.title)
         else:
-            self.message(u'放弃发表新文章')
+            self.write(u'放弃发表新文章')
             self.pause()
             self.goto_back()
 
@@ -37,7 +37,8 @@ class NewPostFrame(BaseEditFrame):
                                 self.title,
                                 self.fetch_all(),
                                 self.session.ip,
-                                config.BBS_HOST_FULLNAME)
+                                config.BBS_HOST_FULLNAME,
+                                replyable=True)
         self.message(u'发表文章成功！')
         self.pause()
         self.goto_back()
@@ -45,21 +46,23 @@ class NewPostFrame(BaseEditFrame):
 @mark('reply_post')
 class ReplyPostFrame(BaseEditFrame):
 
-    def check_perm(self, board, post):
+    def check_perm(self, boardname, pid):
         _,w,_,_ = manager.query.get_board_ability(self.session.user.userid, board['boardname'])
+        w = w and post.replyable
         return w or u'该版禁止发文或你没有相应的权限！'
 
-    @need_perm
-    def initialize(self, board, post):
+    # @need_perm
+    def initialize(self, boardname, post):
         self.cls()
-        self.boardname = board['boardname']
+        self.boardname = boardname
         self.replyid = post['pid']
         if post['title'].startswith('Re:'):
             title = post['title']
         else:
             title = 'Re: %s' % post['title']
         self.title = self.read_title(prompt=u'请输入标题：',prefix=title)
-        super(ReplyPostFrame,self).initialize()
+        super(ReplyPostFrame, self).initialize()
+        self.message(u'回复文章 -- %s' % self.title)
 
     def finish(self):
         manager.action.reply_post(
@@ -69,7 +72,8 @@ class ReplyPostFrame(BaseEditFrame):
             self.fetch_all(),
             self.session.ip,
             config.BBS_HOST_FULLNAME,
-            self.replyid)
+            self.replyid,
+            replyable=True)
         self.message(u'回复文章成功！')
         self.pause()
         self.goto_back()
@@ -78,8 +82,9 @@ class ReplyPostFrame(BaseEditFrame):
 class EditPostFrame(BaseEditFrame):
 
     def check_perm(self, board, post):
-        _,w,_,_ = manager.query.get_board_ability(self.session.user.userid, board['boardname'])
-        return w or u'该版禁止发文或你没有相应的权限！'
+        # _,w,_,_ = manager.query.get_board_ability(self.session.user.userid, board['boardname'])
+        # return (w or u'该版禁止发文或你没有相应的权限！') and
+        return (post.owner == self.userid) or u'你没有编辑此文章的权限！'
 
     @need_perm
     def initialize(self, board, post):

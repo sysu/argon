@@ -9,7 +9,7 @@ from chaofeng import Frame
 from chaofeng.g import mark
 import chaofeng.ascii as ac
 from chaofeng.ui import TextEditor, PagedTable, Animation, ColMenu,\
-    NullValueError, SimpleTextBox
+    NullValueError, SimpleTextBox, TableLoadNoDataError
 import config
 from template import env
 from model import manager
@@ -400,8 +400,12 @@ class BaseTableFrame(BaseAuthedFrame):
         self.table.restore_screen()
 
     def restore(self):
-        self.table.reload()        ###############   Ugly!!!
-        self.init_screen()
+        try:
+            self.table.reload()        ###############   Ugly!!!
+        except TableLoadNoDataError:
+            self.goto_back()
+        else:
+            self.init_screen()
 
     def get(self, data):
         if data in ac.ks_finish:
@@ -630,8 +634,64 @@ class BaseFormFrame(BaseTableFrame):
 
 class Editor(TextEditor):
 
+    fground_string = {
+        u'0':(u'[#30%]', u'[%#]'),
+        u'1':(u'[#31%]', u'[%#]'),
+        u'2':(u'[#32%]', u'[%#]'),
+        u'3':(u'[#33%]', u'[%#]'),
+        u'4':(u'[#34%]', u'[%#]'),
+        u'5':(u'[#35%]', u'[%#]'),
+        u'6':(u'[#36%]', u'[%#]'),
+        u'7':(u'[#37%]', u'[%#]'),
+        }
+
+    bground_string = {
+        u'0':(u'[#40%]', u'[%#]'),
+        u'1':(u'[#41%]', u'[%#]'),
+        u'2':(u'[#42%]', u'[%#]'),
+        u'3':(u'[#43%]', u'[%#]'),
+        u'4':(u'[#44%]', u'[%#]'),
+        u'5':(u'[#45%]', u'[%#]'),
+        u'6':(u'[#46%]', u'[%#]'),
+        u'7':(u'[#47%]', u'[%#]'),
+        }
+
+    special_style = {
+        u'i':(u'[#3%]', u'[%#]'),
+        u'u':(u'[#4%]', u'[%#]'),
+        u'b':(u'[#1%]', u'[%#]'),
+        u'l':(u'[#5%]', u'[%#]'),
+        u'n':(u'[#7%]', u'[%#]'),
+        }
+
     def insert_esc(self):
-        self.insert_char(u'*')
+        self.hint(u'b) 背景色 f)字体色 r)样式复原')
+        char = self.frame.read_secret()
+        if char == 'b' :
+            self.hint(u'背景颜色? 0)黑 1)红 2)绿 3)黄 4)深蓝 5)粉红 6)浅蓝 7)白')
+            char2 = self.frame.read_secret()
+            print ('c2', char2, self.bground_string, char2 in self.bground_string)
+            if char2 in self.bground_string :
+                print '!!!'
+                self.insert_string(*self.bground_string[char2])
+        elif char == 'f' :
+            self.hint(u'字体颜色? 0)黑 1)红 2)绿 3)黄 4)深蓝 5)粉红 6)浅蓝 7)白')
+            char2 = self.frame.read_secret()
+            if char2 in self.fground_string :
+                self.insert_string(*self.fground_string[char2])
+        elif char == 'e' :
+            self.hint(u'特殊样式? i)斜体 u)下划线 b)加粗 l)闪烁 n)反转')
+            char2 = self.frame.read_secret()
+            if char2 in self.special_style:
+                self.insert_string(*self.special_style[char2])
+        elif char == 'r' :
+            self.insert_string('[#%]','')
+                
+    # def insert_esc(self):
+    #     # if self.two_esc_mode
+    #     char = self.frame.read()
+    #     if char == ac.esc :
+    #         self.insert_char(u'*')
 
     def bottom_bar(self,msg=u''):
         self.write(ac.move2(24,0))
@@ -761,8 +821,8 @@ class BaseTextBoxFrame(BaseAuthedFrame):
             m = s[0]
             status = mark[m].try_jump(self, s)
             if status :
-                self.suspend(m,**status)            
-
+                self.suspend(m,**status)
+                
     def go_link(self):
         self.write(ac.move2(24,1) + ac.kill_line)
         d = self.readline()
@@ -822,6 +882,9 @@ class BaseTextBoxFrame(BaseAuthedFrame):
     def jump_from_screen(self):
         text,self.lines = self.textbox.getscreen_with_raw()
         self.select_and_jump(text)
+
+    def show_help(self):
+        self.suspend('help', page='view')
 
 def chunks(data, height):
     for i in xrange(0, len(data), height+1):

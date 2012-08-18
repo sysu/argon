@@ -50,7 +50,7 @@ class CF:
     auth      = UserAuth(userinfo,online,userperm)
     admin     = Admin(board, userperm, post, section)
     query     = Query(board=board, userperm=userperm, perm=perm, favourite=favourite,
-                      section=section, post=post, userinfo=userinfo)
+                      section=section, post=post, userinfo=userinfo, team=team)
     
     loads = [section,online,userinfo,auth,board,post,readmark,mail,usersign,
              favourite,clipboard,disgest,freq, perm, team, userperm, admin]
