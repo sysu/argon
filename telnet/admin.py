@@ -332,7 +332,7 @@ class EditUserTeamFrame(BaseAuthedFrame):
         userid = self.readline(prompt=u'请输入欲管理的使用者帐号: ')
         user = manager.userinfo.get_user(userid)
         if not user :
-            self.writeln('\r\n没有该用户！')
+            self.writeln(u'\r\n没有该用户！')
             self.pause()
             self.goto_back()
         userid = user['userid']
@@ -375,7 +375,7 @@ class EditTeamFrame(BaseAuthedFrame):
                 continue
             user = manager.userinfo.get_user(cmd[1:])
             if not user :
-                self.writeln('\r\n没有该用户！')
+                self.writeln(u'\r\n没有该用户！')
                 continue
             if cmd[0] == '+' :
                 manager.team.join_team(user['userid'], teamname)
