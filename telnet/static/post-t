@@ -3,8 +3,6 @@
 发信站: {{ post.fromhost }} ({{ post.posttime }})
 
 {{ post.content }}[%#]
---
-{{ post.signature }}[%#]
 
 ※ 来源:．{{ BBS_HOST_FULLNAME|wrapper(bold) }} [FROM: {{ post.fromaddr }}]
 本文id：{{ post.pid }}

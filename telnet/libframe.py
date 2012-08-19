@@ -9,7 +9,7 @@ from chaofeng import Frame
 from chaofeng.g import mark
 import chaofeng.ascii as ac
 from chaofeng.ui import TextEditor, PagedTable, Animation, ColMenu,\
-    NullValueError, SimpleTextBox, TableLoadNoDataError
+    NullValueError, SimpleTextBox, TableLoadNoDataError, TextEditorAreaMixIn
 import config
 from template import env
 from model import manager
@@ -158,7 +158,7 @@ class BaseAuthedFrame(BaseFrame):
         raise NotImplementedError, u"How to show notify in `%s` ?" % self.__mark__
     
     def get(self,data):
-        raise NotImplementedError, u"How to reation in `%` ?" % self.__mark__
+        raise NotImplementedError, u"How to reation in `%s` ?" % self.__mark__
 
     check_perm = NotImplementedError
     
@@ -632,7 +632,7 @@ class BaseFormFrame(BaseTableFrame):
         self.form = self.get_default_values()
         super(BaseFormFrame, self).initialize()
 
-class Editor(TextEditor):
+class Editor(TextEditor, TextEditorAreaMixIn):
 
     fground_string = {
         u'0':(u'[#30%]', u'[%#]'),
@@ -664,35 +664,41 @@ class Editor(TextEditor):
         u'n':(u'[#7%]', u'[%#]'),
         }
 
-    def insert_esc(self):
+    def _insert_style(self):
         self.hint(u'b) 背景色 f)字体色 r)样式复原')
         char = self.frame.read_secret()
         if char == 'b' :
             self.hint(u'背景颜色? 0)黑 1)红 2)绿 3)黄 4)深蓝 5)粉红 6)浅蓝 7)白')
             char2 = self.frame.read_secret()
-            print ('c2', char2, self.bground_string, char2 in self.bground_string)
             if char2 in self.bground_string :
-                print '!!!'
-                self.insert_string(*self.bground_string[char2])
+                return self.bground_string[char2]
         elif char == 'f' :
             self.hint(u'字体颜色? 0)黑 1)红 2)绿 3)黄 4)深蓝 5)粉红 6)浅蓝 7)白')
             char2 = self.frame.read_secret()
             if char2 in self.fground_string :
-                self.insert_string(*self.fground_string[char2])
+                return self.fground_string[char2]
         elif char == 'e' :
             self.hint(u'特殊样式? i)斜体 u)下划线 b)加粗 l)闪烁 n)反转')
             char2 = self.frame.read_secret()
             if char2 in self.special_style:
-                self.insert_string(*self.special_style[char2])
+                return self.special_style[char2]
         elif char == 'r' :
-            self.insert_string('[#%]','')
-                
-    # def insert_esc(self):
-    #     # if self.two_esc_mode
-    #     char = self.frame.read()
-    #     if char == ac.esc :
-    #         self.insert_char(u'*')
+            return (u'[#%]', '')
+        elif char == ac.esc :
+            return self.esc
 
+    def insert_style(self):
+        res = self._insert_style()
+        if isinstance(res, tuple) :
+            self.insert_string(*res)
+        else :
+            self.insert_char(res)
+
+    def insert_style_area(self):
+        res = self._insert_style()
+        if isinstance(res, tuple) :
+            self.insert_string_area(*res)
+                
     def bottom_bar(self,msg=u''):
         self.write(ac.move2(24,0))
         self.frame.render(u'bottom_edit', message=msg, l=self._hover_col, r=self._hover_row)
@@ -701,6 +707,14 @@ class Editor(TextEditor):
     def do_command(self, cmd):
         getattr(self, cmd)()
         self.bottom_bar()
+
+    def fetch_all(self):
+        text = super(Editor, self).fetch_all()
+        return text.replace(self.esc, ac.esc)
+
+    def fetch_lines(self):
+        text = self.fetch_all()
+        return text.split('\r\n')
 
 class BaseEditFrame(BaseAuthedFrame):
 
@@ -731,6 +745,10 @@ class BaseEditFrame(BaseAuthedFrame):
             self.e.do_command(config.hotkeys['edit_editor'][char])
         elif char in config.hotkeys['edit']:
             getattr(self, config.hotkeys['edit'][char])()
+        elif char == config.hotkeys['edit_2ndcmd_start'] :
+            char2 = self.read_secret()
+            if char2 in config.hotkeys['edit_2nd'] :
+                getattr(self.e, config.hotkeys['edit_2nd'][char2])()
         else:
             self.e.insert_char(char)
 
@@ -759,9 +777,6 @@ class BaseEditFrame(BaseAuthedFrame):
                                                       for line in text))
         self.e = self.load(Editor, text, spoint)
         self.restore_screen()
-        
-    def read_title(self, prompt=u'', prefix=u''):
-        return self.readline(prompt=prompt, prefix=prefix, buf_size=40)
 
 class TextBox(SimpleTextBox):
 

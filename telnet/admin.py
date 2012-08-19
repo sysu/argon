@@ -27,12 +27,12 @@ class BaseEditSystemFileFrame(SelectFrame):
     def finish(self):
         filename = self.menu.fetch()
         with codecs.open('static/%s' % filename, encoding="utf8") as f:
-            text = map(list, f.read().replace(u'\x1b', u'*').split('\n'))
+            text = f.read().replace('\n', '\r\n')
         self.suspend('edit_text', filename=self.menu.fetch(), text=text,
                      callback=self.save_to_file)
 
     def save_to_file(self, filename, text):
-        text = style2telnet(text).replace('\r\n', '\n')
+        text = text.replace('\r\n', '\n')
         with codecs.open('static/%s' % filename, "w", encoding="utf8") as f:
             f.write(text)
         self.message(u'修改系统档案成功！')
@@ -321,4 +321,66 @@ class RemoveBoardManager(BaseAuthedFrame):
         except ValueError as e:
             self.writeln(u'\r\n操作失败 %s' % e.message)
         self.pause()
+        self.goto_back()
+
+@mark('sys_edit_user_team')
+class EditUserTeamFrame(BaseAuthedFrame):
+
+    def initialize(self):
+        self.cls()
+        self.render('edit_user_team')
+        userid = self.readline(prompt=u'请输入欲管理的使用者帐号: ')
+        user = manager.userinfo.get_user(userid)
+        if not user :
+            self.writeln('\r\n没有该用户！')
+            self.pause()
+            self.goto_back()
+        userid = user['userid']
+        userteam = manager.team.user_teams(userid)
+        self.writeln(u'\r\n该用户加入的组有:%s\r\n' % ','.join(userteam))
+        self.writeln(u'\r\n要干什么呢？+组名/-组名, .离开\r\n')
+        prompt = ac.move2(21,1) + ac.kill_line
+        while True:
+            cmd = self.readline(prompt=prompt, buf_size=40)
+            if not cmd :
+                break
+            if cmd[0] == '+' :
+                manager.team.join_team(userid, cmd[1:])
+                self.writeln(u'\r\n加入 %s 成功!' % cmd[1:])
+            if cmd[0] == '-' :
+                manager.team.remove_team(userid, cmd[1:])
+                self.writeln(u'\r\n离开 %s 成功!' % cmd[1:])
+            if cmd == '.' :
+                break
+        self.goto_back()
+
+@mark('sys_edit_team')
+class EditTeamFrame(BaseAuthedFrame):
+
+    def initialize(self):
+        self.cls()
+        self.render('edit_team_user')
+        teamname = self.readline(prompt=u'请输入欲管理的组名: ')
+        userids = manager.team.all_menber(teamname)
+        self.writeln(u'\r\n该组包括的用户有：%s\r\n' % ','.join(userids))
+        self.writeln(u'\r\n要干什么呢？+用户id/-用户id,  .离开\r\n')
+        prompt = ac.move2(21,1) + ac.kill_line
+        while True:
+            cmd = self.readline(prompt=prompt, buf_size=40)
+            if not cmd :
+                break
+            if cmd == '.' :
+                break
+            if cmd[0] != '+' and cmd[0] !='-' :
+                continue
+            user = manager.userinfo.get_user(cmd[1:])
+            if not user :
+                self.writeln('\r\n没有该用户！')
+                continue
+            if cmd[0] == '+' :
+                manager.team.join_team(user['userid'], teamname)
+                self.writeln(u'\r\n %s 加入!' % user['userid'])
+            if cmd[0] == '-' :
+                manager.team.remove_team(user['userid'], teamname)
+                self.writeln(u'\r\n %s 离开!' % user['userid'])
         self.goto_back()

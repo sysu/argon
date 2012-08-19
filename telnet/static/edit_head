@@ -1,0 +1,4 @@
+发表文章于 {{ boardname|wrapper(bold) }}          [本文{{ ('可以' if replyable else '不可以')|wrapper(bold, yellow) }}回复]
+使用标题: {{ title|wrapper(bold) }}
+使用第 {{ usesign|wrapper(bold) }} 个签名档
+

@@ -187,8 +187,6 @@ class EditSignFrame(BaseTextBoxFrame):
 class QueryUserFrame(BaseTextBoxFrame):
 
     def initialize(self, userid=None):
-        if userid is None:
-            userid = self.userid
         user = manager.query.get_user(self.userid, userid)
         if user :
             self.text = self.render_str('user-t',**user)
@@ -196,6 +194,23 @@ class QueryUserFrame(BaseTextBoxFrame):
         else:
             self.write(u'\r\n无此id！')
             self.pause()
+            self.goto_back()
+
+    def finish(self,a):
+        self.goto_back()
+
+    def get_text(self):
+        return self.text
+
+@mark('query_user_self')
+class QueryUserSelfFrame(BaseTextBoxFrame):
+
+    def initialize(self):
+        user = manager.query.get_user(self.userid, self.userid)
+        if user :
+            self.text = self.render_str('user_self-t', **user)
+            super(QueryUserSelfFrame, self).initialize()
+        else:
             self.goto_back()
 
     def finish(self,a):

@@ -33,7 +33,7 @@ class FinishFrame(Frame):
     def finish(self):
         raise BadEndInterrupt
 
-config.data['ROOT'] = 'debug'
+# config.data['ROOT'] = 'debug'
 
 if __name__ == '__main__' :
     s = Server(mark[config.data['ROOT']])
