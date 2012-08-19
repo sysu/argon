@@ -2,15 +2,14 @@
 import sys
 sys.path.append('../')
 
-from argo_frame import ArgoFrame
+from libframe import BaseAuthedFrame, BaseTextBoxFrame
 from chaofeng import EndInterrupt
 from chaofeng.g import mark
 import chaofeng.ascii as ac
 from model import manager
-from view import ArgoTextBoxFrame
 
 @mark('bad_ending')
-class BadEndingFrame(ArgoFrame):
+class BadEndingFrame(BaseAuthedFrame):
 
     def bad_ending(self,e):
         try:
@@ -22,26 +21,19 @@ class BadEndingFrame(ArgoFrame):
         self.close()
 
 @mark('history')
-class ArgoHistoryFrame(ArgoTextBoxFrame):
+class HistoryFrame(BaseTextBoxFrame):
 
-    def initialize(self):
-        super(ArgoHistoryFrame,self).initialize()
-        self.setup()
-        self.show_history()
+    def get_text(self):
+        return self.render_str('history',items=self.session.history)
 
-    def show_history(self):
-        items = filter(lambda x: hasattr(x, 'getdesc'), self.history)
-        items = map(lambda x : x.getdesc(), items)
-        self.set_text(self.render_str('history',items=items))
-
-    def finish(self,args):
-        self.goto_back_nh()
+    def finish(self, e):
+        self.goto_back()
 
     def show_help(self):
         self.suspend('help',page='history')
     
 @mark('finish')
-class Finish(ArgoFrame):
+class Finish(BaseAuthedFrame):
 
     def initialize(self):
         self.finish(None)

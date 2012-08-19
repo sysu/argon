@@ -24,7 +24,7 @@ class ViewTextFrame(BaseTextBoxFrame):
 @mark('post')
 class ReadPostFrame(BaseTextBoxFrame):
 
-    # @classmethod
+    @staticmethod
     def try_jump(self,args):
         try:
             r = manager.query.get_board_ability(self.userid, args[0])[0]
@@ -66,9 +66,6 @@ class ReadPostFrame(BaseTextBoxFrame):
             self.goto_back()
         super(ReadPostFrame,self).initialize()
 
-    def getdesc(self):
-        return u'阅读文章            -- [%s](/p/%s/%s)' % (self.post['title'], self.boardname, self.pid)
-
     def _read_post(self, boardname, pid):
         post = self.get_post(self.board, pid)
         if post :
@@ -78,6 +75,9 @@ class ReadPostFrame(BaseTextBoxFrame):
             self.session['lastpid'] = pid
             self.session['lasttid'] = self.post.tid
             self.text = self.wrapper_post(self.post)
+            self.history.append(u'文章 - %s 版 - [%s](/p/%s/%s)' % \
+                                    (boardname, self.post['title'], boardname,
+                                     self.post['pid']))
             manager.readmark.set_read(self.userid, self.boardname, self.pid)
         else:
             raise NullValueError(u'没有此文章')
@@ -121,16 +121,14 @@ class ViewClipboardFrame(BaseTextBoxFrame):
 @mark('help')
 class TutorialFrame(BaseTextBoxFrame):
 
-    # @classmethod
-    def try_jump(cls,args):
+    @staticmethod
+    def try_jump(self, args):
         if 'help/%s' % args[0] in config.all_help_file :
             return dict(page=args[0])
 
-    def getdesc(self):
-        return u'查看帮助            -- [](/h/%s)' % self.page
-
     def initialize(self,page='index'):
         self.page = page
+        self.history.append(u'帮助 - [%s](/h/%s)' % (self.page, self.page))
         super(TutorialFrame,self).initialize()
 
     def get_text(self):

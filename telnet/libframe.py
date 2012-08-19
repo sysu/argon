@@ -127,7 +127,7 @@ class BaseAuthedFrame(BaseFrame):
         and goto a new frame.
         '''
         self.session.stack.append(self)
-        self.session.history.append(self)
+        # self.session.history.append(self)
         self.goto(where,**kwargs)
 
     def goto_back(self):
@@ -135,7 +135,7 @@ class BaseAuthedFrame(BaseFrame):
         Go back to previous frame save in
         history.
         '''
-        self.session.history.append(self)
+        # self.session.history.append(self)
         if self.session.stack:
             self.wakeup(self.session.stack.pop())
 
@@ -226,7 +226,10 @@ class BaseAuthedFrame(BaseFrame):
                     return s
                 elif d == ac.k_ctrl_c:
                     return False
-        return False        
+        return False
+
+    def goto_history(self):
+        self.suspend('history')
 
     # def top_bar(self):
     #     self.render('top')

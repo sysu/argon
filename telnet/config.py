@@ -175,6 +175,7 @@ hotkeys = {
         ac.k_page_down:"page_down",
         },
     "boardlist":{
+        ac.k_ctrl_be:"goto_history",
         '/':'search',         ac.k_right:'finish',
         'q':'goto_back',      'e':'goto_back',        ac.k_left:'goto_back',
         's':'change_sort',           '#':'goto_line',
@@ -199,6 +200,7 @@ hotkeys = {
         ac.k_home:'goto_first',   
         },
     "board":{
+        ac.k_ctrl_be:"goto_history",
         "#":"goto_line",
         ac.k_right:"finish", ac.k_left:"goto_back",
         ac.k_ctrl_p:"new_post","E":"edit_post", ac.k_ctrl_r:"reply_to_author",
@@ -260,6 +262,7 @@ hotkeys = {
         ac.k_ctrl_g:"set_mark",
         },
     "view":{
+        ac.k_ctrl_be:"goto_history",
         "Q":"goto_back",
         ac.k_left:"goto_back",
         # ac.k_ctrl_u:"goto_link",

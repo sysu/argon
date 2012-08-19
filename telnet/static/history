@@ -1,7 +1,11 @@
 {{ "历史记录"|center|wrapper(bg_blue,white) }}
 
+{%- if items %}
 {% for item in items %}
-   {{ loop.index|width(5)|wrapper(yellow) }}. {{ item|wrapper(cyan,bold) }}
+   {{ loop.index|string|width(5)|wrapper(yellow) }}. {{ item|wrapper(cyan,bold) }}
 {%- endfor %}
+{% else %}
+  您还没开始阅读文章！
+{%- endif %}
 
-
+[#32%]^R[%#] 可跳转至文章
