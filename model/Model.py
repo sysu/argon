@@ -242,10 +242,12 @@ class Favourite(Model):
     '''
 
     keyf = "argo:favourite:%s"
+    default_userid = '+default+'
 
     def init_user_favourite(self, userid):
         key = self.keyf % userid
         self.ch.delete(key)
+        self.ch.sunionstore(key, self.keyf % self.default_userid)
 
     def add(self, userid, boardname):
         u''' Add an board into user's favourtie.'''
@@ -260,6 +262,12 @@ class Favourite(Model):
         u'''Return a set holds all board's name in user's favourte.'''
         key = self.keyf % userid
         return self.ch.smembers(key)
+
+    def add_default(self, boardname):
+        self.add(self.default_userid, boardname)
+
+    def remove_default(self, boardname):
+        self.remove(self.default_userid, boardname)
 
 class Post(Model):
 
@@ -890,7 +898,58 @@ class Team(Model):
     key_ust = 'argo:team_ust:%s' # User's team
     key_tsm = 'argo:team_tsm:%s' # Team's member
 
+    key_name = 'argo:team_name'  # hash(key_name, teamid)  !! Primary
+    key_mark = 'argo:team_all' # All Team, save a mark
+    key_owner = 'argo:team_owner' # hash(key_name, teamowner)
+    key_publish = 'argo:team_publish'  # All the publish team
+
+    default_userid = '+default+'
+    
     # Base
+
+    def all_team(self):
+        return self.ch.hkeys(self.key_name)
+
+    def register_team(self, teamid, teamname):
+        return self.ch.hset(self.key_name, teamid, teamname)
+
+    def confirm_exists(self, teamid):
+        if not self.exists(teamid):
+            raise ValueError(u'No such team [%s]' % teamid)
+
+    # def register_team(self, teamid, teamname):
+    #     self._register_team(teamid, teamname)
+    #     self.set_owner(teamid, owner)
+    #     self.publish(teamid)
+
+    def drop_team(self, teamid):
+        self.ch.hdel(self.key_name, teamid)
+        self.ch.delete(self.key_ust % teamid)
+        self.ch.delete(self.key_tsm % teamid)
+        self.ch.hdel(self.key_mark, teamid)
+        self.ch.publish(self.key_mark, teamid)
+
+    def exists(self, teamid):
+        return self.ch.hexists(self.key_name, teamid)
+
+    def publish(self, teamid):
+        self.ch.sadd(self.key_publish, teamid)
+
+    def unpublish(self, teamid):
+        self.ch.srem(self.key_publish, teamid)        
+
+    def join_default_team(self, teamname):
+        self.join_team(self.default_userid, teamname)
+
+    def remove_default_team(self, teamname):
+        self.remove_team(self.default_userid, teamname)
+
+    def init_user_team(self, userid):
+        teams = self.user_teams(self.default_userid)
+        key = self.key_ust % userid
+        for t in teams :
+            self.ch.sadd(key, t)
+            self.ch.sadd(self.key_tsm%t, userid)
 
     def join_team(self, userid, teamname):
         self.ch.sadd(self.key_ust%userid, teamname)
@@ -898,7 +957,7 @@ class Team(Model):
 
     def remove_team(self, userid, teamname):
         self.ch.srem(self.key_ust%userid, teamname)
-        self.ch.sadd(self.key_tsm%teamname, userid)
+        self.ch.srem(self.key_tsm%teamname, userid)
 
     def is_in_team(self, userid, teamname):
         return self.ch.sismenber(self.key_tsm%teamname,
@@ -909,6 +968,18 @@ class Team(Model):
 
     def user_teams(self, userid):
         return self.ch.smembers(self.key_ust%userid)
+
+    def set_owner(self, teamid, owner):
+        return self.ch.hset(self.key_owner, teamid, owner)
+
+    # def get_team_info(self, teamid):
+    #     return dict(teamid=teamid,
+    #                 teamname=self.ch.hget(self.key_name, teamid),
+    #                 mark=self.ch.hget(self.key_mark, teamid),
+    #                 owner=self.ch.hget(self.key_mark, teamid))
+
+    def get_names(self, *teamid):
+        return map( lambda x : self.ch.hget(self.key_name, x), teamid)
 
 class Permissions(Model):
 
@@ -977,6 +1048,8 @@ class UserPerm(Model):
     team_t_deny = perm.TEAM_T_BOARD_DENY
     team_deny_global = perm.TEAM_DENY_GLOBAL
     team_user = perm.TEAM_USER
+
+    default_team = 'argo:default_boardperm'
     
     def _bmteam(self, boardname):
         return self.team_t_bm % boardname
@@ -1017,8 +1090,10 @@ class UserPerm(Model):
     def remove_deny_global(self, userid):
         self.team.remove_team(userid, self.team_deny_global)
 
-    def set_user(self, userid):
-        self.team.join_team(userid, self.team_user)
+    # def init_board_team(self, boardname, r, w, d, a):
+    #     for name,val in zip([perm.BOARD_READ, perm.BOARD_POST, perm.BOARD_DENY,
+    #                          perm.BOARD_ADMIN],  [r,w,d,a]):
+    #         self.perm.give_boardperm(boardname, name, val.replace('{}', boardname,).split(','))
 
     def init_board_team(self, boardname, is_open, is_openw):
         if is_open :
@@ -1097,10 +1172,8 @@ class UserAuth(Model):
     ban_userid = ['guest','new']
     GUEST = AuthUser(userid='guest',is_first_login=None)
 
-    def __init__(self, usertable, online, userperm):
-        self.table = usertable
-        self.online = online
-        self.userperm = userperm
+    def __init__(self, **kwargs):
+        self.__dict__.update(kwargs)
         
     def gen_passwd(self,passwd):
         return bcrypt.hashpw(passwd, bcrypt.gensalt(10))
@@ -1135,7 +1208,8 @@ class UserAuth(Model):
             nickname=userid,
             **kwargs
             )
-        self.userperm.init_user_team(userid)
+        self.favourite.init_user_favourite(userid)
+        self.team.init_user_team(userid)
         
     def get_guest(self):
         return self.GUEST
@@ -1424,10 +1498,6 @@ class Query:
         bids = self.favourite.get_all(userid)
         boards = map(lambda d: self.board.get_board_by_id(d), bids)
         return self._wrap_perm(userid, boards)
-
-    def init_all(self, userid):
-        self.favourite.init_user_favourite(userid)
-        self.team.init_user_team(userid)
 
     def get_section(self, sid):
         return self.section.get_section_by_sid(sid)

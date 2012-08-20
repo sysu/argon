@@ -5,6 +5,7 @@ main:
         - [(P)layFilm     电影放映室, movie, p]
         - [(M)ail           处理信笺, mail_menu, m]
         - [(S)hoHelp        帮助中心, help, s]
+        # - [(T)est               测试, test, t]
         # - [(N)GuessNumber 猜数字游戏, game_guess_number, n]
         - [(G)oodbye    离开逸仙时空, goodbye, g]
         
@@ -34,10 +35,12 @@ user_space:
         - [(E) 回到主选单, main, e]
 
 sys_admin:
-        - ["(P)icture    修改系统画面", sys_edit_system_file, p, [14,20]]
-        - ["(E)HelpPage  修改帮助画面", sys_edit_help_file, h,]
-        - ["(B)board     讨论区设定",  [menu, {menuname: sys_board}], b]
-        - [(U)serLevel  帐号管理,   [menu, {menuname: sys_level}], u]
+        - ["(P)icture        修改系统画面", sys_edit_system_file, p, [14,20]]
+        - ["(E)HelpPage      修改帮助画面", sys_edit_help_file, h,]
+        - ["(B)board           讨论区设定",  [menu, {menuname: sys_board}], b]
+        - [(U)serLevel          帐号管理,   [menu, {menuname: sys_level}], u]
+        - [(D)efault      用户默认收藏夹, edit_default_favourite, d]
+        - [(S)uper             超级设置,  super, s]
         # - [(S)ysTeam    设定系统管理组,  sys_team, s]
         # - [(C)onfigure  系统参数设定, sys_conf, c]
 
@@ -57,6 +60,5 @@ sys_board:
         # - [6. 删除讨论区,     sys_remove_board, "6"]
 
 sys_level:
-        # - [1. 修改帐号资料,   sys_edit_userattr, "1", [14,20]]
-        - [1. 修改帐号的群组,  sys_edit_user_team, '1', [14,20]]
-        - [2. 管理群组,   sys_edit_team, "2"]
+        - [1. 修改帐号的群组,  sys_edit_user_team_iter, '1', [14,20]]
+        - [2. 管理群组,   sys_edit_team_iter, "2"]

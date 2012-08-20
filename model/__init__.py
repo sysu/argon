@@ -47,7 +47,8 @@ class CF:
     freq      = FreqControl()
     team      = Team()
     userperm  = UserPerm(team, perm)
-    auth      = UserAuth(userinfo,online,userperm)
+    auth      = UserAuth(table=userinfo,online=online,userperm=userperm, favourite=favourite,
+                         team=team)
     admin     = Admin(board, userperm, post, section)
     query     = Query(board=board, userperm=userperm, perm=perm, favourite=favourite,
                       section=section, post=post, userinfo=userinfo, team=team)

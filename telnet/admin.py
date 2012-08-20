@@ -8,14 +8,16 @@ sys.path.append('../')
 
 from chaofeng.g import mark
 from chaofeng.ui import Animation,ColMenu,VisableInput,EastAsiaTextInput,\
-    CheckBox, RadioButton
+    CheckBox, RadioButton, ListBox
 import chaofeng.ascii as ac
-from libframe import BaseTableFrame, BaseFormFrame, BaseAuthedFrame
+from libframe import BaseTableFrame, BaseFormFrame, BaseAuthedFrame, list_split
 from model import manager
 from menu import SelectFrame
 import config
 import codecs
 from libformat import style2telnet
+from boardlist import BaseBoardListFrame
+import traceback
 
 class BaseEditSystemFileFrame(SelectFrame):
 
@@ -323,64 +325,266 @@ class RemoveBoardManager(BaseAuthedFrame):
         self.pause()
         self.goto_back()
 
-@mark('sys_edit_user_team')
-class EditUserTeamFrame(BaseAuthedFrame):
-
-    def initialize(self):
-        self.cls()
-        self.render('edit_user_team')
-        userid = self.readline(prompt=u'请输入欲管理的使用者帐号: ')
-        user = manager.userinfo.get_user(userid)
-        if not user :
-            self.writeln(u'\r\n没有该用户！')
-            self.pause()
-            self.goto_back()
-        userid = user['userid']
-        userteam = manager.team.user_teams(userid)
-        self.writeln(u'\r\n该用户加入的组有:%s\r\n' % ','.join(userteam))
-        self.writeln(u'\r\n要干什么呢？+组名/-组名, .离开\r\n')
-        prompt = ac.move2(21,1) + ac.kill_line
-        while True:
-            cmd = self.readline(prompt=prompt, buf_size=40)
-            if not cmd :
-                break
-            if cmd[0] == '+' :
-                manager.team.join_team(userid, cmd[1:])
-                self.writeln(u'\r\n加入 %s 成功!' % cmd[1:])
-            if cmd[0] == '-' :
-                manager.team.remove_team(userid, cmd[1:])
-                self.writeln(u'\r\n离开 %s 成功!' % cmd[1:])
-            if cmd == '.' :
-                break
-        self.goto_back()
-
 @mark('sys_edit_team')
 class EditTeamFrame(BaseAuthedFrame):
 
+    def _initialize(self):
+        self.listbox = self.load(ListBox, start_line=4, height=15)
+        self.cls()
+        self.write(''.join([self.render_str('top'),
+                            '\r\n',
+                            config.str['EDIT_LIST_QUICK_HELP'],
+                            '\r\n',
+                            u'[0;1;44m    帐号                     帐号                    '
+                            u'帐号                      [m',
+                            self.render_str('bottom')]))
+        self.refresh_items()
+
+    def initialize(self, teamname):
+        self.teamname = teamname
+        self._initialize()
+        
+    def refresh_items(self):
+        self.userids = list(manager.team.all_menber(self.teamname))
+        self.listbox.update(self.userids, self.userids)
+
+    def add(self):
+        userids = self.readline(prompt=u'输入要增加的id：').split(',')
+        succ = 0
+        failed = 0
+        for userid0 in userids :
+            user = manager.userinfo.get_user(userid0)
+            if user :
+                manager.team.join_team(user['userid'], self.teamname)
+                succ += 1
+            else:
+                failed += 1
+        self.message(u'成功加入 %s , 不存在的帐号 ：%s' % (succ, failed))
+        self.refresh_items()
+
+    def remove(self):
+        if self.userids :
+            manager.team.remove_team(self.listbox.fetch(), self.teamname)
+            self.message(u'成功移除')
+
+    def get(self, char):
+        if self.userids :
+            if char in config.hotkeys['edit_list_ui'] :
+                getattr(self.listbox, config.hotkeys['edit_list_ui'][char])()
+        if char in config.hotkeys['edit_list']:
+            getattr(self, config.hotkeys['edit_list'][char])()
+
+    def readline(self, prompt, acceptable=ac.is_safe_char, finish=ac.ks_finish,
+                  buf_size=20, prefix=u''):
+        prompt = ''.join([ac.move2(24,1), ac.kill_line, prompt])
+        res = super(EditTeamFrame, self).readline(prompt=prompt, acceptable=acceptable,
+                                                      finish=finish, buf_size=buf_size,
+                                                      prefix=prefix)
+        self.render('bottom')
+        if hasattr(self, 'listbox'):
+            self.listbox.fix_cursor()
+        return res
+
+    def message(self, msg):
+        self.write(''.join([ac.move2(23,2), ac.kill_line, msg]))
+        self.listbox.fix_cursor()
+
+@mark('sys_edit_team_iter')
+class EditTeamIterFrame(EditTeamFrame):
+
     def initialize(self):
         self.cls()
-        self.render('edit_team_user')
-        teamname = self.readline(prompt=u'请输入欲管理的组名: ')
-        userids = manager.team.all_menber(teamname)
-        self.writeln(u'\r\n该组包括的用户有：%s\r\n' % ','.join(userids))
-        self.writeln(u'\r\n要干什么呢？+用户id/-用户id,  .离开\r\n')
-        prompt = ac.move2(21,1) + ac.kill_line
-        while True:
-            cmd = self.readline(prompt=prompt, buf_size=40)
-            if not cmd :
-                break
-            if cmd == '.' :
-                break
-            if cmd[0] != '+' and cmd[0] !='-' :
-                continue
-            user = manager.userinfo.get_user(cmd[1:])
-            if not user :
-                self.writeln(u'\r\n没有该用户！')
-                continue
-            if cmd[0] == '+' :
-                manager.team.join_team(user['userid'], teamname)
-                self.writeln(u'\r\n %s 加入!' % user['userid'])
-            if cmd[0] == '-' :
-                manager.team.remove_team(user['userid'], teamname)
-                self.writeln(u'\r\n %s 离开!' % user['userid'])
+        self.teamname = self.readline(prompt=u'请输入欲管理的组名: ')
+        if not manager.team.exists(self.teamname):
+            self.write(u'没有该组！')
+            self.pause()
+            self.goto_back()
+        self._initialize()
+
+@mark('sys_edit_user_team')
+class EditUserTeamFrame(BaseAuthedFrame):
+    
+    def _initialize(self):
+        self.listbox = self.load(ListBox, start_line=4, height=15)
+        self.cls()
+        self.write(''.join([self.render_str('top'),
+                            '\r\n',
+                            config.str['EDIT_LIST_QUICK_HELP'],
+                            '\r\n',
+                            u'[0;1;44m    组号                     组号                    '
+                            u'组号                      [m',
+                            self.render_str('bottom')]))
+        self.refresh_items()
+
+    def initialize(self, userid):
+        self.euserid = userid
+        self._initialize()
+        
+    def refresh_items(self):
+        self.teams = list(manager.team.user_teams(self.euserid))
+        self.texts = map(lambda x : '%s(%s)' % tuple(x), zip(self.teams,
+                                                             manager.team.get_names(self.teams)))
+        self.listbox.update(self.texts, self.teams)
+
+    def add(self):
+        teamnames = self.readline(prompt=u'输入要增加的组名：').split(',')
+        succ = 0
+        failed = 0
+        for teamname in teamnames :
+            if manager.team.exists(teamname) :
+                manager.team.join_team(self.euserid, teamname)
+                succ += 1
+            else:
+                failed += 1
+        self.message(u'成功加入 %s , 不存在的组 ：%s' % (succ, failed))
+        self.refresh_items()
+
+    def remove(self):
+        if self.teams:
+            manager.team.remove_team(self.euserid, self.listbox.fetch())
+            self.message(u'成功移除')
+
+    def get(self, char):
+        if self.teams :
+            if char in config.hotkeys['edit_list_ui'] :
+                getattr(self.listbox, config.hotkeys['edit_list_ui'][char])()
+        if char in config.hotkeys['edit_list']:
+            getattr(self, config.hotkeys['edit_list'][char])()
+
+    def readline(self, prompt, acceptable=ac.is_safe_char, finish=ac.ks_finish,
+                  buf_size=20, prefix=u''):
+        prompt = ''.join([ac.move2(24,1), ac.kill_line, prompt])
+        res = super(EditUserTeamFrame, self).readline(prompt=prompt, acceptable=acceptable,
+                                                      finish=finish, buf_size=buf_size,
+                                                      prefix=prefix)
+        self.render('bottom')
+        if hasattr(self, 'listbox'):
+            self.listbox.fix_cursor()
+        return res
+
+    def message(self, msg):
+        self.write(''.join([ac.move2(23,2), ac.kill_line, msg]))
+        self.listbox.fix_cursor()
+    
+@mark('sys_edit_user_team_iter')
+class EditUserTeamIterFrame(EditUserTeamFrame):
+
+    def initialize(self):
+        self.cls()
+        euserid = self.readline(prompt=u'请输入欲设置的用户名: ')
+        user = manager.userinfo.get_user(euserid)
+        if not user:
+            self.write(u'没有该组！')
+            self.pause()
+            self.goto_back()
+        self.euserid = user['userid']
+        self._initialize()
+
+@mark('edit_default_favourite')
+class SetDefaultFavouriteFrame(BaseBoardListFrame):
+
+    def catch_nodata(self, e):
+        self.cls()
+        self.writeln(u'没有任何版块！')
+        self.pause()
         self.goto_back()
+
+    def get_default_index(self):
+        return 0
+
+    def get_data(self, start, limit):
+        return self.boards[start:start+limit]
+
+    def finish(self):
+        pass
+
+    def add_to_fav(self):
+        manager.favourte.add_default(self.table.fetch()[u'bid'])
+        self.message(u'成功加入默认用户的收藏夹！')
+
+    def remove_fav(self):
+        manager.favourte.remove_default(self.table.fetch()[u'bid'])
+        self.message(u'成功移除默认用户的收藏夹！')
+
+    def suspend(self):
+        pass
+
+    def initialize(self):
+        self.boards = manager.query.get_boards(self.userid, None)
+        self.board_total = len(self.boards)
+        super(SetDefaultFavouriteFrame, self).initialize()
+
+@mark('super')
+class SuperSystemFrame(BaseAuthedFrame):
+
+    def initialize(self):
+        self.cls()
+        self.render('super')
+        self.loop()
+
+    def loop(self):
+        while True:
+            cmd = filter(lambda x:x, self.readline(prompt='argo$ ', buf_size=70).split())
+            self.write('\r\n')
+            if not cmd : continue
+            action = 'action_%s' % cmd[0]
+            if action == 'action_bye':
+                self.goto_back()
+            if hasattr(self, action) :
+                try:
+                    getattr(self, action)(*cmd[1:])
+                except Exception as e:
+                    traceback.print_exc()
+                    self.writeln('[ERROR] %s' % e.message)
+
+    def action_help(self, cmd='help'):
+        u'''
+        查询帮助：    help cmd
+        cmd包括：
+            rt                                      // register_team
+            dt                                      // drop_team
+            qt                                      // query_all_team
+        '''
+        action = 'action_%s' % cmd
+        if hasattr(self, action):
+            self.writeln(getattr(self, action).__doc__.replace('\n', '\r\n'))
+        else:
+            raise ValueError(u'没有此命令！')
+
+    def action_rt(self, teamid, teamname):
+        u'''
+        添加一个组:    rt teamid teamname
+        其中teamid应该为全部大写字母。
+        '''
+        if manager.team.exists(teamid):
+            raise ValueError(u'此组名已经被使用！')
+        if not teamid.isalpha():
+            raise ValueError(u'组名应该全部为大写字符！')
+        teamid = teamid.upper()
+        manager.team.register_team(teamid, teamname)
+        self.writeln(u'[SUCC] 注册组 %s 成功！' % teamid)
+
+    def action_dt(self, teamid, force=False):
+        u'''
+        删除一个组：    dt teamid force=False
+        删除一个组
+        eg:
+            drop_team TEST // 检查TEST是否存在
+            drop_team TEST dfa // 检查TEST是否存在
+        '''
+        if not force :
+            if not manager.team.exists(teamid):
+                raise ValueError(u'没有该组！')
+        manager.team.drop_team(teamid)
+        self.writeln('[SUCC] 移除组 %S 成功！' % teamid)
+        
+    def action_qt(self, split=4):
+        u'''
+        输出当前全部的组：    qt split=4
+        split表示一行多少个。
+        '''
+        split = int(split)
+        teams = manager.team.all_team()
+        for d in list_split(teams, split) :
+            self.writeln(' '.join(d))
+            self.pause()

@@ -22,8 +22,8 @@ class LoginDebugFrame(login.WelcomeFrame):
         # self.goto('add_board')
         # self.goto('user_editdata')
         # self.try_login('admin','123456')
-        # self.try_login('admin', '123456')
-        self.try_login('test', '123456')
+        self.try_login('admin', '123456')
+        # self.try_login('test', '123456')
         # self.goto('dd')
         # self.goto('post','Test1','3')
         pass

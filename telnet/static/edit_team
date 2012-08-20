@@ -1,0 +1,23 @@
+{{ o_o(bg_blue, yellow, bold) }}    设置用户组                                                             {{ ac.reset }}
+  离开[{{ 'Rtn'|wrapper(green, bold) }}] 增加用户[{{ 'a'|wrapper(green, bold) }},{{ '+'|wrapper(bold, green) }}] 移除用户[{{ 'r'|wrapper(green, bold) }},{{ '-'|wrapper(green, bold) }}] 刷新屏幕[{{ '^L'|wrapper(green, bold) }},{{ 'f'|wrapper(green, bold) }}] 返回[{{ '.'|wrapper(green, bold) }}]
+{{ o_o(bg_blue) }}                                                                             {{ ac.reset }}
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+    {{ '全部动作都是直接完成的！请注意操作'|wrapper(red, bold) }}

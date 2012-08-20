@@ -908,6 +908,10 @@ def chunks(data, height):
     for i in xrange(0, len(data), height+1):
         yield (u'\r\n'.join(data[i:i+height]),int(data[height]))
 
+def list_split(data, height):
+    for i in xrange(0, len(data), height):
+        yield data[i:i+height]
+
 def tidy_anim(text, height):
     l = text.split(u'\r\n')
     return list(chunks(l, height))

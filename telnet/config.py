@@ -136,6 +136,7 @@ str = {
     "BOARD_THEAD_TOPIC":u"[0;1;44m 编号  未读 刊 登 者       日  期      标  题                      [同主题折叠]       [m",
     "BOARD_THEAD_ONETOPIC":u"[0;1;44m 编号  未读 刊 登 者       日  期      标  题                      [主题阅读]         [m",
     "BOARD_THEAD_AUTHOR":u"[0;1;44m 编号  未读 刊 登 者       日  期      标  题                      [同作者阅读]       [m",
+    "EDIT_LIST_QUICK_HELP":u"[m加入[[1;32ma[m,[1;32m+[m], 移除[[1;32mr[m,[1;32m-[m] 离开[[1;32m.[m]",
     "MAIL_QUICK_HELP":u"[0m离开[[1;32m←[0m,[1;32mq[0m] 选择[[1;32m↑[0m, [1;32m↓[0m] 阅读信件[[1;32m→[0m,[1;32mRtn[0m] 回 信[[1;32mR[0m] 砍信／清除旧信[[1;32md[0m,[1;32mD[0m] 求助[[1;32mh[0m][m",
     "MAIL_THEAD":u"[0;1;44m 编号  发信者       日 期      标题                                                       [m",
     'MSG_BOARDLIST_MODE_0':u'按讨论区编号排序',
@@ -300,6 +301,22 @@ hotkeys = {
         "j":"move_down",     "n":"move_down",
         "P":"page_up",       "N":"page_down",
         "$":"goto_last",
+        },
+    "edit_list":{
+        "a":"add",
+        "r":"remove",
+        "+":"add",
+        "-":"remove",
+        ac.k_ctrl_l:"refresh_items",
+        "f":"refresh_items",
+        ".":"goto_back",
+        ac.k_ctrl_c:"goto_back",
+        },
+    "edit_list_ui":{
+        ac.k_up:"move_up",
+        ac.k_down:"move_down",
+        ac.k_left:"move_left",
+        ac.k_right:"move_right",
         }
     }
 
