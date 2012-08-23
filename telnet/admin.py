@@ -402,7 +402,7 @@ class EditTeamMmembersFrame(BaseAuthedFrame):
     def initialize(self, teamname):
         self.cls()
         self.teamname = teamname
-        self.members = list(manager.team.all_members(teamname))
+        self.members = members = list(manager.team.all_members(teamname))
         self.render('top')
         self.write(''.join([ac.move2(2,1),
                             config.str['EDIT_LIST_QUICK_HELP'],
