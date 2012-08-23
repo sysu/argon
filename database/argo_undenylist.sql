@@ -5,13 +5,13 @@
 */
 DROP TABLE IF EXISTS `argo_undenylist`;
 CREATE TABLE IF NOT EXISTS `argo_undenylist`(
-    `id` int(11) unsigned NOT NULL auto_increment,
+    `uid` int(11) unsigned NOT NULL auto_increment,
+    `id` int(11) unsigned ,
     `userid` varchar(16) NOT NULL,
     `executor` varchar(16),
     `boardname` varchar(20), 
     `why` varchar(128) NOT NULL, /* why deny */
-    `denytime` int(11) unsigned NOT NULL, /* the timestamp when deny */
-    `freetime` int(11) unsigned NOT NULL, /* when will be free */
-    PRIMARY KEY (`id`),
-    UNIQUE KEY (`userid`, `boardname`)
+    `denytime` TIMESTAMP,
+    `freetime` TIMESTAMP, 
+    PRIMARY KEY (`uid`)
 ) ENGINE=MyISAM  DEFAULT CHARSET=UTF8;

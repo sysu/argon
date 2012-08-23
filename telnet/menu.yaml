@@ -1,64 +1,73 @@
 main:
-        - [(E)Group       分类讨论区, sections, e, [13, 5]]
-        - [(F)avourite    个人收藏夹, favourite, f]
-        - [(I)nfoEdit   个人资料设定, user_space, i]
-        - [(P)layFilm     电影放映室, movie, p]
-        - [(M)ail           处理信笺, mail_menu, m]
-        - [(S)hoHelp        帮助中心, help, s]
-        # - [(T)est               测试, test, t]
-        # - [(N)GuessNumber 猜数字游戏, game_guess_number, n]
-        - [(G)oodbye    离开逸仙时空, goodbye, g]
-        
-main_guest:
-        - [(E)Group       分类讨论区, sections, e, [12, 5]]
-        - ['(G)oodbye    离开逸仙时空 ', finish, g]
-
-main_admin:
-        - [(A)dmin      系统管理功能, [menu, {menuname: sys_admin}], a]
+        - ['' ,             (E)Group       分类讨论区,   sections,   e, [13, 5]]
+        - ['$USER' ,        (F)avourite    个人收藏夹,   favourite,  f]
+        - ['$USER',         (I)nfoEdit   个人资料设定,   user_space, i]
+        - ['',              (P)layFilm     电影放映室,   movie,      p]
+        - ['$AUTHED_USER',  (M)ail           处理信笺,   mail_menu,  m]
+        - ['',              (S)howHelp       帮助中心,   help,       s]
+        - ['',              (G)oodbye    离开逸仙时空,   goodbye,    g]
+        - ['',              (T)est       测试键盘按键,   test_keyboard, t]
+        - ['$BASE_ADMIN',   (A)dmin      系统管理功能,   [menu, {menuname: sys_admin}],  a]
 
 mail:
-        - [(R)ead          览阅全部信笺, get_mail, r, [16, 41]]
-        - [(S)end          发送站内信件, send_mail, s]
-        - [(E)xit          回到主选单, main, e]
-        
-section:
-        - ["\e[1;32mA\e[0m) 所有讨论区 -- [ALL]", [boardlist, {sid: null}], a, [11, 41]]
-        # - ["\e[1;36mN\e[0m) 阅读新文章 -- [NEW]", undone, n]
-        - ["\e[1;36mE\e[0m) 回到主选单 -- [EXIT]", main, e]
-        
+        - ['',  (R)ead          览阅全部信笺, get_mail,  r, [16, 41]]
+        - ['',  (S)end          发送站内信件, send_mail, s]
+        - ['',  (E)xit          回到主选单,   main,      e]
+                
 user_space:
-        - [(I) 设定个人资料, user_editdata, i, [12, 6]]
-        - [(P) 修改个人密码, user_change_passwd, p]
-        - [(W) 编修个人档案, user_nickdata, w]
-        - [(S) 修改签名档, user_edit_sign, s]
-        - [(U) 查看我的资料, query_user_self, u]
-        - [(E) 回到主选单, main, e]
+        - ['', (I) 设定个人资料, user_editdata, i, [12, 6]]
+        - ['', (P) 修改个人密码, user_change_passwd, p]
+        - ['', (W) 编修个人档案, user_nickdata, w]
+        - ['', (S) 修改签名档, user_edit_sign, s]
+        - ['', (U) 查看我的资料, query_user_self, u]
+        - ['', (E) 回到主选单, main, e]
 
 sys_admin:
-        - ["(P)icture        修改系统画面", sys_edit_system_file, p, [14,20]]
-        - ["(E)HelpPage      修改帮助画面", sys_edit_help_file, h,]
-        - ["(B)board           讨论区设定",  [menu, {menuname: sys_board}], b]
-        - [(U)serLevel          帐号管理,   [menu, {menuname: sys_level}], u]
-        - [(D)efault      用户默认收藏夹, edit_default_favourite, d]
-        - [(S)uper             超级设置,  super, s]
-        # - [(S)ysTeam    设定系统管理组,  sys_team, s]
-        # - [(C)onfigure  系统参数设定, sys_conf, c]
+        - ['$TELNET_ART'    ,  "(P)icture        修改系统画面", [menu, {menuname: sys_static}], p, [14,20]]
+        - ['$TELNET_ART'    ,  "(E)HelpPage      修改帮助画面", [menu, {menuname: sys_static_help}], h]
+        - ['$MASTER'        ,  "(B)board           讨论区设定",  [menu, {menuname: sys_board}], b]
+        - ['$ADMIN_ACCOUNT' ,   (U)serLevel          帐号管理,   [menu, {menuname: sys_level}], u]
+        - ['$SYS_CONFIG'    ,   (D)efault      用户默认收藏夹,    edit_default_favourite, d]
+        - ['$SYS_SUPER'     ,   (S)uper              超级设置,  super, s]
 
 sys_static:
-        - [1. 系统菜单背景 , sys_edit_menu_background, "1", [14,20]]
-        - [2. 活动看板 ,     sys_edit_active, "2"]
-        - [3. 欢迎画面 ,     sys_edit_welcome, "3"]
+        - ['', 1. 活动看板 , [sys_edit_system_file, {filename: active}], "1", [12,20]]
+        - ['', 2. 主菜单背景 , [sys_edit_system_file, {filename: menu_main}], "2"]
+        - ['', 3. 站内信背景 , [sys_edit_system_file, {filename: menu_mail}], "3"]
+        - ['', 4. 分类讨论区背景 , [sys_edit_system_file, {filename: menu_section}], "4"]
+        - ['', 5. 个人资料设定背景 , [sys_edit_system_file, {filename: menu_user_space}], "5"]
+        - ['', 6. 注册前画面 , [sys_edit_system_file, {filename: register}], "6"]
+        - ['', 7. 注册成功画面 , [sys_edit_system_file, {filename: register_succ}], "7"]
+        - ['', 8. 欢迎画面 , [sys_edit_system_file, {filename: welcome}], "8"]
+
+sys_static_help :
+        - ['', 1. 主菜单说明,     [sys_edit_system_file, {filename: 'help/main_menu'}], '1', [12,20]]
+        - ['', 2. 分类讨论区说明, [sys_edit_system_file, {filename: 'help/sections'}], '2']
+        - ['', 3. 讨论区选单说明, [sys_edit_system_file, {filename: 'help/boardlists'}], '3']
+        - ['', 4. 阅读选单说明,   [sys_edit_system_file, {filename: 'help/board'}], '4']
+        - ['', 5. 编辑功能说明,   [sys_edit_system_file, {filename: 'help/edit'}], '5']
+        - ['', 6. 帮助页面说明,   [sys_edit_system_file, {filename: 'help/help'}], '6']
+        - ['', 7. 邮件选单说明,   [sys_edit_system_file, {filename: 'help/mail'}], '7']
+        - ['', 8. 阅读功能说明,   [sys_edit_system_file, {filename: 'help/view'}], '8']
 
 sys_board:
-        - ["1. 开启新讨论区",   sys_new_board, "1", [14,20]]
-        - ["2. 修改讨论区设定", sys_set_boardattr, "2"]
-        - ["3. 任命版主",       sys_add_bm, "3"]
-        - ["4. 版主离任",       sys_remove_bm, "4"]
-        - ["5. 增加讨论区分区", sys_new_section, '5']
-        - ["6. 修改讨论区分区", sys_edit_section, '6']
+        - ['', "1. 开启新讨论区",   sys_new_board, "1", [14,20]]
+        - ['', "2. 修改讨论区设定", sys_update_boardattr_iter, "2"]
+        - ['', "3. 任命版主",       sys_add_bm, "3"]
+        - ['', "4. 版主离任",       sys_remove_bm, "4"]
+        - ['', "5. 增加讨论区分区", sys_new_section, '5']
+        - ['', "6. 修改讨论区分区", sys_edit_section, '6']
+        - ['$MASTER'        ,   a. 查看全部讨论区,   sys_all_boards, a]
         # - [5. 讨论区组权限管理,   sys_board_team_manager, "5"]
         # - [6. 删除讨论区,     sys_remove_board, "6"]
 
 sys_level:
-        - [1. 修改帐号的群组,  sys_edit_user_team_iter, '1', [14,20]]
-        - [2. 管理群组,   sys_edit_team_iter, "2"]
+        - ['',  0. 验证用户 , [sys_get_userid, {callback: 'sys_user_join_team', destteam: 'SYS_USER'}],'0', [12,20]]
+        - ['',  1. 修改帐号的群组,  [sys_get_userid, {callback: 'sys_edit_user_team'}], '1']
+        - ['',  2. 管理群组,        [sys_get_teamname, {callback: 'sys_edit_team_members'}], "2"]
+        - ['',  3. 管理站务组,      [sys_edit_team_members, {teamname: 'SYS_SYSOPS'}], "3"]
+
+# 不是真的menu，默认全部为无需权限，前面不需要写权限要求
+section:
+        - ["\e[1;32mA\e[0m) 所有讨论区 -- [ALL]", [boardlist, {sid: null}], a, [11, 41]]
+        - ["\e[1;36mE\e[0m) 回到主选单 -- [EXIT]", main, e]

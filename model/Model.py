@@ -8,7 +8,7 @@ import bcrypt,time
 from datetime import datetime
 import mode
 import random
-import perm
+# import perm
 
 class MetaModel(type):
 
@@ -329,7 +329,6 @@ class Post(Model):
                         "WHERE pid>=%%s AND pid<%%s" % (new_tablename, self.all_attrs_str,
                                                         self.all_attrs_str, tablename),
                         start, end)
-        print ('move_range', tablename, start, end)
         return self.db.execute("DELETE FROM %s "
                                "WHERE pid>=%%s AND pid<%%s" % tablename, start, end)
 
@@ -557,7 +556,6 @@ class Online(Model):
 
     def logout(self,userid,session):
         self.ch_sessions.hincrby(userid,-1)
-        print self.ch_sessions.hget(userid)
         if int(self.ch_sessions.hget(userid)) <= 0 :
             self.ch_sessions.hdel(userid)
 
@@ -624,7 +622,6 @@ class Mail(Model):
             else:
                 sql = "SELECT * FROM `%s` WHERE touserid=%%s %s ORDER BY mid DESC LIMIT %%s"%\
                     (self.__(touid), cond)#'AND %s'%cond if cond else '')
-            print ('sql', sql, touserid, limit)
             return self.db.query(sql, touserid, abs(limit))
         except ProgrammingError as e:
             if e.args[0] == 1146 : # Table NOT EXIST
@@ -900,27 +897,22 @@ class Team(Model):
 
     key_name = 'argo:team_name'  # hash(key_name, teamid)  !! Primary
     key_mark = 'argo:team_all' # All Team, save a mark
-    key_owner = 'argo:team_owner' # hash(key_name, teamowner)
+    # key_owner = 'argo:team_owner' # hash(key_name, teamowner)
     key_publish = 'argo:team_publish'  # All the publish team
-
-    default_userid = '+default+'
     
     # Base
 
     def all_team(self):
         return self.ch.hkeys(self.key_name)
 
-    def register_team(self, teamid, teamname):
-        return self.ch.hset(self.key_name, teamid, teamname)
+    def register_team(self, teamid, teamname, publish):
+        self.ch.hset(self.key_name, teamid, teamname)
+        if publish :
+            self.publish(teamid)
 
     def confirm_exists(self, teamid):
         if not self.exists(teamid):
             raise ValueError(u'No such team [%s]' % teamid)
-
-    # def register_team(self, teamid, teamname):
-    #     self._register_team(teamid, teamname)
-    #     self.set_owner(teamid, owner)
-    #     self.publish(teamid)
 
     def drop_team(self, teamid):
         self.ch.hdel(self.key_name, teamid)
@@ -938,19 +930,6 @@ class Team(Model):
     def unpublish(self, teamid):
         self.ch.srem(self.key_publish, teamid)        
 
-    def join_default_team(self, teamname):
-        self.join_team(self.default_userid, teamname)
-
-    def remove_default_team(self, teamname):
-        self.remove_team(self.default_userid, teamname)
-
-    def init_user_team(self, userid):
-        teams = self.user_teams(self.default_userid)
-        key = self.key_ust % userid
-        for t in teams :
-            self.ch.sadd(key, t)
-            self.ch.sadd(self.key_tsm%t, userid)
-
     def join_team(self, userid, teamname):
         self.ch.sadd(self.key_ust%userid, teamname)
         self.ch.sadd(self.key_tsm%teamname, userid)
@@ -963,20 +942,11 @@ class Team(Model):
         return self.ch.sismenber(self.key_tsm%teamname,
                                  userid)
 
-    def all_menber(self, teamname):
+    def all_members(self, teamname):
         return self.ch.smembers(self.key_tsm%teamname)
 
     def user_teams(self, userid):
         return self.ch.smembers(self.key_ust%userid)
-
-    def set_owner(self, teamid, owner):
-        return self.ch.hset(self.key_owner, teamid, owner)
-
-    # def get_team_info(self, teamid):
-    #     return dict(teamid=teamid,
-    #                 teamname=self.ch.hget(self.key_name, teamid),
-    #                 mark=self.ch.hget(self.key_mark, teamid),
-    #                 owner=self.ch.hget(self.key_mark, teamid))
 
     def get_names(self, *teamid):
         return map( lambda x : self.ch.hget(self.key_name, x), teamid)
@@ -1006,6 +976,9 @@ class Permissions(Model):
     def check_perm(self, userid, perm):
         return self.ch.sinter(self.key_ust%userid, self.key_glb%perm)
 
+    def clear_perm(self, perm):
+        self.ch.delete(self.key_glb%perm)
+
     def get_teams_with_perm(self, perm):
         return self.ch.smembers(self.key_glb%perm)
 
@@ -1016,6 +989,9 @@ class Permissions(Model):
 
     def remove_boardperm(self, boardname, perm, *teamname):
         self.ch.srem(self.key_brd%(boardname, perm), *teamname)
+
+    def clear_boardperm(self, boardname, perm):
+        self.ch.delete(self.key_brd%(boardname, perm))
 
     def check_boardperm(self, userid, boardname, perm):
         return self.ch.sinter(self.key_ust%userid,
@@ -1031,103 +1007,6 @@ class Permissions(Model):
 
     def get_teams_with_boardperm(self, boardname, perm):
         return self.ch.smembers(self.key_brd%(boardname, perm))
-
-class UserPerm(Model):
-
-    u'''
-    High level operation of User's Permissions.
-    Some const are include in model/perm.py
-
-    using module: team, perm
-    '''
-
-    BOARD_DENY_NAME = '%sDeny'
-    BOARD_BM = '%sBM'
-
-    team_t_bm = perm.TEAM_T_BOARD_BM
-    team_t_deny = perm.TEAM_T_BOARD_DENY
-    team_deny_global = perm.TEAM_DENY_GLOBAL
-    team_user = perm.TEAM_USER
-
-    default_team = 'argo:default_boardperm'
-    
-    def _bmteam(self, boardname):
-        return self.team_t_bm % boardname
-
-    def _denyteam(self, boardname):
-        return self.team_t_deny % boardname
-
-    def __init__(self, team, perm):
-        self.team = team
-        self.perm = perm
-
-    def get_board_ability(self, userid, boardname):
-        r,w,d,s = self.perm.checkmany_boardperm(userid, boardname,
-                                                perm.BOARD_READ, perm.BOARD_POST,
-                                                perm.BOARD_DENY, perm.BOARD_ADMIN)
-        print r,w,d,s
-        return ( r and not d, r and not d and w, d, s)
-
-    def is_open(self, boardname):
-        return (self.perm.check_boardperm_team(perm.TEAM_USER, boardname, perm.BOARD_READ),
-                self.perm.check_boardperm_team(perm.TEAM_USER, boardname, perm.BOARD_POST))
-
-    def join_board_bm(self, boardname, bm):
-        self.team.join_team(bm, self._bmteam(boardname))
-
-    def remove_board_bm(self, boardname, bm):
-        self.team.remove_team(bm, self._bmteam(boardname))
-
-    def set_deny(self, boardname, userid):
-        self.team.join_team(userid, self._denyteam(boardname))
-
-    def remove_deny(self, boardname, userid):
-        self.team.remove_team(userid, self._denyteam(boardname))
-
-    def set_deny_global(self, userid):
-        self.team.join_team(userid, self.team_deny_global)
-
-    def remove_deny_global(self, userid):
-        self.team.remove_team(userid, self.team_deny_global)
-
-    # def init_board_team(self, boardname, r, w, d, a):
-    #     for name,val in zip([perm.BOARD_READ, perm.BOARD_POST, perm.BOARD_DENY,
-    #                          perm.BOARD_ADMIN],  [r,w,d,a]):
-    #         self.perm.give_boardperm(boardname, name, val.replace('{}', boardname,).split(','))
-
-    def init_board_team(self, boardname, is_open, is_openw):
-        if is_open :
-            self.perm.give_boardperm(boardname, perm.BOARD_READ, *perm.DEFAULT_BOARD_R_TEAM)
-        else:
-            self.perm.remove_boardperm(boardname, perm.BOARD_READ, *perm.DEFAULT_BOARD_R_TEAM)
-        if is_openw:
-            self.perm.give_boardperm(boardname, perm.BOARD_POST, *perm.DEFAULT_BOARD_W_TEAM)
-        else:
-            self.perm.remove_boardperm(boardname, perm.BOARD_POST, *perm.DEFAULT_BOARD_W_TEAM)
-        self.perm.give_boardperm(boardname, perm.BOARD_DENY,
-                                 self._denyteam(boardname),
-                                 *perm.DEAFULT_BOARD_D_TEAM)
-        self.perm.give_boardperm(boardname, perm.BOARD_ADMIN,
-                                 self._bmteam(boardname),
-                                 *perm.DEAFULT_BOARD_X_TEAM)
-
-    def init_user_team(self, userid):
-        self.team.join_team(userid, perm.TEAM_WELCOME)
-
-    # # Teams Admin
-
-    # def give_teamperm(self, teamname, oteamname, perm):
-    #     self.ch.sadd(self.key_tsp%(oteamname, perm), teamname)
-
-    # def remove_teamperm(self, teamname, oteamname, perm):
-    #     self.ch.srem(self.key_tsp%(oteamname, perm), teamname)
-
-    # def check_boardperm(self, teamname, oteamname, perm):
-    #     self.ch.sinter(self.key_tsp%(oteamname, perm), teamname)
-
-    # def get_teams_with_teamperm(self, teamname, oteamname, perm):
-    #     return self.ch.smembers(self.key_tsp%(oteamname, perm),
-    #                             teamname)
 
 class Clipboard(Model):
 
@@ -1209,7 +1088,7 @@ class UserAuth(Model):
             **kwargs
             )
         self.favourite.init_user_favourite(userid)
-        self.team.init_user_team(userid)
+        self.userperm.init_user_team(userid)
         
     def get_guest(self):
         return self.GUEST
@@ -1269,13 +1148,14 @@ class Action(Model):
     using mod: board, online, post, mail, userinfo
     '''
 
-    def __init__(self,board,online,post,mail,userinfo):
+    def __init__(self,board,online,post,mail,userinfo,readmark):
         self.board = board
         self.online = online
         self.post = post
         self.mail = mail
         self.userinfo = userinfo
-
+        self.readmark = readmark
+        
     def enter_board(self,userid,sessionid,boardname):
         self.online.enter_board(boardname,userid,sessionid)
         self.online.set_state(userid,sessionid,mode.IN_BOARD)
@@ -1299,6 +1179,7 @@ class Action(Model):
         self.post.update_post(boardname,pid,tid=pid)
         self.board.update_attr_plus1(bid,'total')
         self.board.update_attr_plus1(bid,'topic_total')
+        self.readmark.set_read(userid, boardname, pid)
         return pid
 
     def reply_post(self,boardname,userid,title,content,addr,host,replyid,replyable):
@@ -1317,6 +1198,7 @@ class Action(Model):
             replyable=replyable
             )
         self.board.update_attr_plus1(bid,'total')
+        self.readmark.set_read(userid, boardname, pid)
         return pid
 
     def update_post(self,boardname,userid,pid,content):
@@ -1381,19 +1263,27 @@ class Admin(Model):
     using mod: board, userperm, post, section
     '''
 
-    def __init__(self, board, userperm, post, section):
+    def __init__(self, board, userperm, post, section, deny, userinfo, mail):
         self.board = board
         self.userperm = userperm
         self.post = post
         self.section = section
+        self.deny = deny
+        self.userinfo = userinfo
+        self.mail = mail
 
     def set_post_replyattr(self,userid, boardname, pid, replyable):
         self.post.update_post(boardname, pid, replyable=replyable)
 
-    def add_board(self, userid, boardname, sid, description, is_open, is_openw):
+    def add_board(self, userid, boardname, sid, description, allowteam, postteam, denyteam, adminteam):
         self.board.add_board(boardname=boardname, description=description, sid=sid)
-        self.userperm.init_board_team(boardname, is_open, is_openw)
+        self.userperm.init_boardteam(boardname)
+        self.userperm.set_board_allow(boardname, allowteam)
+        self.userperm.set_board_post(boardname, postteam)
+        self.userperm.set_board_deny(boardname, denyteam)
+        self.userperm.set_board_admin(boardname, adminteam)
         self.post._create_table(boardname)
+        self.post._create_table_junk(boardname)
 
     def update_board(self, userid, bid, boardname, sid, description, is_open, is_openw):
         self.board.update_board(bid, boardname=boardname,
@@ -1416,22 +1306,6 @@ class Admin(Model):
         self.board.set_board_bm(boardname, bms)
         self.userperm.join_board_bm(boardname, userid)
 
-    def add_section(self, userid, sid, sectionname, description):
-        if sid is None:
-            self.section.add_section(sectionname=sectionname,
-                                     description=description)
-        else:
-            self.section.add_section(sid=sid, sectionname=sectionname,
-                                     description=description)
-
-    def update_section(self, userid, old_sid, sid, sectionname, description):
-        if sid is None:
-            self.section.update_section(old_sid, sectionname=sectionname,
-                                        description=description)
-        else:
-            self.section.update_section(old_sid, sid=sid, sectionname=sectionname,
-                                        description=description)
-
     def set_g_mark(self, userid, board, post):
         if board['perm'][3] :
             post['flag'] = post['flag'] ^ 1
@@ -1444,9 +1318,6 @@ class Admin(Model):
             self.post.update_post(board['boardname'], post['pid'], flag=post['flag'])
         return post
 
-    def is_open_board(self, userid, boardname):
-        return self.userperm.is_open(boardname)
-    
     def remove_post_personal(self, userid, boardname, pid):
         self.post.remove_post_personal(boardname, pid)
 
@@ -1456,11 +1327,54 @@ class Admin(Model):
     def remove_post_junk_range(self, userid, boardname, start, end):
         self.post.remove_post_junk_range(boardname, start, end)
 
-# class Manager:
+    def send_system_mail(self, touserid, **kwargs):
+        touid = self.userinfo.name2id(touserid)
+        mid =  self.mail.send_mail(touid,
+                                   fromuserid=u'deliver',
+                                   touserid=touserid,
+                                   replyid=0,
+                                   **kwargs)
+        self.mail.update_mail(touid, mid, tid=mid)
+        return mid
 
-#     def __init__(self):
-#         self.db = connect_db()
-#         self.ch = connect_ch()
+    def deny_user(self, executor, userid, boardname, why, denytime, freetime):
+        self.userperm.set_deny(boardname, userid)
+        self.deny.deny_user_board(executor, userid, boardname, why, denytime, freetime)
+        self.send_system_mail(userid, title=u'%s被 取消在 %s 版的发文权利' % (userid, boardname),
+                              content=u"封禁原因 %s , \r\n解封日期 %s " % (why, freetime))
+
+    def undeny_user(self, userid, boardname):
+        self.userperm.remove_deny(boardname, userid)
+        self.deny.remove_user_deny(userid=userid, boardname=boardname)
+        self.send_system_mail(userid, title=u'恢复 %s 在 %s 的发文权利' % (userid, boardname),
+                              content=u'你已经被恢复在 %s 版的发文权利' % boardname)
+
+class Deny(Model):
+
+    _d = "argo_denylist"
+    _u = "argo_undenylist"
+
+    def get_deny(self, userid, boardname):
+        return self.db.get("SELECT * FROM `%s` WHERE userid=%%s AND boardname=%%s" % self._d ,
+                           userid, boardname)
+
+    def get_denys(self, boardname, start, limit):
+        return self.db.query("SELECT * FROM `%s` "
+                             "WHERE boardname=%%s "
+                             "ORDER BY id LIMIT %%s,%%s" % self._d,
+                             boardname, start, limit)                             
+
+    def deny_user_board(self, executor, userid, boardname, why, denytime, freetime):
+        return self.table_insert(self._d, dict(executor=executor, userid=userid,
+                                               why=why, boardname=boardname,
+                                               denytime=denytime, freetime=freetime))
+
+    def remove_user_deny(self, userid, boardname):
+        record = self.get_deny(userid, boardname)
+        if not record:
+            raise ValueError(u'Not such deny record. [U]{%s} [B]{%s}' % (userid, boardname))
+        self.table_insert(self._u, record)
+        self.table_delete_by_key(self._d, 'id', record['id'])
 
 class Query:
 
@@ -1619,3 +1533,4 @@ def foreach_board(f):
     d.bind(global_conn)
     for board in d.get_all_boards():
         f(board)
+

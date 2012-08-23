@@ -4,9 +4,11 @@
 import sys
 sys.path.append('../')
 
+ALL_BASE_MODULE = sys.modules.keys()
+
 from chaofeng import Server, g, sleep, asynchronous, Frame
 from chaofeng.g import mark
-import login, menu,boardlist,edit,view,mail,admin,user,game,special_frame
+import login, menu,boardlist,edit,view,mail,game,special_frame ,admin,user
 import config
 # from model import db_orm
 from model import dbapi
@@ -30,10 +32,13 @@ class LoginDebugFrame(login.WelcomeFrame):
 
 @mark('finish')
 class FinishFrame(Frame):
-    def finish(self):
+    
+    def finish(self, e=None):
         raise BadEndInterrupt
 
 # config.data['ROOT'] = 'debug'
+
+ALL_MODULES = sys.modules.keys()
 
 if __name__ == '__main__' :
     s = Server(mark[config.data['ROOT']])

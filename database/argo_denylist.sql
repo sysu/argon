@@ -10,8 +10,8 @@ CREATE TABLE IF NOT EXISTS `argo_denylist`(
     `executor` varchar(16),
     `boardname` varchar(20), 
     `why` varchar(128) NOT NULL, /* why deny */
-    `denytime` int(11) unsigned NOT NULL, /* the timestamp when deny */
-    `freetime` int(11) unsigned NOT NULL, /* when will be free */
+    `denytime` TIMESTAMP NOT NULL, /* the timestamp when deny */
+    `freetime` TIMESTAMP NOT NULL, /* when will be free */
     PRIMARY KEY (`id`),
     UNIQUE KEY (`userid`, `boardname`)
 ) ENGINE=MyISAM  DEFAULT CHARSET=UTF8;

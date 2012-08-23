@@ -200,7 +200,7 @@ class EditFileFrame(BaseEditFrame):
         self.split = split
         self.callback = callback
         super(EditFileFrame, self).initialize(text=text, spoint=l)
-        self.message(u'开始编辑档案 -- %s' % filename)
+        self.message(u'开始编辑档案')
 
     def finish(self):
         self.message(u'修改档案结束!')

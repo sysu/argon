@@ -1,8 +1,16 @@
 # -*- coding: utf-8 -*-
+
+print 'Loading config...'
+
 from chaofeng import ascii as ac
 import yaml
 # from chaofeng.g import static
 # from template import load_jinjatxt,load_jinjatpl
+
+import os, sys
+
+BASEPATH_TELNET = os.path.dirname(os.path.realpath(__file__))
+BASEPATH = os.path.dirname(BASEPATH_TELNET)
 
 BBS_HOST_FULLNAME = u"逸仙时空 Yat-Sen Channel"
 BBS_HOST_DOMAIN = u"argo.sysu.edu.cn"
@@ -136,7 +144,9 @@ str = {
     "BOARD_THEAD_TOPIC":u"[0;1;44m 编号  未读 刊 登 者       日  期      标  题                      [同主题折叠]       [m",
     "BOARD_THEAD_ONETOPIC":u"[0;1;44m 编号  未读 刊 登 者       日  期      标  题                      [主题阅读]         [m",
     "BOARD_THEAD_AUTHOR":u"[0;1;44m 编号  未读 刊 登 者       日  期      标  题                      [同作者阅读]       [m",
-    "EDIT_LIST_QUICK_HELP":u"[m加入[[1;32ma[m,[1;32m+[m], 移除[[1;32mr[m,[1;32m-[m] 离开[[1;32m.[m]",
+    "EDIT_LIST_QUICK_HELP":u"[m加入并生效[[1;32ma[m,[1;32m+[m], 准备移除[[1;32md[m,[1;32m-[m] 应用并刷新[[1;32m^L[m,[1;32mf[m] 离开[[1;32m.[m]",
+    "EDIT_LIST_TEAM_THEAD":u"[44;1m    帐号                     帐号                     帐号                    	[m",
+    "EDIT_LIST_USERTEAM_THEAD":u"[44;1m    组                       组                       组                      	[m",
     "MAIL_QUICK_HELP":u"[0m离开[[1;32m←[0m,[1;32mq[0m] 选择[[1;32m↑[0m, [1;32m↓[0m] 阅读信件[[1;32m→[0m,[1;32mRtn[0m] 回 信[[1;32mR[0m] 砍信／清除旧信[[1;32md[0m,[1;32mD[0m] 求助[[1;32mh[0m][m",
     "MAIL_THEAD":u"[0;1;44m 编号  发信者       日 期      标题                                                       [m",
     'MSG_BOARDLIST_MODE_0':u'按讨论区编号排序',
@@ -151,6 +161,8 @@ str = {
     'MSG_BOARD_MODE_AUTHOR':u'查看单一作者',
     'FORM_QUICK_HELP':u'[0m返回[[1;32m←[0m,[1;32mq[0m] 修改[[1;32m→[0m,[1;32mRtn[0m] 选择[[1;32m↑[0m,[1;32m↓[0m] 求助[[1;32mh[0m][m',
     'FORM_THEAD':u'[0;1;44m  项目名称                         项目属性                                   [m',
+    'DENY_QUICK_HELP' : u'[m封禁[[32;1ma[m] 解除封禁[[32;1md[m] 返回[[32;1m.[m]',
+    'DENY_THEAD' : u'[0;1;44m 流水号  封禁日期      被封者        被封原因                                 [m',
    }
 
 hotkeys = {
@@ -219,6 +231,7 @@ hotkeys = {
         "D":"del_post_range",
         ac.k_ctrl_g:"set_g_mode", "-":"set_onetopic_mode",
         "!":"goto_bye",
+        ac.k_ctrl_d:"set_deny",
         },
     "board_table":{
         "k":"move_up", "j":"move_down", "P":"page_up", "N":"page_down",
@@ -277,6 +290,7 @@ hotkeys = {
         ac.k_up : "move_up",
         "k":"move_up",
         ac.k_down : "move_down",
+        " ":"move_down",
         ac.k_right:"move_down",
         "j":"move_down",
         ac.k_ctrl_b:"page_up",
@@ -304,7 +318,7 @@ hotkeys = {
         },
     "edit_list":{
         "a":"add",
-        "r":"remove",
+        "d":"remove",
         "+":"add",
         "-":"remove",
         ac.k_ctrl_l:"refresh_items",
@@ -317,6 +331,13 @@ hotkeys = {
         ac.k_down:"move_down",
         ac.k_left:"move_left",
         ac.k_right:"move_right",
+        },
+    "set_board_deny":{
+        "a":"add_deny",
+        '.':"goto_back",
+        "d":"remove_deny",
+        ac.k_ctrl_c:"goto_back",
+        ac.k_ctrl_l:"reload",
         }
     }
 

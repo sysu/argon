@@ -1,0 +1,7 @@
+  #0          SYS_GUEST          游客          
+  #1          SYS_WELCOME        未验证用户    
+  #2          SYS_USER           验证用户
+  #3          SYS_SYSOPS         站务组
+  #4          SYS_SUPER          最高权限
+
+可以输入 [32m#+数字[m，或者直接输入组名，逗号隔开。

@@ -26,12 +26,6 @@ class NormalBoardListFrame(BaseBoardListFrame):
         self.boards = manager.query.get_boards(self.userid, self.sid)
         self.board_total = len(self.boards)
 
-    def catch_nodata(self, e):
-        self.cls()
-        self.writeln(u'没有讨论区！')
-        self.pause()
-        self.goto_back()
-
     def initialize(self, sid=None):
         self.sid = sid
         self.load_boardlist()
@@ -39,7 +33,7 @@ class NormalBoardListFrame(BaseBoardListFrame):
         super(NormalBoardListFrame, self).initialize()
 
     def change_board_attr(self):
-        self.suspend('sys_set_boardattr', board=self.table.fetch())
+        self.suspend('sys_set_boardattr', boardname=self.table.fetch()['boardname'])
 
 @mark('favourite')
 class FavouriteFrame(BaseBoardListFrame):
@@ -86,7 +80,6 @@ class BoardFrame(BaseTableFrame):
         return self.render_str('board-li', **li)
 
     def get(self, data):
-        print repr(data),data==ac.k_home
         if data in ac.ks_finish:
             self.finish()
         self.table.do_command(config.hotkeys['g_table'].get(data))
@@ -260,9 +253,6 @@ class BoardFrame(BaseTableFrame):
                     self.message(u'错误的输入')
             else:
                 self.message(u'错误的输入')
-        
-#     def reproduced(self):
-#         pass
 
     def goto_tid(self):
         self.tid = self.table.fetch()['tid']
@@ -277,7 +267,7 @@ class BoardFrame(BaseTableFrame):
         # self.restore()
 
     def goto_back(self):
-        if self.mode != 0 :
+        if hasattr(self, 'mode') and self.mode != 0 :
             self.set_view_mode(0)
             # self.restore()
             return
@@ -312,6 +302,10 @@ class BoardFrame(BaseTableFrame):
 
     def show_help(self):
         self.suspend('help', page='board')
+
+    def set_deny(self):
+        if manager.query.get_board_ability(self.session.user.userid, self.boardname)[3] :
+            self.suspend('sys_set_board_deny', boardname=self.boardname)
 
 @mark('query_board')
 class QueryBoardFrame(BaseTextBoxFrame):

@@ -5,11 +5,11 @@ sys.path.append('../')
 from chaofeng import Frame,EndInterrupt,Timeout
 from chaofeng.g import mark,is_chchar
 from chaofeng.ui import EastAsiaTextInput,Password,DatePicker,ColMenu,VisableInput,\
-    DatePicker
+    DatePicker, Form
 from chaofeng import ascii as ac
 from model import manager
 from datetime import datetime
-from libframe import BaseAuthedFrame, BaseTableFrame, BaseFormFrame, BaseTextBoxFrame
+from libframe import BaseAuthedFrame, BaseTableFrame, BaseTextBoxFrame
 from libframe import chunks
 from menu import BaseMenuFrame, NormalMenuFrame
 from MySQLdb import DataError
@@ -22,66 +22,61 @@ class UserSpaceFrame(NormalMenuFrame):
         super(UserSpaceFrame, self).initialize('user_space')
 
 @mark('user_editdata')
-class UserEditDataFrame(BaseFormFrame):
+class UserEditDataFrame(BaseAuthedFrame):
 
-    attr = ['nickname', 'realname', 'email', 'birthday', 'gender']
-    attrzh = [u'昵称', u'真实姓名', u'电子邮箱', u'生日', u'性别']
+    def initialize(self):
+        self.cls()
+        text = self.render_str('hint/edit_userattr').split('\r\n----\r\n')
+        self.form = self.load(Form, [
+                ('nickname', text[0], self.handler_nickname),
+                ('realname', text[1], self.handler_realname),
+                ('email', text[2], self.handler_email),
+                ('birthday', text[3], self.handler_birthday),
+                ('gender', text[4], self.handler_gender),
+                ])
+        self.default = default = manager.userinfo.get_user(self.userid)
+        default['birthday'] = unicode(default['birthday'].strftime('%Y-%m-%d'))
+        default['gender'] = u'1' if default['gender'] else u'0'
+        self.form.read(default=default)
+        self.writeln(u'全部设置完毕！')
+        self.pause()
+        self.goto_back()
 
-    nickstr = [ lambda x : x, lambda x : x, lambda x : x,
-                lambda x : x.strftime(u'%Y-%m-%d'),
-                lambda x : u'M' if x else u'F']
+    def handler_nickname(self, nickname):
+        if nickname == self.default['nickname'] :
+            return
+        if len(nickname) >= 20 :
+            raise ValueError(u'昵称太长！')
+        manager.userinfo.update_user(self.userid,  nickname=nickname)
 
-    inputers = [ lambda x: x.readline(prompt=u'输入昵称： ',
-                                      acceptable=ac.isalpha,
-                                      prefix=x.form['nickname']),
-                 lambda x: x.readline(prompt=u'输入真实姓名： ',
-                                      prefix=x.form['realname']),
-                 lambda x: x.readline(prompt=u'输入电子邮箱： ',
-                                      prefix=x.form['email']),
-                 lambda x: x.read_date(),
-                 lambda x: x.read_gender(),
-                 ]
+    def handler_realname(self, realname):
+        if realname == self.default['realname'] :
+            return
+        if len(realname) >= 20 :
+            raise ValueError(u'真实姓名太长！')
+        manager.userinfo.update_user(self.userid, realname=realname)
 
-    def read_gender(self):
-        d = self.readline(prompt=u'输入性别(Male/Female)： ',
-                          acceptable=lambda x: x in u'MF',
-                          buf_size=1,
-                          prefix=u'M' if self.form['gender'] else u'F')
-        return 0 if d=='F' else 1        
-                          
-    def read_date(self):
-        d = self.read_lbd(lambda : self.load(DatePicker).set_from_date(self.form["birthday"]).\
-                              read(prompt=u"请输入生日(xxxx-xx-xx)"))
-        return d or self.form['birthday']
-    
-    def get_data_len(self):
-        return len(self.attr)        
-    
-    def get_data_index(self, index):
-        value = self.nickstr[index](self.form[self.attr[index]])
-        name = self.attrzh[index]
-        return (name, value)
+    def handler_email(self, email):
+        if email == self.default['email'] :
+            return
+        if len(email) >= 80 :
+            raise ValueError(u'电子邮件过长！')
+        manager.userinfo.update_user(self.userid, email=email)
 
-    def get_default_values(self):
-        return self.session.user.copy()
+    def handler_birthday(self, birthday):
+        if birthday == self.default['birthday'] :
+            return
+        try: 
+            birthday = datetime.strptime(birthday, '%Y-%m-%d')
+        except ValueError:
+            raise ValueError(u'错误的日期，格式 YYYY-MM-DD')
+        manager.userinfo.update_user(self.userid, birthday=birthday)
 
-    def handle(self, index):
-        value = self.inputers[index](self)
-        self.form[self.attr[index]] = value
-        self.table.set_hover_data(self.get_data_index(index))
-                 
-    def submit(self):
-        if self.readline(buf_size=1, prompt=u'确定修改资料？[Y]es/[N]o ') in ac.ks_yes :
-            self.set_user_attr(**self.form)
-            self.message(u'修改成功！')
-        else:
-            self.message(u'取消修改')
-
-    def set_user_attr(self, nickname, realname, address, email, birthday, gender, **kwargs):
-        packup = dict(nickname=nickname, realname=realname, address=address,
-                      email=email, birthday=birthday, gender=gender)
-        manager.userinfo.update_user(self.userid, **packup)
-        self.session.user.update(packup)
+    def handler_gender(self, gender):
+        if not gender or gender == self.default['gender']:
+            return
+        gender = 0 if gender in ['F', 'f', 'female', 'girl', 'g', '0'] else 1
+        manager.userinfo.update_user(self.userid, gender=gender)
 
 @mark('user_nickdata')
 class NickDataFrame(BaseMenuFrame):
@@ -240,3 +235,50 @@ class QueryUserIterFrame(QueryUserFrame):
             self.goto_back()
         else:
             return user
+
+@mark('test_keyboard')
+class TestKeyBoardFrame(BaseAuthedFrame):
+
+    all_test_key = [
+        "Cursor Up", "Cursor Down", "Cursor Left", "Cursor Right",
+        ]
+
+    def initialize(self):
+        self.cls()
+        self.render('hint/test_keyboard')
+        self.title = self.readline(prompt=u'请输入简要的按键方案说明：')
+        if not self.title :
+            self.write(u'放弃操作')
+            self.pause()
+            self.goto_back()
+        self.test_all()
+
+    def get_key(self):
+        buf = []
+        while True :
+            char = self.read_secret()
+            if char in ac.ks_finish:
+                break
+            buf.append(char)
+        return ''.join(buf)
+
+    def test_all(self):
+        buf = [u'来自 [#1;31%%]%s[%%#] 的按键测试\r\n\r\n' % self.userid]
+        res = {}
+        self.write('r\n----------\r\n\r\n')
+        for key in self.all_test_key :
+            self.write(u'开始测试... [%s] ' % key)
+            res[key] = self.get_key()
+            self.writeln(u'  结果 %r' % res[key])
+            buf.append(u'    测试 %-15s 的结果为 %r  \r\n' % (key, self.s(res[key])))
+        self.goto('edit_text', filename='Test KeyBoard', callback=self.publish_as_post,
+                  text=''.join(buf))
+
+    def publish_as_post(self, filename, text):
+        manager.action.new_post('Test',
+                                self.userid,
+                                u'[按键测试] %s ' % self.title,
+                                text,
+                                self.session.ip,
+                                config.BBS_HOST_FULLNAME,
+                                replyable=False)

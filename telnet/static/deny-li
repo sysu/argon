@@ -1,0 +1,1 @@
+   {{ id|center(5) }} {{ denytime.strftime('%m-%d') }} {{ userid|center(20) }}  {{ why }}

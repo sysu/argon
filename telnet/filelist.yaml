@@ -5,7 +5,7 @@ board-t : 查询版块显示模板
 history : 查询历史显示模板
 mail-t : 站内信显示模板
 menu_mail : 站内信菜单背景
-menu_mail : 主菜单背景
+menu_main : 主菜单背景
 menu_section : 分类讨论区菜单背景
 menu_user_space : 修改个人资料菜单背景
 movie : 电影放映

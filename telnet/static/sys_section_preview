@@ -1,0 +1,6 @@
+分区号 ： {{ sid }}
+分区名 ： {{ sectionname }}
+描述   ： {{ description }}
+介绍   ： {{ introduction }}
+
+

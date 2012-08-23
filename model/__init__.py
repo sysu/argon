@@ -25,8 +25,9 @@ class CF:
     from globaldb import global_conn,global_cache
     from Model import Section,Online,UserInfo,UserAuth,\
         Board,Post,Action,ReadMark,Mail,Permissions,UserSign,\
-        Favourite, Clipboard, Disgest,FreqControl, Team, UserPerm,\
-        Admin, Query
+        Favourite, Clipboard, Disgest,FreqControl, Team, Admin,\
+        Query, Deny
+    from perm import ArgoTeam
     
     db = global_conn
     ch = global_cache
@@ -38,23 +39,24 @@ class CF:
     board     = Board()
     post      = Post()
     mail      = Mail()
-    action    = Action(board,online,post,mail,userinfo)
-    perm      = Permissions()
     readmark  = ReadMark(post=post)
+    action    = Action(board,online,post,mail,userinfo,readmark)
+    perm      = Permissions()
     favourite = Favourite()
     clipboard = Clipboard()
     disgest   = Disgest()
     freq      = FreqControl()
     team      = Team()
-    userperm  = UserPerm(team, perm)
+    userperm  = ArgoTeam(team, perm)
     auth      = UserAuth(table=userinfo,online=online,userperm=userperm, favourite=favourite,
                          team=team)
-    admin     = Admin(board, userperm, post, section)
+    deny      = Deny()
+    admin     = Admin(board, userperm, post, section, deny, userinfo, mail)
     query     = Query(board=board, userperm=userperm, perm=perm, favourite=favourite,
                       section=section, post=post, userinfo=userinfo, team=team)
     
     loads = [section,online,userinfo,auth,board,post,readmark,mail,usersign,
-             favourite,clipboard,disgest,freq, perm, team, userperm, admin]
+             favourite,clipboard,disgest,freq, perm, team, userperm, admin, deny]
 
     use = {
         "section":section,
@@ -76,6 +78,7 @@ class CF:
         "team":team,
         "admin":admin,
         "query":query,
+        "deny":deny,
         }
 
     @classmethod

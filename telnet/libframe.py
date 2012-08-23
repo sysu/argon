@@ -512,6 +512,12 @@ class BaseBoardListFrame(BaseTableFrame):
             
     def finish(self):
         self.suspend(u'board', board=self.table.fetch())
+    
+    def catch_nodata(self, e):
+        self.cls()
+        self.writeln(u'没有讨论区！')
+        self.pause()
+        self.goto_back()
 
     ######################
 
@@ -576,64 +582,6 @@ class BaseBoardListFrame(BaseTableFrame):
 
     def show_help(self):
         self.suspend('help', page='boardlist')
-
-class BaseFormFrame(BaseTableFrame):
-
-    def get_data_index(self, index):
-        u'''
-        tuple like ( attrname, attrstring ) is return.
-        '''
-        raise NotImplementedError
-
-    def handle(self, index):
-        raise NotImplementedError
-
-    def submit(self):
-        raise NotImplementedError
-
-    def get_data_len(self):
-        raise NotImplementedError
-
-    def get_default_values(self):
-        raise NotImplementedError
-
-    def top_bar(self):
-        self.render(u'top')
-        self.writeln()
-
-    def quick_help(self):
-        self.writeln(config.str[u'FORM_QUICK_HELP'])
-
-    def print_thead(self):
-        self.writeln(config.str[u'FORM_THEAD'])
-
-    def notify(self, msg):
-        self.write(ac.move2(0, 1))
-        self.render(u'top_msg', messages=msg)
-        self.table.restore_cursor_gently()
-
-    def get_default_index(self):
-        return 0
-
-    def get_data(self, start, limit):
-        return map(self.get_data_index, range(start, min(self.get_data_len(), start+limit)))
-
-    def wrapper_li(self, li):
-        return u'  %s%-1s' % (self.format_width(li[0], -30), li[1])
-
-    def finish(self):
-        self.handle(self.table.fetch_num())
-
-    def get(self, data):
-        if data in ac.ks_finish:
-            self.finish()
-        self.table.do_command(config.hotkeys['g_table'].get(data))
-        self.do_command(config.hotkeys['table'].get(data))
-        self.do_command(config.hotkeys['form'].get(data))
-
-    def initialize(self):
-        self.form = self.get_default_values()
-        super(BaseFormFrame, self).initialize()
 
 class Editor(TextEditor, TextEditorAreaMixIn):
 

@@ -6,262 +6,298 @@ __metaclass__ = type
 import sys
 sys.path.append('../')
 
-from chaofeng.g import mark
-from chaofeng.ui import Animation,ColMenu,VisableInput,EastAsiaTextInput,\
-    CheckBox, RadioButton, ListBox
-import chaofeng.ascii as ac
-from libframe import BaseTableFrame, BaseFormFrame, BaseAuthedFrame, list_split
-from model import manager
-from menu import SelectFrame
-import config
 import codecs
-from libformat import style2telnet
-from boardlist import BaseBoardListFrame
+import datetime
+from model import manager
+from libframe import BaseEditFrame, BaseAuthedFrame, BaseBoardListFrame,\
+    list_split
+from chaofeng.g import mark
+from chaofeng.ui import Form, ListBox, PagedTable, NullValueError, TableLoadNoDataError
+import config
+import chaofeng.ascii as ac
 import traceback
 
-class BaseEditSystemFileFrame(SelectFrame):
+@mark('sys_edit_system_file')
+class EditSystemFileFrame(BaseEditFrame):
 
-    def initialize(self, filelist):
-        filenames = filelist.keys()
-        texts = filelist.values()
-        super(BaseEditSystemFileFrame, self).initialize(filenames, texts, (3, 5))
-
-    def finish(self):
-        filename = self.menu.fetch()
+    def initialize(self, filename):
+        self.filename = filename
         with codecs.open('static/%s' % filename, encoding="utf8") as f:
             text = f.read().replace('\n', '\r\n')
-        self.suspend('edit_text', filename=self.menu.fetch(), text=text,
-                     callback=self.save_to_file)
+        super(EditSystemFileFrame, self).initialize(text=text)
 
-    def save_to_file(self, filename, text):
-        text = text.replace('\r\n', '\n')
-        with codecs.open('static/%s' % filename, "w", encoding="utf8") as f:
+    def finish(self):
+        text = self.e.fetch_all().replace('\r\n', '\n')
+        with codecs.open('static/%s' % self.filename, "w", encoding="utf8") as f:
             f.write(text)
         self.message(u'修改系统档案成功！')
         self.pause()
         self.goto_back()
 
-@mark('sys_edit_system_file')
-class EditSystemFileFrame(BaseEditSystemFileFrame):
+@mark('sys_new_section')
+class NewSectionsFrame(BaseAuthedFrame):
 
     def initialize(self):
-        super(EditSystemFileFrame, self).initialize(config.all_static_file)
-
-@mark('sys_edit_help_file')
-class EditHelpFileFrame(BaseEditSystemFileFrame):
-
-    def initialize(self):
-        super(EditHelpFileFrame, self).initialize(config.all_help_file)
-
-class BaseEditSectionFormFrame(BaseFormFrame):
-
-    attr = ['sid', 'sectionname', 'description']
-    attrzh = [u'讨论区区号', u'分区名称', u'分区描述']
-
-    inputers = [lambda x:x.readline(prompt=u'分区号：', acceptable=ac.isdigit, prefix=x.form.get('sid')),
-                lambda x:x.readline(prompt=u'分区名称：', prefix=x.form.get('sectionname')),
-                lambda x:x.readline(prompt=u'分区描述：', prefix=x.form.get('description'))]
-
-    def get_default_values(self):
-        return self.section
-        
-    def get_data_index(self, index):
-        return (self.attrzh[index], self.form.get(self.attr[index]))
-
-    def handle(self, index):
-        self.form[self.attr[index]] = self.inputers[index](self)
-        self.table.set_hover_data(self.get_data_index(index))
-
-    def get_data_len(self):
-        return len(self.attr)
-
-    def handle_submit(self):
-        raise NotImplementedError
-    
-    def submit(self):
-        if self.readline(prompt=u'确认？',buf_size=5) in ac.ks_yes :
-            self.handle_submit()
-            self.message(u'操作成功！')
+        self.cls()
+        self.render('top')
+        text = self.render_str('hint/new_section').split('\r\n----\r\n')
+        self.form = self.load(Form, [
+                ('sid', text[0], self.handler_sid),
+                ('sectionname', text[1], self.handler_sectionname),
+                ('description', text[2], self.handler_description),
+                ('introduction', text[3], self.handler_introduction),
+                ])
+        data = self.form.read()
+        if not data :
+            self.writeln(u'取消操作！')
             self.pause()
             self.goto_back()
+        self.cls()
+        self.render('sys_section_preview', **data)
+        confirm = self.readline(prompt=u'输入资料完成，确定新建分区？YES确定 >>')
+        if confirm == 'YES' :
+            manager.section.add_section(sid=data['sid'],
+                                        sectionname=data['sectionname'],
+                                        description=data['description'],
+                                        introduction=data['introduction'])
+            self.writeln(u'\r\n增加分区成功！')
         else:
-            self.message(u'取消操作')
-        self.pause()
-
-@mark('sys_new_section')
-class NewSectionFormFrame(BaseEditSectionFormFrame):
-
-    def handle_submit(self):
-        manager.admin.add_section(self.userid, sid=self.form['sid'],
-                                  sectionname=self.form['sectionname'],
-                                  description=self.form['description'])
-
-    def initialize(self, section=None):
-        if section is None:
-            section = {}
-        self.section = section
-        super(BaseEditSectionFormFrame, self).initialize()
-
-@mark('sys_edit_section')
-class UpdateSectionFormFrame(BaseEditSectionFormFrame):
-
-    def handle_submit(self):
-        manager.admin.update_section(self.userid,
-                                     sid=self.section['sid'], 
-                                     sectionname=self.form['sectionname'],
-                                     description=self.form['description'])
-        
-    def end(self, s):
-        self.writeln(s)
+            self.writeln(u'\r\n取消操作！')
         self.pause()
         self.goto_back()
 
-    def initialize(self, section=None):
-        if section is None:
-            sid = self.readline_safe(prompt=u'请输入讨论区编号：', acceptable=ac.isdigit)
-            if sid.isdigit() :
-                section = manager.query.get_section(sid)
-                if not section :
-                    self.end(u'没有该分区！')
-            else:
-                self.end(u'非法输入！')
-        self.section = section
-        super(UpdateSectionFormFrame, self).initialize()                    
+    def handler_sid(self, sid):
+        if not sid.isdigit() :
+            raise ValueError(u'分区号应该是一个数字')
+        g = int(sid)
+        if manager.section.get_section_by_sid(g) :
+            raise  ValueError(u'该分区号已经被使用！')
+        return g
 
-class BaseEditBoardFormFrame(BaseFormFrame):
+    def handler_sectionname(self, sectionname):
+        if len(sectionname) >= 20 :
+            raise ValueError(u'分区名太长！')
+        return sectionname
 
-    attr = ['boardname', 'description', 'sid', 'is_open', 'is_openw']
-    attrzh = [u'讨论区名称',u'讨论区描述',u'所属讨论区分区',u'公开',u'允许回复']
+    def handler_description(self, description):
+        if len(description) >= 50 :
+            raise ValueError(u'分区的中文描述太长！')
+        return description
 
-    inputers = [lambda x:x.readline(prompt=u'输入新讨论区名称： ', acceptable=ac.isalpha,
-                                    prefix=x.form['boardname']),
-                lambda x:x.readline(prompt=u'讨论区描述： ', prefix=x.form['description']),
-                lambda x:x.read_sid(),
-                lambda x:x.read_true_or_false(x.form['is_open'],
-                                              [u'设置为不公开？',u'设置为公开？']),
-                lambda x:x.read_true_or_false(x.form['is_openw'],
-                                              [ u'设置为不可回复？', u'设置为允许回复？'])
-                ]
+    def handler_introduction(self, introduction):
+        if len(introduction) >= 140 :
+            raise ValueError(u'分区的介绍太长！')
+        return introduction
 
-    def read_true_or_false(self, value, prompt):
-        p = prompt[0] if value else prompt[1]
-        if self.readline(buf_size=3, prompt=p) :
-            return not value
+@mark('sys_edit_section')
+class EditSectionFrame(BaseAuthedFrame):
+
+    def handler_sid(self, sid):
+        if not sid:
+            raise ValueError(u'\r\n取消操作！')
+        if not sid.isdigit():
+            raise ValueError(u'\r\n分区号是一个数字！')
+        section = manager.section.get_section_by_sid(sid)
+        if section :
+            return int(sid), section
         else:
-            return value
+            raise ValueError(u'\r\n没有该讨论区！')        
 
-    def read_sid(self):
-        self.cls()
-        radio = self.load(RadioButton, self.sections_op, default=self.form['sid'])
-        res = radio.read()
-        self.restore()
-        return res
-        
-    def get_default_values(self):
-        openr, openw = manager.admin.is_open_board(self.userid,
-                                                   self.board.get('boardname'))
-        print ('pp', openr, openw)
-        sid = self.board.get('sid')
-        return dict( boardname=self.board.get('boardname') or '',
-                     description=self.board.get('description') or '',
-                     sid=self.board.get('sid'),
-                     is_open=openr, is_openw=openw)
-
-    def get_data_index(self, index):
-        if index == 2:
-            sid = self.form[self.attr[index]]
-            if sid is None:
-                return (self.attrzh[index], '')
-            else:
-                return (self.attrzh[index], self.sectionstr[sid])
-        else:
-            return (self.attrzh[index], self.form[self.attr[index]])
-
-    def handle(self, index):
-        self.form[self.attr[index]] = self.inputers[index](self)
-        self.table.set_hover_data(self.get_data_index(index))
-
-    def get_data_len(self):
-        return len(self.attr)
-
-    def check_boardattr(self):
-        if len(self.form['boardname']) < 3 :
-            self.message(u'讨论区名过短')
-        elif len(self.form['description']) < 3:
-            self.message(u'讨论区描述过短')
-        elif self.form['sid'] == None:
-            self.message(u'没有正确设置讨论区分区')
-        else : return True
-        return False
-
-    def submit(self):
-        if self.check_boardattr() :
-            if self.readline(prompt=u'确认修改？',buf_size=5) in ac.ks_yes :
-                self.handle_submit()
-                self.pause()
-                self.goto_back()
-            else:
-                self.message(u'取消操作')
-        self.pause()
-    
-    def initialize(self, board=None):
-        sections = manager.query.get_all_section_with_rownum()
-        self.sectionstr = map(lambda x: u'%s区 %s' % (x.rownum, x.sectionname) , sections)
-        self.sections_op = self.sectionstr
-        print self.sections_op
-        if board is None:
-            board = {}
-        self.board = board
-        super(BaseEditBoardFormFrame, self).initialize()
-
-    def handle_submit(self):
-        raise NotImplementedError
-
-@mark('sys_new_board')
-class AddBoardFrame(BaseEditBoardFormFrame):
-
-    def handle_submit(self):
-        manager.admin.add_board(self.userid,
-                                boardname=self.form['boardname'],
-                                description=self.form['description'],
-                                sid=self.form['sid'], is_open=self.form['is_open'],
-                                is_openw=self.form['is_openw'])
-        self.message(u'操作成功！')
-
-@mark('sys_set_boardattr')
-class UpdateBoardFrame(BaseEditBoardFormFrame):
-
-    '''
-    Update board attr.
-    '''
-
-    def handle_submit(self):
-        manager.admin.update_board(self.userid,
-                                   boardname=self.form['boardname'], bid=self.board['bid'],
-                                   description=self.form['description'],
-                                   sid=self.form['sid'], is_open=self.form['is_open'],
-                                   is_openw=self.form['is_openw'])
-        self.message(u'操作成功！')
-
-
-    def initialize(self, board=None):
-        '''
-        board is dict then should holds bid, boardname, description, sid,
-        is_openw key, and update by bid.
-        '''
-        if board is None:
-            board = self.get_board_iter()
-        super(UpdateBoardFrame, self).initialize(board)
-
-    def get_board_iter(self):
-        boardname = self.readline_safe(prompt=u'请输入讨论区名字：')
-        board = manager.query.get_board(self.userid,  boardname)
-        print board
-        if not board :
-            self.write(u'没有该讨论区！')
+    def initialize(self):
+        sid = self.readline(prompt=u'请输入欲修改的讨论区号：')
+        try:
+            self.sid, default = self.handler_sid(sid)
+        except ValueError as e:
+            self.writeln(e.message)
             self.pause()
             self.goto_back()
-        return board
+        self.cls()
+        self.render('top')
+        text = self.render_str('hint/edit_section').split('\r\n----\r\n')
+        self.form = self.load(Form, [
+                ('sectionname', text[0], self.handler_sectionname),
+                ('description', text[1], self.handler_description),
+                ('introduction', text[2], self.handler_introduction),
+                ])
+        default['sid'] = unicode(default['sid'])
+        self.form.read(default=default)
+        self.writeln(u'\r\n全部设置完毕！')
+        self.pause()
+        self.goto_back()
+
+    def handler_sectionname(self, sectionname):
+        if not sectionname:
+            return
+        if len(sectionname) >= 20 :
+            raise ValueError(u'分区名太长！')
+        manager.section.update_section(self.sid, sectionname=sectionname)
+
+    def handler_description(self, description):
+        if not description:
+            return
+        if len(description) >= 50 :
+            raise ValueError(u'分区的中文描述太长！')
+        manager.section.update_section(self.sid, description=description)
+
+    def handler_introduction(self, introduction):
+        if not introduction:
+            return
+        if len(introduction) >= 140 :
+            raise ValueError(u'分区的介绍太长！')
+        manager.section.update_section(self.sid, introduction=introduction)
+        
+@mark('sys_new_board')
+class NewBoardFrame(BaseAuthedFrame):
+
+    def initialize(self):
+        self.cls()
+        self.render('top')
+        text = self.render_str('hint/new_board').split('\r\n----\r\n')
+        self.form = self.load(Form, [
+                ('boardname', text[0], self.handler_boardname),
+                ('description', text[1], self.handler_description),
+                ('sid', text[2], self.handler_sid),
+                ('allowteam', text[3], self.handler_allowteam),
+                ('postteam', text[4], self.handler_postteam),
+                ('denyteam', text[5], self.handler_denyteam),
+                ('adminteam', text[6], self.handler_adminteam),
+                ])
+        data = self.form.read()
+        if not data :
+            self.writeln(u'取消操作！')
+            self.pause()
+            self.goto_back()
+        self.cls()
+        self.render('sys_board_preview', **data)
+        confirm = self.readline(prompt=u'输入资料完成，确认新建版块？YES确认')
+        if confirm == 'YES' :
+            manager.admin.add_board(self.userid, **data)
+            self.writeln(u'\r\n增加版块成功！')
+        else:
+            self.writeln(u'\r\n\取消操作!')
+        self.pause()
+        self.goto_back()
+            
+    def handler_boardname(self, boardname):
+        if len(boardname) >= 20 :
+            raise ValueError(u'版块名太长！')
+        if manager.board.get_board(boardname):
+            raise ValueError(u'该版块名已被使用！')
+        return boardname
+
+    def handler_description(self, description):
+        if len(description) >= 49 :
+            raise ValueError(u'版块描述太长！')
+        return description
+
+    def handler_sid(self, sid):
+        if not sid.isdigit() :
+            raise ValueError(u'分区应该是一个数字！')
+        return int(sid)
+
+    def handler_allowteam(self, allteam):
+        return allteam or 'SYS_GUEST,SYS_WELCOME,SYS_USER'
+
+    def handler_postteam(self, postteam):
+        return postteam or 'SYS_USER'
+
+    def handler_denyteam(self, denyteam):
+        return denyteam or 'SYS_DENY_GLOBAL,SYS_{}_DENY'
+
+    def handler_adminteam(self, adminteam):
+        return adminteam or 'SYS_SYSOPS,SYS_{}_BM'
+
+@mark('sys_set_boardattr')
+class EditBoardAttrFrame(BaseAuthedFrame):
+
+    def initialize(self, boardname):
+        board = manager.board.get_board(boardname)
+        if not board:
+            self.writeln(u'没有该版块！')
+            self.pause()
+            self.goto_back()
+        self.cls()
+        self.render('top')
+        text = self.render_str('hint/edit_board').split('\r\n----\r\n')
+        self.form = self.load(Form, [
+                ('description', text[0], self.handler_description),
+                ('sid', text[1], self.handler_sid),
+                ('allowteam', text[2], self.handler_allowteam),
+                ('postteam', text[3], self.handler_postteam),
+                ('denyteam', text[4], self.handler_denyteam),
+                ('adminteam', text[5], self.handler_adminteam),
+                ])
+        self.bid = board['bid']
+        self.boardname = boardname = board['boardname']
+        board['sid'] = unicode(board['sid'])
+        board['allowteam'] = ','.join(manager.userperm.get_board_allow(boardname))
+        board['postteam'] = ','.join(manager.userperm.get_board_post(boardname))
+        board['denyteam'] = ','.join(manager.userperm.get_board_deny(boardname))
+        board['adminteam'] = ','.join(manager.userperm.get_board_admin(boardname))
+        self.form.read(default=board)
+        self.writeln(u'全部设置完毕！')
+        self.pause()
+        self.goto_back()
+
+    def handler_description(self, description):
+        if description == '':
+            return
+        if len(description) >= 49 :
+            raise ValueError(u'版块描述太长！')
+        manager.board.update_board(self.bid, description=description)
+
+    def handler_sid(self, sid):
+        if sid == '':
+            return
+        if not sid.isdigit() :
+            raise ValueError(u'分区应该是一个数字！')
+        manager.board.update_board(self.bid, sid=sid)
+        
+    def handler_allowteam(self, teams):
+        if teams == '':
+            return
+        manager.userperm.set_board_allow(self.boardname, teams)
+
+    def handler_postteam(self, teams):
+        if teams == '':
+            return
+        manager.userperm.set_board_post(self.boardname, teams)
+
+    def handler_denyteam(self, teams):
+        if teams == '':
+            return
+        manager.userperm.set_board_deny(self.boardname, teams)
+
+    def handler_adminteam(self, teams):
+        if teams == '':
+            return
+        manager.userperm.set_board_admin(self.boardname, teams)        
+
+@mark('sys_update_boardattr_iter')
+class EditBoardAttrIterFrame(EditBoardAttrFrame):
+
+    def initialize(self):
+        self.cls()
+        boardname = self.readline(prompt=u'请输入版块的名称：')
+        super(EditBoardAttrIterFrame, self).initialize(boardname)
+
+@mark('sys_all_boards')
+class AdminAllBoards(BaseBoardListFrame):
+
+    def get_default_index(self):
+        return 0
+
+    def get_data(self, start, limit):
+        return self.boards[start:start+limit]
+
+    def initialize(self):
+        self.sort_mode = 0
+        self.boards = manager.board.get_all_boards()
+        self.board_total = len(self.boards)
+        super(AdminAllBoards, self).initialize()
+    
+    def change_board_attr(self):
+        self.suspend('sys_set_boardattr', boardname=self.table.fetch()['boardname'])
 
 @mark('sys_add_bm')
 class AddBoardManager(BaseAuthedFrame):
@@ -325,194 +361,280 @@ class RemoveBoardManager(BaseAuthedFrame):
         self.pause()
         self.goto_back()
 
-@mark('sys_edit_team')
-class EditTeamFrame(BaseAuthedFrame):
+@mark('sys_get_userid')
+class GetUserIdFrame(BaseAuthedFrame):
 
-    def _initialize(self):
-        self.listbox = self.load(ListBox, start_line=4, height=15)
+    def initialize(self, callback, **kwargs):
         self.cls()
-        self.write(''.join([self.render_str('top'),
-                            '\r\n',
-                            config.str['EDIT_LIST_QUICK_HELP'],
-                            '\r\n',
-                            u'[0;1;44m    帐号                     帐号                    '
-                            u'帐号                      [m',
-                            self.render_str('bottom')]))
-        self.refresh_items()
-
-    def initialize(self, teamname):
-        self.teamname = teamname
-        self._initialize()
-        
-    def refresh_items(self):
-        self.userids = list(manager.team.all_menber(self.teamname))
-        self.listbox.update(self.userids, self.userids)
-
-    def add(self):
-        userids = self.readline(prompt=u'输入要增加的id：').split(',')
-        succ = 0
-        failed = 0
-        for userid0 in userids :
-            user = manager.userinfo.get_user(userid0)
-            if user :
-                manager.team.join_team(user['userid'], self.teamname)
-                succ += 1
-            else:
-                failed += 1
-        self.message(u'成功加入 %s , 不存在的帐号 ：%s' % (succ, failed))
-        self.refresh_items()
-
-    def remove(self):
-        if self.userids :
-            manager.team.remove_team(self.listbox.fetch(), self.teamname)
-            self.message(u'成功移除')
-
-    def get(self, char):
-        if self.userids :
-            if char in config.hotkeys['edit_list_ui'] :
-                getattr(self.listbox, config.hotkeys['edit_list_ui'][char])()
-        if char in config.hotkeys['edit_list']:
-            getattr(self, config.hotkeys['edit_list'][char])()
-
-    def readline(self, prompt, acceptable=ac.is_safe_char, finish=ac.ks_finish,
-                  buf_size=20, prefix=u''):
-        prompt = ''.join([ac.move2(24,1), ac.kill_line, prompt])
-        res = super(EditTeamFrame, self).readline(prompt=prompt, acceptable=acceptable,
-                                                      finish=finish, buf_size=buf_size,
-                                                      prefix=prefix)
-        self.render('bottom')
-        if hasattr(self, 'listbox'):
-            self.listbox.fix_cursor()
-        return res
-
-    def message(self, msg):
-        self.write(''.join([ac.move2(23,2), ac.kill_line, msg]))
-        self.listbox.fix_cursor()
-
-@mark('sys_edit_team_iter')
-class EditTeamIterFrame(EditTeamFrame):
-
-    def initialize(self):
-        self.cls()
-        self.teamname = self.readline(prompt=u'请输入欲管理的组名: ')
-        if not manager.team.exists(self.teamname):
-            self.write(u'没有该组！')
+        userid = self.readline(prompt=u'请输入要管理的帐号：')
+        if manager.userinfo.get_user(userid):
+            self.goto(callback, userid=userid, **kwargs)
+        else:
+            self.writeln(u'没有该用户！')
             self.pause()
             self.goto_back()
-        self._initialize()
 
-@mark('sys_edit_user_team')
+@mark('sys_user_join_team')
 class EditUserTeamFrame(BaseAuthedFrame):
-    
-    def _initialize(self):
-        self.listbox = self.load(ListBox, start_line=4, height=15)
-        self.cls()
-        self.write(''.join([self.render_str('top'),
-                            '\r\n',
-                            config.str['EDIT_LIST_QUICK_HELP'],
-                            '\r\n',
-                            u'[0;1;44m    组号                     组号                    '
-                            u'组号                      [m',
-                            self.render_str('bottom')]))
-        self.refresh_items()
 
-    def initialize(self, userid):
-        self.euserid = userid
-        self._initialize()
-        
-    def refresh_items(self):
-        self.teams = list(manager.team.user_teams(self.euserid))
-        self.texts = map(lambda x : '%s(%s)' % tuple(x), zip(self.teams,
-                                                             manager.team.get_names(self.teams)))
-        self.listbox.update(self.texts, self.teams)
-
-    def add(self):
-        teamnames = self.readline(prompt=u'输入要增加的组名：').split(',')
-        succ = 0
-        failed = 0
-        for teamname in teamnames :
-            if manager.team.exists(teamname) :
-                manager.team.join_team(self.euserid, teamname)
-                succ += 1
-            else:
-                failed += 1
-        self.message(u'成功加入 %s , 不存在的组 ：%s' % (succ, failed))
-        self.refresh_items()
-
-    def remove(self):
-        if self.teams:
-            manager.team.remove_team(self.euserid, self.listbox.fetch())
-            self.message(u'成功移除')
-
-    def get(self, char):
-        if self.teams :
-            if char in config.hotkeys['edit_list_ui'] :
-                getattr(self.listbox, config.hotkeys['edit_list_ui'][char])()
-        if char in config.hotkeys['edit_list']:
-            getattr(self, config.hotkeys['edit_list'][char])()
-
-    def readline(self, prompt, acceptable=ac.is_safe_char, finish=ac.ks_finish,
-                  buf_size=20, prefix=u''):
-        prompt = ''.join([ac.move2(24,1), ac.kill_line, prompt])
-        res = super(EditUserTeamFrame, self).readline(prompt=prompt, acceptable=acceptable,
-                                                      finish=finish, buf_size=buf_size,
-                                                      prefix=prefix)
-        self.render('bottom')
-        if hasattr(self, 'listbox'):
-            self.listbox.fix_cursor()
-        return res
-
-    def message(self, msg):
-        self.write(''.join([ac.move2(23,2), ac.kill_line, msg]))
-        self.listbox.fix_cursor()
-    
-@mark('sys_edit_user_team_iter')
-class EditUserTeamIterFrame(EditUserTeamFrame):
-
-    def initialize(self):
-        self.cls()
-        euserid = self.readline(prompt=u'请输入欲设置的用户名: ')
-        user = manager.userinfo.get_user(euserid)
-        if not user:
-            self.write(u'没有该组！')
-            self.pause()
-            self.goto_back()
-        self.euserid = user['userid']
-        self._initialize()
-
-@mark('edit_default_favourite')
-class SetDefaultFavouriteFrame(BaseBoardListFrame):
-
-    def catch_nodata(self, e):
-        self.cls()
-        self.writeln(u'没有任何版块！')
+    def initialize(self, userid, destteam):
+        manager.team.join_team(userid, destteam)
+        self.writeln(u'\r\n%s 加入了 %s 组' % (userid, destteam))
         self.pause()
         self.goto_back()
 
-    def get_default_index(self):
-        return 0
+@mark('sys_get_teamname')
+class GetTeamnameFrame(BaseAuthedFrame):
+
+    def initialize(self, callback, **kwargs):
+        self.cls()
+        teamname = self.readline(prompt=u'请输入要管理的组名：')
+        if manager.team.exists(teamname) :
+            self.goto(callback, teamname=teamname, **kwargs)
+        else:
+            self.writeln(u'没有该组！')
+            self.pause()
+            self.goto_back()
+
+@mark('sys_edit_team_members')
+class EditTeamMmembersFrame(BaseAuthedFrame):
+
+    def initialize(self, teamname):
+        self.cls()
+        self.teamname = teamname
+        members = list(manager.team.all_members(teamname))
+        self.render('top')
+        self.write(''.join([ac.move2(2,1),
+                            config.str['EDIT_LIST_QUICK_HELP'],
+                           '\r\n',
+                           config.str['EDIT_LIST_TEAM_THEAD']]))
+        self.listbox = self.load(ListBox, start_line=4)
+        self.listbox.update(members, members)
+        self.prepare_remove = set()
+
+    def get(self, char):
+        if char in config.hotkeys['edit_list_ui']:
+            getattr(self.listbox, config.hotkeys['edit_list_ui'][char])()
+        elif char in config.hotkeys['edit_list'] :
+            getattr(self, config.hotkeys['edit_list'][char])()
+
+    def add(self):
+        userids = self.readline(prompt=u'请输入要加入的id，逗号隔开：')
+        if userids :
+            succ = 0
+            notfound = 0
+            for u in userids.split(',') :
+                user = manager.userinfo.get_user(u)
+                if user :
+                    manager.team.join_team(user['userid'], self.teamname)
+                    succ += 1
+                else:
+                    notfound += 1
+            self.hint(u'加入成功 %s 个，找不到id共 %s 个' % (succ, notfound))
+        self.refresh_items()
+
+    def remove(self):
+        userid = self.listbox.fetch()
+        self.prepare_remove.add(userid)
+        self.write('                         ')
+        self.listbox.fix_cursor()
+
+    def refresh_items(self):
+        if self.prepare_remove :
+            for u in self.prepare_remove:
+                manager.team.remove_team(u, self.teamname)
+            self.prepare_remove.clear()
+        members = list(manager.team.all_members(self.teamname))
+        self.listbox.update(members, members)
+
+    def hint(self, msg):
+        self.writeln('%s%s' % (ac.move2(23, 1), msg))
+        self.pause()
+
+    def readline(self, prompt):
+        return self.readline_safe(prompt='%s%s\r\n' % (ac.move2(21,1), prompt))
+
+@mark('sys_edit_user_team')
+class EditTeamMmembersFrame(BaseAuthedFrame):
+
+    def initialize(self, userid):
+        self.cls()
+        self.euserid = userid
+        teams = list(manager.team.user_teams(userid))
+        self.render('top')
+        self.write(''.join([ac.move2(2,1),
+                            config.str['EDIT_LIST_QUICK_HELP'],
+                           '\r\n',
+                           config.str['EDIT_LIST_USERTEAM_THEAD']]))
+        self.listbox = self.load(ListBox, start_line=4)
+        self.listbox.update(teams, teams)
+        self.prepare_remove = set()
+
+    def get(self, char):
+        if char in config.hotkeys['edit_list_ui']:
+            getattr(self.listbox, config.hotkeys['edit_list_ui'][char])()
+        elif char in config.hotkeys['edit_list'] :
+            getattr(self, config.hotkeys['edit_list'][char])()
+
+    alias = {
+        "#0":"SYS_GUEST", "#1":"SYS_WELCOME", "#2":"SYS_USER",
+        "#3":"SYS_SYSOPS", "#4":"SYS_SUPER",
+        }
+
+    def add(self):
+        self.write(''.join([ac.move2(4, 1),
+                            ac.kill_line_n(20),
+                            ac.move2(5, 1),
+                            self.render_str('add_team_hint')]))
+        teams = self.readline(prompt=u'请输入要加入的组，逗号隔开：')
+        if teams :
+            succ = 0
+            notfound = 0
+            for t in teams.split(',') :
+                if t in self.alias:
+                    t = self.alias[t]
+                if manager.team.exists(t) :
+                    manager.team.join_team(self.euserid, t)
+                    succ += 1
+                else:
+                    notfound += 1
+            self.hint(u'加入成功 %s 个，找不到id共 %s 个' % (succ, notfound))
+        self.refresh_items()
+
+    def remove(self):
+        teamname = self.listbox.fetch()
+        self.prepare_remove.add(teamname)
+        self.write('                         ')
+        self.listbox.fix_cursor()
+
+    def refresh_items(self):
+        if self.prepare_remove :
+            for t in self.prepare_remove:
+                manager.team.remove_team(self.euserid, t)
+            self.prepare_remove.clear()
+        teams = list(manager.team.user_teams(self.euserid))
+        self.listbox.update(teams, teams)
+
+    def hint(self, msg):
+        self.writeln('%s%s' % (ac.move2(23, 1), msg))
+        self.pause()
+
+    def readline(self, prompt):
+        return self.readline_safe(prompt='%s%s\r\n' % (ac.move2(21,1), prompt))
+
+@mark('sys_join_teams')
+class JoinTeamsFrame(BaseAuthedFrame):
+
+    def initialize(self, userid, teams):
+        succ = 0
+        notexists = 0
+        for t in teams:
+            if manager.team.exists(t) :
+                manager.team.join_team(userid, t)
+                succ += 1
+            else:
+                notexists += 1
+        self.writeln(u' %s 加入 %s \r\n 成功 %s, 不存在的组 %s' % (userid, succ, notexists))
+        self.pause()
+        self.goto_back()
+
+@mark('sys_set_board_deny')
+class SetBoardDenyFrame(BaseAuthedFrame):
+
+    def initialize(self, boardname):
+        self.boardname = boardname
+        self.cls()
+        self.write(''.join([self.render_str('top'),
+                            '\r\n',
+                            config.str['DENY_QUICK_HELP'],
+                            '\r\n',
+                            config.str['DENY_THEAD']]))
+        try:
+            self.table = self.load(PagedTable, loader=self.get_data,
+                                   formater=self.wrapper_li, start_num=0,
+                                   start_line=4, height=18)
+        except NullValueError as e:
+            self.catch_nodata(e)
+            self.goto_back()
+        self.table.restore_screen()
+
+    def get(self, char):
+        if char in config.hotkeys['g_table'] :
+            getattr(self.table, config.hotkeys['g_table'][char])()
+        elif char in config.hotkeys['set_board_deny'] :
+            getattr(self, config.hotkeys['set_board_deny'][char])()
 
     def get_data(self, start, limit):
-        return self.boards[start:start+limit]
+        return manager.deny.get_denys(self.boardname, start, limit)
 
-    def finish(self):
-        pass
+    def wrapper_li(self, record):
+        return self.render_str('deny-li', **record)
 
-    def add_to_fav(self):
-        manager.favourte.add_default(self.table.fetch()[u'bid'])
-        self.message(u'成功加入默认用户的收藏夹！')
+    def _add_deny(self):
+        userid = self.readline(prompt=u'[22;1H[K请输入欲封禁的id：')
+        if not userid :
+            raise ValueError(u'放弃操作')
+        user = manager.userinfo.get_user(userid)
+        if not user :
+            raise ValueError(u'没有该id！')
+        if manager.deny.get_deny(userid, self.boardname):
+            raise ValueError(u'该id已经被封！')
+        userid = user['userid']
+        why = self.readline(prompt=u'\r[K请输入封禁的原因：')
+        if not why or len(why) >= 128 :
+            raise ValueError(u'不合法的输入或中止输入！')
+        day = self.readline(prompt=u'\r[K请输入封禁天数：')
+        if not day.isdigit() :
+            raise ValueError(u'不合法的输入或中止输入！')
+        day = int(day)
+        if not ( 0 < day < 10):
+            raise ValueError(u'封禁时间太长或不合理！')
+            return
+        start = datetime.datetime.now()
+        free = start + datetime.timedelta(day)
+        manager.admin.deny_user(self.userid, userid, self.boardname,
+                                why, start, free)
 
-    def remove_fav(self):
-        manager.favourte.remove_default(self.table.fetch()[u'bid'])
-        self.message(u'成功移除默认用户的收藏夹！')
+    def add_deny(self):
+        try:
+            self._add_deny()
+        except ValueError as e:
+            self.hint('\r[K%s' % e.message) 
+        self.reload()
 
-    def suspend(self):
-        pass
+    def remove_deny(self):
+        record = self.table.fetch()
+        confirm = self.readline(prompt=u'[22;1H[K确认解除封禁？ YES/else >> ')
+        if confirm == 'YES':
+            manager.admin.undeny_user(record['userid'], self.boardname)
+            self.reload()
+        else:
+            self.hint(u' 取消操作')
 
-    def initialize(self):
-        self.boards = manager.query.get_boards(self.userid, None)
-        self.board_total = len(self.boards)
-        super(SetDefaultFavouriteFrame, self).initialize()
+    def hint(self, msg):
+        self.write(msg)
+        self.pause()
+        self.table.restore_cursor_gently()
+
+    def catch_nodata(self, e):
+        self.write(u'\r\n现在没有封禁的帐号！')
+        self.pause()
+        try:
+            self._add_deny()
+        except ValueError as e:
+            self.writeln(e.message)
+        else:
+            self.writeln(u' 成功！')
+        self.pause()
+        self.goto_back()
+
+    def reload(self):
+        try:
+            self.table.reload()
+        except TableLoadNoDataError as e:
+            self.catch_nodata(e)
+        else:
+            self.table.restore_screen()
 
 @mark('super')
 class SuperSystemFrame(BaseAuthedFrame):
@@ -587,4 +709,31 @@ class SuperSystemFrame(BaseAuthedFrame):
         teams = manager.team.all_team()
         for d in list_split(teams, split) :
             self.writeln(' '.join(d))
+            self.pause()
+
+    def action_reload_config(self):
+        reload(config)
+
+    def action_reload(self, mod):
+        import sys
+        try:
+            sys.modules[mod]
+        except KeyError as e:
+            raise ValueError(u'没有该模块！ [%s]' % mod)
+        reload(sys.modules[mod])
+
+    def reload_all(self):
+        global ALL_BASE_MODULE
+        global ALL_MODULES
+        import sys
+        for mod in ALL_MODULES :
+            if mod not in ALL_BASE_MODULE :
+                reload(sys.modules[mod])
+
+    def action_show_modules(self, split=3):
+        import sys
+        mod = sys.modules.keys()
+        formatc = '%%-%ds' % int(80/split)
+        for d in list_split(mod, split):
+            self.writeln(' ' .join(map(lambda x: formatc % x , d)))
             self.pause()

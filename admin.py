@@ -6,7 +6,7 @@ import sys,inspect
 import argo_conf as cc
 from argo_conf import ConfigTestDate as t
 
-manager = model.manager
+mrg = manager = model.manager
 
 def init_database():
     u'''

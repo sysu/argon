@@ -57,25 +57,31 @@ class NormalMenuFrame(BaseMenuFrame):
             self.goto_back()
 
     def load_all(self):
-        height = None
-        menu = ColMenu.tidy_data(config.menu[self.menuname])
+        d_menu = config.menu[self.menuname]
+        buf = []
+        for op in d_menu :
+            if op[0] :
+                if manager.perm.check_perm(self.userid, op[0]) :
+                    buf.append(op[1:])
+            else:
+                buf.append(op[1:])
+        if not buf:
+            self.writeln(u'你无权进入这个菜单！')
+            self.pause()
+            self.goto_back()
+        menu = ColMenu.tidy_data(buf)
+        print ('mm', 'menu_%s' % self.menuname, 'menu_%s' % self.menuname in config.all_static_file )
         if ('menu_%s' % self.menuname) in config.all_static_file:
             background = self.render_str('menu_%s' % self.menuname)
         else:
             background = ''
-        return (menu, height, background)
+        return (menu, None, background)
 
 @mark('main')
-class MainMenuFrame(BaseMenuFrame):
+class MainMenuFrame(NormalMenuFrame):
 
-    def load_all(self):
-        height = None
-        if self.userid == 'admin' :
-            menu = ColMenu.tidy_data(config.menu['main'] + config.menu['main_admin'])
-        else:
-            menu = ColMenu.tidy_data(config.menu['main'])
-        background = self.render_str('menu_main')
-        return (menu, height, background)
+    def initialize(self):
+        super(MainMenuFrame, self).initialize('main')
 
     def show_help(self):
         self.suspend('help',page='main_menu')
@@ -102,8 +108,7 @@ class SectionMenuFrame(BaseMenuFrame):
 
     def wrapper_li(self, x):
         return (self.render_str('section-li', index=x[0], **x[1]),
-                ('boardlist', {"sid":x[1]['sid']}),
-                str(x[0]))
+                ('boardlist', {"sid":x[1]['sid']}), str(x[0]))
 
     def show_help(self):
         self.suspend('help',page='sections')
