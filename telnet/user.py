@@ -241,6 +241,12 @@ class TestKeyBoardFrame(BaseAuthedFrame):
 
     all_test_key = [
         "Cursor Up", "Cursor Down", "Cursor Left", "Cursor Right",
+        "Page Up", "Page Down",
+        "Home", "End",
+        "CTRL+Home", "CTRL+END",
+        "CTRL+F2", "CTRL+\\", 
+        "backspace", "delete",
+        "CTRL+a", "CTRL+z"
         ]
 
     def initialize(self):
