@@ -118,6 +118,12 @@ class ConfigCache:
 ```bash
 ./admin.sh
 >>> init_database()
+
+另外，需要初始化权限设置
+
+```bash
+./admin.sh
+>>> mrg.userperm.init_system()
 ```
 
 如果数据库正常启动，配置无错误，telnet即可启动了：
@@ -136,22 +142,18 @@ $ telnet localhost 5000
 注册一个帐号。然后就可以登陆了。但注意到现在还没有设置
 版块等等，也没有讨论区分区。
 
-目前没有写好管理的接口，但我们还是可以手动来：
-
 ```bash
-./admin.sh # 继续admin.sh
->>> manager.section.add_section(sectionname="BBS 系统",description="[站务] [意见]")
->>> manager.section.get_all_section() # 记住sid，一般是1
->>> manager.board.add_board(boardname="Test",description="系统测试",sid=1)
->>> manager.post._create_table(boardname="Test")
->>> manager.board.get_all_boards()
->>> manager.board.get_by_sid(1)
->>> manager.board.get_board("Test")
+./admin.sh
+mrg.team.joint_team('你注册的帐号', 'SYS_SUPER')
 ```
 
-如果没有问题，那么我们已经成功添加了一个`BBS 系统`讨论区分类，和一个`Test`版块。
+这将会将你注册的帐号设置为超级帐号，然后登录（可能需要登出再登入）。
+即可简单管理入口。
 
-`admin.sh`实际上在调用`admin.py`,而后者则直接加载`model/manager.py` 。更多的
-接口参加源代码。
+### 补充
 
-telnet端的更多说明见`telnet/README.md`。
+如果存在一些旧的数据和旧的设置，可能会导致出现问题（SQL和redis设置
+发生变化，可能会出现bug）。这时候可以尝试 `mrg.favourite.init_user_favourite`
+`mrg.userperm.init_user_team`, `init_boardteam` 。`model.Model.foreach`可以
+对SQL进行一些简单的迭代，不过仅是测试或许直接重新建造更方便。
+
