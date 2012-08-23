@@ -177,7 +177,7 @@ class NewBoardFrame(BaseAuthedFrame):
             self.writeln(u'\r\n\取消操作!')
         self.pause()
         self.goto_back()
-            
+
     def handler_boardname(self, boardname):
         if len(boardname) >= 20 :
             raise ValueError(u'版块名太长！')
@@ -402,7 +402,7 @@ class EditTeamMmembersFrame(BaseAuthedFrame):
     def initialize(self, teamname):
         self.cls()
         self.teamname = teamname
-        members = list(manager.team.all_members(teamname))
+        self.members = list(manager.team.all_members(teamname))
         self.render('top')
         self.write(''.join([ac.move2(2,1),
                             config.str['EDIT_LIST_QUICK_HELP'],
@@ -411,8 +411,12 @@ class EditTeamMmembersFrame(BaseAuthedFrame):
         self.listbox = self.load(ListBox, start_line=4)
         self.listbox.update(members, members)
         self.prepare_remove = set()
+        if not self.members :
+            self.add()
 
     def get(self, char):
+        if not self.members :
+            self.goto_back()
         if char in config.hotkeys['edit_list_ui']:
             getattr(self.listbox, config.hotkeys['edit_list_ui'][char])()
         elif char in config.hotkeys['edit_list'] :
@@ -444,7 +448,7 @@ class EditTeamMmembersFrame(BaseAuthedFrame):
             for u in self.prepare_remove:
                 manager.team.remove_team(u, self.teamname)
             self.prepare_remove.clear()
-        members = list(manager.team.all_members(self.teamname))
+        self.members = members = list(manager.team.all_members(self.teamname))
         self.listbox.update(members, members)
 
     def hint(self, msg):
@@ -460,7 +464,7 @@ class EditTeamMmembersFrame(BaseAuthedFrame):
     def initialize(self, userid):
         self.cls()
         self.euserid = userid
-        teams = list(manager.team.user_teams(userid))
+        self.teams = teams = list(manager.team.user_teams(userid))
         self.render('top')
         self.write(''.join([ac.move2(2,1),
                             config.str['EDIT_LIST_QUICK_HELP'],
@@ -469,8 +473,12 @@ class EditTeamMmembersFrame(BaseAuthedFrame):
         self.listbox = self.load(ListBox, start_line=4)
         self.listbox.update(teams, teams)
         self.prepare_remove = set()
+        if not teams:
+            self.add()
 
     def get(self, char):
+        if not self.teams:
+            self.goto_back()
         if char in config.hotkeys['edit_list_ui']:
             getattr(self.listbox, config.hotkeys['edit_list_ui'][char])()
         elif char in config.hotkeys['edit_list'] :
@@ -512,7 +520,7 @@ class EditTeamMmembersFrame(BaseAuthedFrame):
             for t in self.prepare_remove:
                 manager.team.remove_team(self.euserid, t)
             self.prepare_remove.clear()
-        teams = list(manager.team.user_teams(self.euserid))
+        self.teams = teams = list(manager.team.user_teams(self.euserid))
         self.listbox.update(teams, teams)
 
     def hint(self, msg):
