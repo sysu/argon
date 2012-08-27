@@ -259,3 +259,26 @@ if MySQLdb is not None:
     # Alias some common MySQL exceptions
     IntegrityError = MySQLdb.IntegrityError
     OperationalError = MySQLdb.OperationalError
+
+
+'''
+    Hacked for db_pool.
+    Using WrapConnection and cursor method to prevent the method hiding
+    by PoolConnectionWrapper.
+'''
+
+class WrapConnection(object):
+
+    def __init__(self, connection):
+        self._connection = connection
+
+    def cursor(self):
+        return self._connection
+
+    def rollback(self):
+        pass
+
+def connect(*args, **kwargs):
+    print 'connect in dbapi'
+    return WrapConnection(Connection(*args, **kwargs))
+
