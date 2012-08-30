@@ -236,6 +236,34 @@ class QueryUserIterFrame(QueryUserFrame):
         else:
             return user
 
+@mark('test_timeout')
+class TestTimeoutFrame(BaseAuthedFrame):
+
+    def initialize(self):
+        self.cls()
+        self.writeln(u'请死按一个键')
+        buf = []
+        for i in range(11):
+            self.write('.')
+            self.read_secret()
+            buf.append(datetime.now())
+        self.writeln(u'\r\n\r\n请按 CTRL+a ')
+        while True:
+            if self.read_secret() == ac.k_ctrl_a:
+                break
+        self.goto('edit_text', filename='Test Timeout',
+                  callback=self.publish_as_post,
+                  text=self.render_str('timeouttest-t', data=buf))
+
+    def publish_as_post(self, filename, text):
+        manager.action.new_post('Test',
+                                self.userid,
+                                u'[反应测试] 来自 %s 的网络反应速度测试' % self.userid,
+                                text,
+                                self.session.ip,
+                                config.BBS_HOST_FULLNAME,
+                                replyable=True)
+
 @mark('test_keyboard')
 class TestKeyBoardFrame(BaseAuthedFrame):
 

@@ -1,0 +1,14 @@
+测试ip ： {{ session.ip }}
+测试id ： {{ session.user.userid }}
+
+测试时间 ： {{ data[0] }}
+
+序号                     时间                               延时
+
+{% for d in data[1:] %}
+{{ loop.index|string|width(5) }}           {{ d }}           {{ (data[loop.index] - data[loop.index0]).total_seconds()|string|width(10)|wrapper(bold, green) }}s
+{% endfor %}
+
+-------------------- END
+
+

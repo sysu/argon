@@ -92,6 +92,9 @@ class NewPostFrame(BaseEditFrame):
         self.pause()
         self.goto_back()
 
+    def pause(self):
+        sleep(1)
+
 @mark('reply_post')
 class ReplyPostFrame(BaseEditFrame):
 
