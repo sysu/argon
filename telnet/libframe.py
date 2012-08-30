@@ -642,7 +642,7 @@ class Editor(TextEditor, TextEditorAreaMixIn):
         res = self._insert_style()
         if isinstance(res, tuple) :
             self.insert_string(*res)
-        else :
+        elif res is not None :
             self.force_insert_char(res)
 
     def insert_style_area(self):
