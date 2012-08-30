@@ -43,7 +43,6 @@ class WelcomeFrame(BaseFrame):
                 print (userid, passwd)
                 self.try_login(userid, passwd)
 
-    @asynchronous
     def auth(self,userid,passwd):
         try:
             authobj = manager.auth.login(userid,passwd,self.session.ip)

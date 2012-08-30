@@ -3,7 +3,7 @@ import sys
 sys.path.append('../')
 
 from chaofeng import Frame,EndInterrupt,Timeout
-from chaofeng.g import mark,is_chchar
+from chaofeng.g import mark
 from chaofeng.ui import EastAsiaTextInput,Password,DatePicker,ColMenu,VisableInput,\
     DatePicker, Form
 from chaofeng import ascii as ac
