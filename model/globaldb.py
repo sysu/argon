@@ -4,6 +4,7 @@
 import  dbapi
 from config import *
 from eventlet import db_pool
+import MySQLdb
 import redis
 
 class DBConnectionPool:
@@ -45,6 +46,14 @@ class DBConnectionPool:
         conn = self._db_pool.get()
         try:
             return conn.cursor().executemany(query, parameters)
+        finally:
+            self._db_pool.put(conn)
+
+    ############  Add to support execute from files  ###########################
+    def execute_paragraph(self, para):
+        conn = self._db_pool.get()
+        try:
+            return conn.cursor().execute_paragraph(para)
         finally:
             self._db_pool.put(conn)
 
