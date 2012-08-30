@@ -383,6 +383,20 @@ class EditUserTeamFrame(BaseAuthedFrame):
         self.pause()
         self.goto_back()
 
+@mark('sys_user_join_by_passwd')
+class SetAuthedUserByPassword(BaseAuthedFrame):
+
+    def initialize(self):
+        self.write(ac.clear)
+        passwd = self.readline(prompt=u'请输入暗号：')
+        if passwd == config.dark.password :
+            manager.team.join_team(self.userid, 'SYS_USER')
+            self.writeln(u'验证成功！')
+        else:
+            self.writeln(u'验证失败！')
+        self.pause()
+        self.goto_back()
+
 @mark('sys_get_teamname')
 class GetTeamnameFrame(BaseAuthedFrame):
 

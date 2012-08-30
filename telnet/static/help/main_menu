@@ -1,10 +1,8 @@
-{{ "欢迎你来到逸仙时空@telnet"|center|wrapper(bg_blue,bold,yellow) }}
-
 欢迎你！
 
-欢迎来到新版argo！  这个是{{ "内部测试版本"|wrapper(cyan) }}！
+欢迎来到新版argo！
 
-... 快找人写点东西吧。
+我不知道怎么解释主菜单！
 
 {#
 这里是{{ "【主菜单】"|wrapper(yellow) }}，相信你已经发现新旧版本的差异了~ 别担心，原有的功能我们都会

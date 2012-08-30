@@ -20,6 +20,7 @@ user_space:
         - ['', (W) 编修个人档案, user_nickdata, w]
         - ['', (S) 修改签名档, user_edit_sign, s]
         - ['', (U) 查看我的资料, query_user_self, u]
+        - ['', (A) 验证我的资料, sys_user_join_by_passwd, a]
         - ['', (E) 回到主选单, main, e]
 
 sys_admin:
