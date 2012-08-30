@@ -42,7 +42,8 @@ sys_static:
         - ['', 8. 欢迎画面 , [sys_edit_system_file, {filename: welcome}], "8"]
 
 sys_static_help :
-        - ['', 1. 主菜单说明,     [sys_edit_system_file, {filename: 'help/main_menu'}], '1', [12,20]]
+        - ['', 0. 帮助中心,       [sys_edit_system_file, {filename: 'help/index'}], '0', [12,20]]
+        - ['', 1. 主菜单说明,     [sys_edit_system_file, {filename: 'help/main_menu'}], '1']
         - ['', 2. 分类讨论区说明, [sys_edit_system_file, {filename: 'help/sections'}], '2']
         - ['', 3. 讨论区选单说明, [sys_edit_system_file, {filename: 'help/boardlists'}], '3']
         - ['', 4. 阅读选单说明,   [sys_edit_system_file, {filename: 'help/board'}], '4']
