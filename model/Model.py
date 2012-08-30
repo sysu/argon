@@ -119,6 +119,9 @@ class Model:
                                    (tablename, what, key),
                                r, value)
 
+    def u(self, char):
+        return char.decode('utf-8')        
+
 class Section(Model):
 
     u'''
@@ -867,17 +870,17 @@ class UserSign(Model):
     def get_all_sign(self,userid):
         key = self.keyf % userid
         s = self.ch.lrange(key,0,-1)
-        return map(lambda x:unicode(x, 'utf8'), s)
+        return map(self.u, s)
 
     def get_sign(self,userid,index):
         key = self.keyf % userid
-        return self.ch.lindex(key,index)
+        return self.u(self.ch.lindex(key,index))
 
     def get_random(self,userid):
         key = self.keyf % userid
         l = self.ch.llen(key)
         i = self.ch.lindex(key,random.randint(0,l-1))
-        return self.ch.lindex(key,i)
+        return self.u(self.ch.lindex(key,i))
 
     def get_sign_num(self,userid):
         key = self.keyf % userid
@@ -903,7 +906,7 @@ class Team(Model):
     # Base
 
     def all_team(self):
-        return self.ch.hkeys(self.key_name)
+        return map(self.u, self.ch.hkeys(self.key_name))
 
     def register_team(self, teamid, teamname, publish):
         self.ch.hset(self.key_name, teamid, teamname)
@@ -949,7 +952,7 @@ class Team(Model):
         return self.ch.smembers(self.key_ust%userid)
 
     def get_names(self, *teamid):
-        return map( lambda x : self.ch.hget(self.key_name, x), teamid)
+        return map( lambda x : self.u(self.ch.hget(self.key_name, x)), teamid)
 
 class Permissions(Model):
 
@@ -980,7 +983,7 @@ class Permissions(Model):
         self.ch.delete(self.key_glb%perm)
 
     def get_teams_with_perm(self, perm):
-        return self.ch.smembers(self.key_glb%perm)
+        return set(self.u(m) for m in self.ch.smembers(self.key_glb%perm))
 
     # Board Permissions
 
@@ -1006,7 +1009,7 @@ class Permissions(Model):
         return self.ch.sismember(self.key_brd%(boardname, perm), teamname)
 
     def get_teams_with_boardperm(self, boardname, perm):
-        return self.ch.smembers(self.key_brd%(boardname, perm))
+        return set( self.u(m) for m in self.ch.smembers(self.key_brd%(boardname, perm)))
 
 class Clipboard(Model):
 
@@ -1032,7 +1035,7 @@ class Clipboard(Model):
 
     def get_clipboard(self, userid):
         key = self.keyf % userid
-        return self.ch.get(key)
+        return self.u(self.ch.get(key))
 
 class AuthUser(dict):
     def __getattr__(self, name):
