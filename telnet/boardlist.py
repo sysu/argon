@@ -158,7 +158,7 @@ class BoardFrame(BaseTableFrame):
         if no is not False:
             self.table.goto(no)
         else:
-            self.table.refresh_cursor_gently()
+            self.table.restore_cursor_gently()
             self.message(u'放弃输入')
 
     def get_last_pid(self):

@@ -36,7 +36,7 @@ class FinishFrame(Frame):
     def finish(self, e=None):
         raise BadEndInterrupt
 
-# config.data['ROOT'] = 'debug'
+#config.data['ROOT'] = 'debug'
 
 ALL_MODULES = sys.modules.keys()
 
