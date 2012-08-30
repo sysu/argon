@@ -634,7 +634,7 @@ class Editor(TextEditor, TextEditorAreaMixIn):
             if char2 in self.special_style:
                 return self.special_style[char2]
         elif char == 'r' :
-            return (u'[#%]', '')
+            return (u'[#%]', u'')
         elif char == ac.esc :
             return self.esc
 
@@ -643,7 +643,7 @@ class Editor(TextEditor, TextEditorAreaMixIn):
         if isinstance(res, tuple) :
             self.insert_string(*res)
         else :
-            self.insert_char(res)
+            self.force_insert_char(res)
 
     def insert_style_area(self):
         res = self._insert_style()
