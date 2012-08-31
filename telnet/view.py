@@ -49,7 +49,8 @@ class ReadPostFrame(BaseTextBoxFrame):
 
     @need_perm
     def initialize(self, boardname, pid):
-        if hasattr(self, 'lastboard') and self.lastboard.boardname != boardname :
+        if hasattr(self, 'lastboard') and getattr(self, 'lastboard') and \
+                self.session.lastboard.boardname != boardname :
             manager.action.enter_board(self.userid, self.seid, boardname)
             try:
                 index = map(lambda x:x['boardname'], self.boards).index(boardname)
