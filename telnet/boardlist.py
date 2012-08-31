@@ -230,6 +230,9 @@ class BoardFrame(BaseTableFrame):
         p = self.table.fetch()
         if p.owner == self.userid :  #######  need to check perm
             title = self.readline(prompt=u'新标题：',prefix=p['title'])
+            if not title:
+                self.message(u'放弃操作')
+                return
             p['title'] = title
             manager.action.update_title(self.userid,self.boardname,
                                         p['pid'], title)
