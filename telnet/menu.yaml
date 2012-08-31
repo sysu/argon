@@ -1,10 +1,10 @@
 main:
-        - ['' ,             (E)Group       分类讨论区,   sections,   e, [13, 5]]
+        - ['',              (H)elp           进站必读,   help,       h, [13, 5]]
+        - ['' ,             (E)Group       分类讨论区,   sections,   e]
         - ['$USER' ,        (F)avourite    个人收藏夹,   favourite,  f]
         - ['$USER',         (I)nfoEdit   个人资料设定,   user_space, i]
         - ['',              (P)layFilm     电影放映室,   movie,      p]
         - ['$AUTHED_USER',  (M)ail           处理信笺,   mail_menu,  m]
-        - ['',              (I)ndexHelp      进站必读,   help,       s]
         - ['',              (G)oodbye    离开逸仙时空,   goodbye,    g]
         - ['',              (T)est       测试键盘按键,   test_keyboard, t]
         - ['',              (O)Timeout   测试网络延时,   test_timeout, o]
