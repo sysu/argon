@@ -47,7 +47,7 @@ class BaseFrame(Frame):
         Read one line.
         '''
         buf = []
-        while len(buf) < buf_size:
+        while True :
             ds = self.read_secret()
             for d in ds :
                 if d in ac.ks_delete:
@@ -59,7 +59,7 @@ class BaseFrame(Frame):
                     return u''.join(buf)
                 elif d == ac.k_ctrl_c:
                     return False
-                elif d.isalnum():
+                elif (len(buf) < buf_size) and d.isalnum():
                     buf.append(d)
                     self.write(d)
         return u''.join(buf)                        

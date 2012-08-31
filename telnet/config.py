@@ -127,7 +127,7 @@ str = {
     "PROMPT_INPUT_USERID":u"请输入帐号：",
     "PROMPT_GUEST_UNABLE_TO_USER":u"用户名不可用",
     "PROMPT_AUTH_FAILED":u"认证失败，帐号或密码错误。",
-    "PROMPT_INPUT_USERID_REG":u'请输入帐号名称 (Enter User ID, leave blank to abort): ',
+    "PROMPT_INPUT_USERID_REG":u'请输入帐号名称 (Enter User ID, leave blank to abort):\r\n',
     "PROMPT_INPUT_PASSWD_REG":u'请设定您的密码 (Setup Password): ',
     "PROMPT_REG_SUCC":u"成功",
     "PROMPT_REG_CANNOT_USE":u"抱歉，您不能使用该id。请再拟。",
