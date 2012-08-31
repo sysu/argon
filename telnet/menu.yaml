@@ -8,6 +8,7 @@ main:
         - ['',              (G)oodbye    离开逸仙时空,   goodbye,    g]
         - ['',              (T)est       测试键盘按键,   test_keyboard, t]
         - ['',              (O)Timeout   测试网络延时,   test_timeout, o]
+        - ['$AUTHED_USER',  (B)ugReport      错误报告,   post_bug, b]
         - ['$BASE_ADMIN',   (A)dmin      系统管理功能,   [menu, {menuname: sys_admin}],  a]
 
 mail:

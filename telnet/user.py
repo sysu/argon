@@ -267,6 +267,33 @@ class TestTimeoutFrame(BaseAuthedFrame):
                                 config.BBS_HOST_FULLNAME,
                                 replyable=True)
 
+@mark('post_bug')
+class PostBugFrame(BaseAuthedFrame):
+
+    def initialize(self):
+        self.cls()
+        self.writeln(u'现在不是什么都要你说说，但是你说的每个字都会post'
+                     u'到BugReport版并且加m，\r\n请尽量减少重复的报告！\r\n')
+        title = self.readline(prompt=u'请用几个字简洁地描述bug\r\n')
+        if title :
+            self.title = title
+            self.goto('edit_text', filename='Post bug',
+                      callback=self.publish_as_post,
+                      text=self.render_str('bug-t', title=title))
+        self.writeln(u'放弃操作')
+        self.pause()
+        self.goto_back()
+
+    def publish_as_post(self, filename, text):
+        pid = manager.action.new_post('BugReport',
+                                      self.userid,
+                                      u'[未解决] %s' % self.title,
+                                      text,
+                                      self.session.ip,
+                                      config.BBS_HOST_FULLNAME,
+                                      replyable=True)
+        manager.post.update_post('BugReport', pid, flag=2)
+
 @mark('test_keyboard')
 class TestKeyBoardFrame(BaseAuthedFrame):
 
