@@ -277,9 +277,12 @@ class PostBugFrame(BaseAuthedFrame):
         title = self.readline(prompt=u'请用几个字简洁地描述bug\r\n')
         if title :
             self.title = title
+            self.important = important = self.readline(prompt=u'\r\n重要程度（尽量选择低的数字），不输入为 3,\r\n'
+                                                       u' 0：安全问题    1：建议性     2：不急着修复\r\n'
+                                                       u' 3：一般        4：危险       5：需立即修复\r\n') or '3'
             self.goto('edit_text', filename='Post bug',
                       callback=self.publish_as_post,
-                      text=self.render_str('bug-t', title=title))
+                      text=self.render_str('bug-t', title=title, important=important))
         self.writeln(u'放弃操作')
         self.pause()
         self.goto_back()
@@ -287,7 +290,7 @@ class PostBugFrame(BaseAuthedFrame):
     def publish_as_post(self, filename, text):
         pid = manager.action.new_post('BugReport',
                                       self.userid,
-                                      u'[未解决] %s' % self.title,
+                                      u'[bug]/%s\ %s' % (self.important[0], self.title),
                                       text,
                                       self.session.ip,
                                       config.BBS_HOST_FULLNAME,
