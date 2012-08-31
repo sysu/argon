@@ -266,7 +266,8 @@ hotkeys = {
     "edit":{
         # ac.k_ctrl_o:"insert_superclip",
         # ac.k_ctrl_i:"copy_to_superclip",
-        ac.k_ctrl_w:"finish",
+        ac.k_ctrl_w:"finish",        #############
+        ac.k_ctrl_x:"finish",
         ac.k_ctrl_q:"show_help",
         ac.k_ctrl_c:"quit_iter",
         },
