@@ -1,5 +1,5 @@
 {%- if session['lastboard'] -%}
-1{{ o_o(bg_blue,bold) }}2{{ o_o(bg_blue,bold) }}3{{ '逸仙时空 Yat-Sen Channel'|center(75) }}4{{ session['lastboard']|right|wrapper(yellow) }}5{{ o_o(reset) }}6
+{{ o_o(bg_blue,bold) }}{{ '逸仙时空 Yat-Sen Channel'|center(75) }}4{{ session['lastboard']|right|wrapper(yellow) }}5{{ o_o(reset) }}6
 {%- else -%}
 {{ o_o(bg_blue,bold) }}{{ '逸仙时空 Yat-Sen Channel'|center(75) }}{{ o_o(reset) }}
 {%- endif -%}
