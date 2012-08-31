@@ -236,6 +236,7 @@ hotkeys = {
         "s":"change_board", "u":"query_user",
 
         ac.k_ctrl_y:"post_bug",
+        "r":"finish",
         },
     "board_table":{
         "k":"move_up", "j":"move_down", "P":"page_up", "N":"page_down",
@@ -314,6 +315,7 @@ hotkeys = {
     "maillist":{
         ac.k_ctrl_p:"send_mail",
         "R":"reply",
+        "r":"reply",
         ac.k_left:"goto_back", ac.k_right:"finish",
         },
     "maillist_table":{
