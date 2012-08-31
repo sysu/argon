@@ -281,7 +281,7 @@ class PostBugFrame(BaseAuthedFrame):
                                                        u' 0：安全问题    1：建议性     2：不急着修复\r\n'
                                                        u' 3：一般        4：危险       5：需立即修复\r\n') or '3'
             self.goto('edit_text', filename='Post bug',
-                      callback=self.publish_as_post,
+                      callback=self.publish_as_post, l=12,
                       text=self.render_str('bug-t', title=title, important=important))
         self.writeln(u'放弃操作')
         self.pause()
