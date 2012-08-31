@@ -1,5 +1,5 @@
 main:
-        - ['',              (H)elp           进站必读,   help,       h, [13, 5]]
+        - ['',              (z)IndexHelp     进站必读,   help,       z, [13, 5]]
         - ['' ,             (E)Group       分类讨论区,   sections,   e]
         - ['$USER' ,        (F)avourite    个人收藏夹,   favourite,  f]
         - ['$USER',         (I)nfoEdit   个人资料设定,   user_space, i]

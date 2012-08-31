@@ -244,7 +244,7 @@ class TestTimeoutFrame(BaseAuthedFrame):
 
     def initialize(self):
         self.cls()
-        self.writeln(u'请死按一个键')
+        self.writeln(u'测试仅供参考，请在看到字符出现后继续按一个键')
         buf = []
         for i in range(11):
             self.write('.')
