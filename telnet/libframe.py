@@ -79,6 +79,9 @@ class BaseAuthedFrame(BaseFrame):
     def set_pipe(self, value):
         self.session[u'_$$pipe$$'] = value
 
+    def post_bug(self):
+        self.suspend('post_bug')
+
     pipe = property(get_pipe, set_pipe)
 
     @property

@@ -272,8 +272,7 @@ class PostBugFrame(BaseAuthedFrame):
 
     def initialize(self):
         self.cls()
-        self.writeln(u'现在不是什么都要你说说，但是你说的每个字都会post'
-                     u'到BugReport版并且加m，\r\n请尽量减少重复的报告！\r\n')
+        self.render('post_bug_bg')
         title = self.readline(prompt=u'请用几个字简洁地描述bug\r\n')
         if title :
             self.title = title

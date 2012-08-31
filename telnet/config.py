@@ -199,7 +199,8 @@ hotkeys = {
         'X':'set_readonly',
         ac.k_ctrl_e:'change_board_attr',
         # jump
-        "h":"show_help", 
+        "h":"show_help",
+        ac.k_ctrl_y:"post_bug",
         },
     "boardlist_jump":{
         "u":"query_user_iter",
@@ -233,6 +234,8 @@ hotkeys = {
         "!":"goto_bye",
         ac.k_ctrl_d:"set_deny",
         "s":"change_board", "u":"query_user",
+
+        ac.k_ctrl_y:"post_bug",
         },
     "board_table":{
         "k":"move_up", "j":"move_down", "P":"page_up", "N":"page_down",
