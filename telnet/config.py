@@ -266,6 +266,7 @@ hotkeys = {
         ac.esc:"insert_style",
         ac.k_ctrl_b:"page_up",      ac.k_page_up:"page_up",
         ac.k_ctrl_f:"page_down",    ac.k_page_down:"page_down",
+        ac.k_ctrl_y:"kill_whole_line",
         },
     "edit":{
         # ac.k_ctrl_o:"insert_superclip",
