@@ -286,6 +286,7 @@ hotkeys = {
         ac.k_ctrl_r:"jump_from_screen",
         "h":"show_help",
         "R":"reply_post",
+        "r":"reply_post",
         },
     "view_textbox":{
         ac.k_up : "move_up",
