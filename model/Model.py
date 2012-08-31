@@ -1408,8 +1408,9 @@ class Query:
             boards = self.board.get_by_sid(sid)
         return self._wrap_perm(userid, boards)
 
-    def get_board_by_name(self, userid, boardname):
-        return self._wrap_perm(self.board.get_board(boardname))    
+    # def get_board_by_name(self, userid, boardname):
+    #     board = self.board.get_board(boardname)
+    #     # return self._wrap_perm()    
 
     def get_all_favourite(self, userid):
         bids = self.favourite.get_all(userid)

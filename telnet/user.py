@@ -21,6 +21,9 @@ class UserSpaceFrame(NormalMenuFrame):
     def initialize(self):
         super(UserSpaceFrame, self).initialize('user_space')
 
+    def show_help(self):
+        self.suspend('help', page='userspace')
+
 @mark('user_editdata')
 class UserEditDataFrame(BaseAuthedFrame):
 
@@ -219,7 +222,7 @@ class QueryUserIterFrame(QueryUserFrame):
 
     def initialize(self):
         self.write(ac.clear + u'要查询谁？')
-        userid = self.readline(acceptable=ac.is_alnum)
+        userid = self.readline(acceptable=ac.isalnum)
         if userid :
             super(QueryUserIterFrame,self).initialize(userid)
         else:

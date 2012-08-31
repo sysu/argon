@@ -161,6 +161,20 @@ class BoardFrame(BaseTableFrame):
             self.table.restore_cursor_gently()
             self.message(u'放弃输入')
 
+    def change_board(self):
+        boardname = self.readline(prompt=u'请输入要切换的版块：')
+        board = manager.board.get_board(boardname)
+        if board :
+            perm = manager.query.get_board_ability(self.session.user.userid, board['boardname'])[0]
+            if perm :
+                self.goto('board', board=board)
+        self.message(u'错误的讨论区或你无权力进入该版')
+
+    def query_user(self):
+        self.suspend('query_user_iter')
+        
+        ####################
+
     def get_last_pid(self):
         return manager.post.get_last_pid(self.boardname)
 

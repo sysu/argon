@@ -232,6 +232,7 @@ hotkeys = {
         ac.k_ctrl_g:"set_g_mode", "-":"set_onetopic_mode",
         "!":"goto_bye",
         ac.k_ctrl_d:"set_deny",
+        "s":"change_board", "u":"query_user",
         },
     "board_table":{
         "k":"move_up", "j":"move_down", "P":"page_up", "N":"page_down",

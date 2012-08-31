@@ -7,3 +7,4 @@ help/help : 帮助页面说明
 help/index : 帮助中心
 help/mail : 邮件选单说明
 help/view : 阅读说明
+help/userspace : 用户资料设定说明
