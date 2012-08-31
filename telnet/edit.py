@@ -88,8 +88,8 @@ class NewPostFrame(BaseEditFrame):
                                 self.session.ip,
                                 config.BBS_HOST_FULLNAME,
                                 replyable=self.attrs['replyable'])
-        self.message(u'发表文章成功！')
-        self.pause()
+        # self.message(u'发表文章成功！')
+        # self.pause()
         self.goto_back()
 
 @mark('reply_post')
@@ -162,8 +162,8 @@ class ReplyPostFrame(BaseEditFrame):
             config.BBS_HOST_FULLNAME,
             self.replyid,
             replyable=True)
-        self.message(u'回复文章成功！')
-        self.pause()
+        # self.message(u'回复文章成功！')
+        # self.pause()
         self.goto_back()
 
 @mark('edit_post')
@@ -187,8 +187,8 @@ class EditPostFrame(BaseEditFrame):
                                    self.userid,
                                    self.pid,
                                    self.fetch_all())
-        self.message(u'编辑文章成功！')
-        self.pause()
+        # self.message(u'编辑文章成功！')
+        # self.pause()
         self.goto_back()
 
 @mark('edit_text')
@@ -208,7 +208,7 @@ class EditFileFrame(BaseEditFrame):
             self.callback(filename=self.filename, text=self.fetch_lines())
         else:
             self.callback(filename=self.filename, text=self.fetch_all())
-        self.pause()
+        # self.pause()
         self.goto_back()
 
     def quit_iter(self):
@@ -226,7 +226,7 @@ class EditorClipboardFrame(BaseEditFrame):
     def finish(self):
         manager.clipboard.set_clipboard(self.userid, self.fetch_all())
         self.message(u'更新暂存档成功！')
-        self.pause()
+        # self.pause()
         self.goto_back()
 
     def get_text(self):
