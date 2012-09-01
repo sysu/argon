@@ -284,7 +284,7 @@ hotkeys = {
         },
     "view":{
         ac.k_ctrl_be:"goto_history",
-        "Q":"goto_back",
+        "Q":"goto_board",
         ac.k_left:"goto_back",
         # ac.k_ctrl_u:"goto_link",
         # "h":"jump_from_screen",

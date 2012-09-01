@@ -17,6 +17,12 @@ import config
 class NormalBoardListFrame(BaseBoardListFrame):
 
     def get_default_index(self):
+        userid = self.userid
+        for index, b in enumerate(self.boards):
+            if manager.readmark.is_new_board(userid, b['boardname']):
+                return index
+        if hasattr(self, 'table'):
+            return self.table.fetch_num()
         return 0
 
     def get_data(self, start, limit):
@@ -48,6 +54,12 @@ class FavouriteFrame(BaseBoardListFrame):
         self.goto_back()
 
     def get_default_index(self):
+        userid = self.userid
+        for index, b in enumerate(self.data):
+            if manager.readmark.is_new_board(userid, b['boardname']):
+                return index
+        if hasattr(self, 'table'):
+            return self.table.fetch_num()
         return 0
 
     def get_data(self, start, limit):
@@ -67,6 +79,10 @@ class FavouriteFrame(BaseBoardListFrame):
 @mark('board')
 class BoardFrame(BaseTableFrame):
 
+    '''
+    use session['last_board_hover']
+    '''
+
     def top_bar(self):
         self.writeln(self.render_str('top'))
 
@@ -82,7 +98,7 @@ class BoardFrame(BaseTableFrame):
         self.table.restore_cursor_gently()
 
     def get_default_index(self):
-        return 0
+        return self.default
 
     def get_data(self, start, limit):
         return self.data_loader(start, limit)
@@ -107,25 +123,27 @@ class BoardFrame(BaseTableFrame):
         else:
             self.goto_back()
 
-    def check_perm(self, board):
+    def check_perm(self, board, default=0):
         r = manager.query.get_board_ability(self.session.user.userid, board['boardname'])[0]
         self.authed = r
         return r or u'错误的讨论区或你无权力进入该版'
 
     @need_perm
-    def initialize(self, board):
+    def initialize(self, board, default=0):
+        self.authed = True
         self.perm = manager.query.get_board_ability(self.userid, board['boardname'])
         self.board = board
         self.boardname = board['boardname']
         manager.action.enter_board(self.userid, self.seid, self.boardname)  ### aother entance in view.py/51
         self.session.lastboard = board
         self._set_view_mode(0)
+        self.default = default
         super(BoardFrame, self).initialize()
 
     ##########
 
     def clear(self):
-        if self.authed:
+        if hasattr(self, 'authed'):
             manager.action.exit_board(self.userid, self.seid, self.boardname)
 
     mode_thead = ['NORMAL', 'GMODE', 'MMODE', 'TOPIC', 'ONETOPIC', 'AUTHOR']
@@ -170,7 +188,7 @@ class BoardFrame(BaseTableFrame):
     def finish(self):
         pid = self.table.fetch()['pid']
         if pid is not None:
-            self.suspend('post', boardname=self.board.boardname, pid=pid)
+            self.goto('post', boardname=self.board.boardname, pid=pid)
 
     #####################
 

@@ -85,9 +85,11 @@ class ReadPostFrame(BaseTextBoxFrame):
             raise NullValueError(u'没有此文章')
 
     def reset_post(self, boardname, pid):
-        if pid :
+        if pid is not None :  ###################  None to return
             self._read_post(boardname, pid)
             self.reset_text(self.text)
+        else:
+            self.goto_back()
 
     def next_post(self):
         return self.boardname, manager.post.next_post_pid(self.boardname,self.pid)
@@ -96,12 +98,17 @@ class ReadPostFrame(BaseTextBoxFrame):
         return self.boardname, manager.post.prev_post_pid(self.boardname,self.pid)
 
     def finish(self,args=None):
+        if args is None:
+            self.goto_back()
         if args is True:
             self.reset_post(*self.next_post())
         if args is False:
             self.reset_post(*self.prev_post())
-        if args is None:
-            self.goto_back()
+
+    def goto_back(self):
+        board = manager.board.get_board(self.boardname)
+        index = manager.post.get_rank_num(self.boardname, self.pid)
+        self.goto('board', board=board, default=index)
 
     def reply_post(self):
         _,w,_,_ = manager.query.get_board_ability(self.userid, self.session.lastboard['boardname'])

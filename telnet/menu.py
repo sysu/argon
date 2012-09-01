@@ -70,7 +70,6 @@ class NormalMenuFrame(BaseMenuFrame):
             self.pause()
             self.goto_back()
         menu = ColMenu.tidy_data(buf)
-        print ('mm', 'menu_%s' % self.menuname, 'menu_%s' % self.menuname in config.all_static_file )
         if ('menu_%s' % self.menuname) in config.all_static_file:
             background = self.render_str('menu_%s' % self.menuname)
         else:

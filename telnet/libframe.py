@@ -411,7 +411,8 @@ class BaseTableFrame(BaseAuthedFrame):
 
     def restore(self):
         try:
-            self.table.reload()        ###############   Ugly!!!
+            # self.table.reload()        ###############   Ugly!!!
+            self.table.goto(self.get_default_index())
         except TableLoadNoDataError:
             self.goto_back()
         else:

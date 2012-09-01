@@ -373,6 +373,13 @@ class Post(Model):
             data[index]['index'] = num + index
         return data
 
+    def get_rank_num(self, boardname, pid):
+        return self.db.get('SELECT count(*) '
+                           'FROM `%s` '
+                           'WHERE pid<%%s '
+                           'ORDER BY pid' % self.__(boardname),
+                           pid)['count(*)']
+
     #####################
     
     def get_posts(self, boardname, num, limit):
