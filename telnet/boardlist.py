@@ -124,7 +124,8 @@ class BoardFrame(BaseTableFrame):
             self.goto_back()
 
     def check_perm(self, board, default=0):
-        r = manager.query.get_board_ability(self.session.user.userid, board['boardname'])[0]
+        board['perm'] = manager.query.get_board_ability(self.session.user.userid, board['boardname'])
+        r = board.perm[0]
         self.authed = r
         return r or u'错误的讨论区或你无权力进入该版'
 
