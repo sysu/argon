@@ -420,7 +420,7 @@ class Post(Model):
         return self._wrap_index(res, num)
 
     def get_posts_onetopic_total(self, tid, boardname):
-        return self.db.get("SELECT count(*) FROM %s WHERE tid=%s" % self.__(boardname), tid)['count(*)']
+        return self.db.get("SELECT count(*) FROM %s WHERE tid=%%s" % self.__(boardname), tid)['count(*)']
 
     def get_posts_owner(self,author,boardname,num,limit):
         res = self.db.query("SELECT * FROM `%s` WHERE owner=%%s ORDER BY pid LIMIT %%s,%%s" %\
