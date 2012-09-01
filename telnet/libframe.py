@@ -65,7 +65,7 @@ class BaseFrame(Frame):
         return u''.join(buf)                        
 
     def render(self, filename, **kwargs):
-        self.write(self.render_str(filename, **kwargs))
+        self.push(self.render_str(filename, **kwargs))
 
 class BaseAuthedFrame(BaseFrame):
 
@@ -658,7 +658,7 @@ class Editor(TextEditor, TextEditorAreaMixIn):
             self.insert_string_area(*res)
                 
     def bottom_bar(self,msg=u''):
-        self.write(ac.move2(24,0))
+        self.frame.push(ac.move2(24,0))
         self.frame.render(u'bottom_edit', message=msg, l=self._hover_col, r=self._hover_row)
         self.fix_cursor()
 
