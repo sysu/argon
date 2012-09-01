@@ -864,7 +864,7 @@ class ReadMark(Model):
         return lastpid is not None and not self.is_read(userid, boardname, lastpid)
 
     def set_read(self,userid,boardname,pid):
-        if self.is_read(boardname, pid):
+        if self.is_read(userid, boardname, pid):
             return
         key = self.keyf%(userid,boardname)
         read_num = self.ch.zcard(key)
