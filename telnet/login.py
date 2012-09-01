@@ -23,6 +23,31 @@ class WelcomeFrame(BaseFrame):
         print 'Connect :: %s : %s' % (self.session.ip, self.session.port)
         self.render('welcome')
         self.try_login_iter()
+    
+    def readline(self, buf_size=20):
+        u'''
+        Read one line.
+        '''
+        buf = []
+        while True :
+            ds = self.read_secret()
+            for d in ds :
+                if d in ac.ks_delete:
+                    if buf:
+                        buf.pop()
+                        self.write(ac.backspace)
+                        continue
+                elif d in ac.ks_finish  :
+                    return u''.join(buf)
+                elif d == '#' :
+                    buf.append('#')
+                    return u''.join(buf)
+                elif d == ac.k_ctrl_c:
+                    return False
+                elif (len(buf) < buf_size) and d.isalnum() :
+                    buf.append(d)
+                    self.write(d)
+        return u''.join(buf)                        
 
     def try_login_iter(self):
         passwd_reader = self.load(Password)
@@ -30,6 +55,9 @@ class WelcomeFrame(BaseFrame):
             while True :
                 self.write(config.str['PROMPT_INPUT_USERID'])
                 userid = self.readline()
+                if userid.endswith('#') :
+                    self.session.set_charset('utf8')
+                    userid = userid[:-1]
                 self.write('\r\n')
                 if not userid:
                     continue

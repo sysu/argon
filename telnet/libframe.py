@@ -33,8 +33,9 @@ class BaseFrame(Frame):
         return f % args
 
     def format_width(self,source,width):
-        s = self.s(source)
-        return self.u('%*s' % (width, s))
+        assert isinstance(source, unicode)
+        s = source.encode('gbk')
+        return ('%*s' % (width, s)).decode('gbk')
 
     def cls(self):
         u'''

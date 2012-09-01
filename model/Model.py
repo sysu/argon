@@ -381,7 +381,7 @@ class Post(Model):
                            pid)['count(*)']
 
     #####################
-    
+
     def get_posts(self, boardname, num, limit):
         res = self.db.query("SELECT * FROM `%s` ORDER BY pid LIMIT %%s,%%s" %\
                             self.__(boardname), num, limit)
