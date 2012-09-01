@@ -42,6 +42,9 @@ class GetMailFrame(BaseTableFrame):
     def get_data(self, start, limit):
         return manager.action.get_mail(self.userid, start, limit)
 
+    def get_total(self):
+        return manager.mail.get_mail_total(self.uid, self.userid)
+
     def wrapper_li(self, d):
         return self.render_str('mail-li', **d)
 
@@ -52,6 +55,7 @@ class GetMailFrame(BaseTableFrame):
 
     def initialize(self):
         super(GetMailFrame, self).initialize()
+        self.uid = self.session.user['uid']
         self.restore()
 
     def get(self, data):
