@@ -22,6 +22,9 @@ class NormalBoardListFrame(BaseBoardListFrame):
     def get_data(self, start, limit):
         return self.boards[start:start+limit]
 
+    def get_total(self):
+        return self.board_total
+
     def load_boardlist(self):
         self.boards = manager.query.get_boards(self.userid, self.sid)
         self.board_total = len(self.boards)
@@ -48,11 +51,19 @@ class FavouriteFrame(BaseBoardListFrame):
         return 0
 
     def get_data(self, start, limit):
-        return manager.query.get_all_favourite(self.userid)
+        return self.data[start:start+limit]
+
+    def get_total(self):
+        return self.board_total
 
     def show_help(self):
         self.suspend('help', page='boardlist')
 
+    def initialize(self):
+        self.data = manager.query.get_all_favourite(self.userid)
+        self.board_total = len(self.data)
+        super(Favourite, self).initialize()
+        
 @mark('board')
 class BoardFrame(BaseTableFrame):
 
@@ -75,6 +86,9 @@ class BoardFrame(BaseTableFrame):
 
     def get_data(self, start, limit):
         return self.data_loader(start, limit)
+
+    def get_total(self):
+        raise NotImplementedError # rewrite in set mode
 
     def wrapper_li(self, li):
         return self.render_str('board-li', **li)
@@ -119,18 +133,25 @@ class BoardFrame(BaseTableFrame):
     def _set_view_mode(self, mode):
         if mode == 1:
             data_loader = lambda o,l : manager.post.get_posts_g(self.boardname, o, l)
+            size_loader = lambda : manager.post.get_posts_g_total(self.boardname)
         elif mode == 2:
             data_loader = lambda o,l : manager.post.get_posts_m(self.boardname, o, l)
+            size_loader = lambda : manager.post.get_posts_m_total(self.boardname)
         elif mode == 3:
             data_loader = lambda p,l : manager.post.get_posts_topic(self.boardname, p, l)
+            size_loader = lambda : manager.post.get_posts_topic_total(self.boardname)
         elif mode == 4:
             data_loader = lambda p,l : manager.post.get_posts_onetopic(self.tid, self.boardname,p,l)
+            size_loader = lambda : manager.post.get_posts_onetopic_total(self.tid, self.boardname,)
         elif mode == 5:
             data_loader = lambda p,l : manager.post.get_posts_owner(self.author, self.boardname,p,l)
+            size_loader = lambda : manager.post.get_posts_owner_total(self.author, self.boardname)
         else :
             data_loader = lambda o,l : manager.post.get_posts(self.boardname, o, l)
+            size_loader = lambda : manager.post.get_posts_total(self.boardname)
             mode = 0
         self.data_loader = data_loader
+        self.get_total = size_loader
         self.thead = config.str['BOARD_THEAD_%s' % self.mode_thead[mode]]
         self.mode = mode
 

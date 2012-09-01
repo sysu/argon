@@ -8,7 +8,7 @@ import re
 from chaofeng import Frame
 from chaofeng.g import mark
 import chaofeng.ascii as ac
-from chaofeng.ui import TextEditor, PagedTable, Animation, ColMenu,\
+from chaofeng.ui import TextEditor, FinitePagedTable, Animation, ColMenu,\
     NullValueError, SimpleTextBox, TableLoadNoDataError, TextEditorAreaMixIn
 import config
 from template import env
@@ -370,14 +370,18 @@ class BaseTableFrame(BaseAuthedFrame):
 
     def wrapper_li(self, li):
         raise NotImplementedError
+    
+    def get_total(self):
+        raise NotImplementedError
 
     def catch_nodata(self, e):
         raise NotImplementedError(u'What to do while cannot catch anything [%s] ' % e.message)
 
     def load_table(self):
         try:
-            return self.load(PagedTable, self.get_data, self.wrapper_li,
-                             self.get_default_index(),
+            return self.load(FinitePagedTable, self.get_data, self.wrapper_li,
+                             get_last=self.get_total,
+                             start_num=self.get_default_index(),
                              start_line=4, height=20)
         except NullValueError as e:
             self.catch_nodata(e)

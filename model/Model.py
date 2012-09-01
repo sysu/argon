@@ -372,36 +372,58 @@ class Post(Model):
         for index in range(len(data)):
             data[index]['index'] = num + index
         return data
+
+    #####################
     
     def get_posts(self, boardname, num, limit):
         res = self.db.query("SELECT * FROM `%s` ORDER BY pid LIMIT %%s,%%s" %\
                             self.__(boardname), num, limit)
         return self._wrap_index(res, num)
 
+    def get_posts_total(self, boardname):
+        return self.db.get("SELECT count(*) FROM %s" % self.__(boardname))['count(*)']
+
     def get_posts_g(self,boardname,num,limit):
         res = self.db.query("SELECT * FROM `%s` WHERE flag & 1 ORDER BY pid LIMIT %%s,%%s" %\
                                 self.__(boardname), num, limit)
         return self._wrap_index(res, num)
+
+    def get_posts_g_total(self, boardname):
+        return self.db.get("SELECT count(*) FROM %s WHERE flag & 1" % self.__(boardname))['count(*)']
 
     def get_posts_m(self,boardname,num,limit):
         res = self.db.query("SELECT * FROM `%s` WHERE flag & 2 ORDER BY pid LIMIT %%s,%%s" %\
                                        self.__(boardname), num, limit)
         return self._wrap_index(res, num)
 
+    def get_posts_m_total(self, boardname):
+        return self.db.get("SELECT count(*) FROM %s WHERE flag & 2" % self.__(boardname))['count(*)']
+    
     def get_posts_topic(self,boardname,num,limit):
         res = self.db.query("SELECT * FROM `%s` WHERE replyid=0 ORDER BY pid LIMIT %%s,%%s" %\
                                 self.__(boardname), num, limit)
-        return self._wrap_index(res, num)      
+        return self._wrap_index(res, num)
+
+    def get_posts_topic_total(self, boardname):
+        return self.db.get("SELECT count(*) FROM %s WHERE replyid=0" % self.__(boardname))['count(*)']
 
     def get_posts_onetopic(self,tid,boardname,num,limit):
         res = self.db.query("SELECT * FROM `%s` WHERE tid=%%s ORDER BY pid LIMIT %%s,%%s" %\
                                 self.__(boardname), tid, num, limit)
         return self._wrap_index(res, num)
 
+    def get_posts_onetopic_total(self, tid, boardname):
+        return self.db.get("SELECT count(*) FROM %s WHERE tid=%s" % self.__(boardname), tid)['count(*)']
+
     def get_posts_owner(self,author,boardname,num,limit):
         res = self.db.query("SELECT * FROM `%s` WHERE owner=%%s ORDER BY pid LIMIT %%s,%%s" %\
                                 self.__(boardname), author, num, limit)
         return self._wrap_index(res, num)
+
+    def get_posts_owner_total(self, author, boardname):
+        return self.db.get("SELECT count(*) FROM %s WHERE owner=%s" % self.__(boardname), author)['count(*)']
+
+    ####################
 
     def get_last_pid(self,boardname):
         res = self.db.get("SELECT pid FROM `%s` ORDER BY pid DESC LIMIT 1" % \
