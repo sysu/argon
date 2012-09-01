@@ -293,7 +293,7 @@ class BaseSelectFrame(BaseAuthedFrame):
     def get(self,data):
         if data in ac.ks_finish:
             self.finish()
-        self.menu.send_shortcuts(data)
+        self.menu.send_shortcuts(data.lower())
         self.menu.do_command(config.hotkeys['menu_menu'].get(data))
         self.do_command(config.hotkeys['menu'].get(data))
         self.do_command(config.hotkeys['g'].get(data))

@@ -1,1 +1,1 @@
-{{ sid }} {{ sectionname }} -- {{ description }}
+{{ sid }}) {{ sectionname }} -- {{ description }}

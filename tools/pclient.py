@@ -37,6 +37,8 @@ class ProxyerFrame(Frame):
         if char == ac.k_ctrl_l :
             self.refresh()
         self._tn.write(self.s(char))
+        if self._will_print :
+            print '[34;1m>>>>[m%s' % arepr(char)
         self.refresh()
 
     def ignore(self, data):
@@ -46,6 +48,7 @@ class DefaultFrame(Frame):
 
     def initialize(self):
         self.raw_goto(ProxyerFrame,
+                      noprint=False,
                       remote='argo.sysu.edu.cn',
                       charset='gbk')
 
