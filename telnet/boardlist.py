@@ -74,7 +74,7 @@ class FavouriteFrame(BaseBoardListFrame):
     def initialize(self):
         self.data = manager.query.get_all_favourite(self.userid)
         self.board_total = len(self.data)
-        super(Favourite, self).initialize()
+        super(FavouriteFrame, self).initialize()
         
 @mark('board')
 class BoardFrame(BaseTableFrame):
