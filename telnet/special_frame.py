@@ -43,7 +43,7 @@ class Finish(BaseAuthedFrame):
 
     def finish(self,e):
         try:
-            manager.auth.safe_logout(self.userid,self.seid)
+            manager.auth.safe_logout(self.seid)
         except AttributeError:
             pass            
 

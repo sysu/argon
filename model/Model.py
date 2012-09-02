@@ -527,7 +527,7 @@ class UserInfo(Model):
         return self.db.get("SELECT %s FROM `%s` WHERE userid = %%s" % (sql_what, self.__),
                            userid)
 
-class Online(Model):
+class Status(Model):
 
     u'''
     The module include some action about online status record.
@@ -543,68 +543,92 @@ class Online(Model):
     set_status , get_status, clear_status are about this.
     
     When it's enter/exit a board, enter_board/exit_board should
-    be called. 
-    
+    be called.
+
     ch :
-       {hash} argo:user_status[userid] ==> status string
-       {hash} argo:user_sessions[userid] ==> userid login total number
-       {hash} argo:board_online[boardname] ==> board online total number
-       {hash}  argo:ip_online[userid+sessionid] ==> ip string
+
+       {string} argo:status_count :: next_sessionid
+
+       {hash} argo:status_ip[sessionid] | primary ==> session's remote ip
+
+       {hash} argo:status_userid[sessionid] ==> userid
+       {hash} argo:status_status[sessionid] ==> status 
+
+       {hash} argo:status_boardonline[boardname] ==> total_num in board
+
+       {set} argo:status_user_session[userid] ==> user's sessionid
+
+       {order map }
+          argo:status_map[rank_score] ==> session id
     '''
 
-    def __init__(self,max_login):
-        self.max_login = max_login
+    max_login = 9999
 
-    def bind(self,db=None,ch=None):
-        super(Online,self).bind(db,ch)
-        if ch is not None:
-            self.ch_status = Cacher('argo:user_status',ch=self.ch)
-            self.ch_sessions = Cacher('argo:user_sessions',ch=self.ch)
-            self.ch_board_online = Cacher('argo:board_online',ch=self.ch)
-            self.ch_user_ip = Cacher('argo:ip_online',ch=self.ch)
-
-    def _record_ip(self,userid,sessionid,ip):
-        self.ch_user_ip.hmset({userid+sessionid:ip})
-
-    def login(self, userid, ip):
-        d = self.ch_sessions.hget(userid)
-        if d and (int(d) >= self.max_login) :
-            return False
-        self.ch_sessions.hincrby(userid)
-        sessionid = self.ch_sessions.hget(userid)
-        self._record_ip(userid, sessionid, ip)
+    _count = 'argo:status_count'
+    _ip = 'argo:status_ip'
+    _status = 'argo:status_status'
+    _userid = 'argo:status_userid'
+    _boardonline = 'argo:status_boardonline'
+    _user_session = 'argo:status_user_session:%s'
+    _map = 'argo:status_map'
+    
+    def new_session(self, remote, userid, status, rank_score):
+        sessionid = self.ch.incr(self._count)
+        self.ch.hset(self._ip, sessionid, remote)
+        self.ch.hset(self._status, sessionid, status)
+        self.ch.hset(self._userid, sessionid, userid)
+        self.ch.sadd(self._user_session % userid, sessionid)
+        self.ch.zadd(self._map, sessionid, rank_score)
         return sessionid
-            
-    def set_state(self,userid,session,value):
-        return self.ch_status.hmset({
-                userid + session : value
-                })
 
-    def get_state(self,userid,session):
-        return self.ch_status.hget(userid + session)
+    def logout(self, sessionid):
+        self.ch.hdel(self._status, sessionid)
+        userid = self.ch.hget(self._userid, sessionid)
+        self.ch.hdel(self._userid, sessionid)
+        self.ch.srem(self._user_session % userid, sessionid)
+        self.ch.zrem(self._map, sessionid)
+        self.ch.hdel(self._ip, sessionid)
 
-    def clear_state(self,userid,session):
-        self.ch_status.hdel(userid + session)
+    def set_status(self, sessionid, status):
+        return self.ch.hset(self._status, sessionid, status)
 
-    def logout(self,userid,session):
-        self.ch_sessions.hincrby(userid,-1)
-        if int(self.ch_sessions.hget(userid)) <= 0 :
-            self.ch_sessions.hdel(userid)
+    def get_status(self, sessionid):
+        return self.ch.hget(self._status, sessionid)
 
     def total_online(self):
-        return self.ch_sessions.hlen() or 0
+        return self.ch.hlen(self._ip)
 
-    def enter_board(self,boardname,userid,sessionid):
-        return self.ch.sadd('argo:board_online:%s'%boardname,
-                            userid+':'+sessionid)
+    def enter_board(self, boardname):
+        self.ch.hincrby(self._boardonline, boardname)
 
-    def exit_board(self,boardname,userid,sessionid):
-        return self.ch.srem('argo:board_online:%s'%boardname,
-                            userid+':'+sessionid)
+    def exit_board(self, boardname):
+        self.ch.hincrby(self._boardonline, boardname, -1)
 
-    def board_online(self,boardname):
-        return self.ch.scard('argo:board_online:%s'%boardname)
+    def board_online(self, boardname):
+        return self.ch.hget(self._boardonline, boardname)
 
+    def get_rank(self, sessionid):
+        return self.ch.zrank(self._map, sessionid)
+
+    def get_session(self, sessionid):
+        return dict(
+            sessionid=sessionid,
+            userid=self.ch.hget(self._userid, sessionid),
+            status=self.ch.hget(self._status, sessionid),
+            ip=self.ch.hget(self._ip, sessionid)
+            )
+
+    def get_sessionid_rank(self, start, limit):
+        return self.ch.zrange(self._map, start, start+limit)
+
+    def get_session_rank(self, start, limit):
+        return map(self.get_session, self.get_sessionid_rank)
+
+    def clear_all(self):
+        all_sesions = self.ch.hkeys(self._ip)
+        for s in all_sesions:
+            self.logout(s)
+            
 class Mail(Model):
 
     u'''
@@ -1079,7 +1103,7 @@ class UserAuth(Model):
     u'''
     An high level module to deal with auth.
 
-    using mod:  userinfo, online, userperm
+    using mod:  userinfo, status, userperm
     '''
     
     ban_userid = ['guest','new']
@@ -1149,7 +1173,8 @@ class UserAuth(Model):
 
         if session:
             #set_state
-            seid = self.online.login(userid, host)
+            seid = self.status.new_session(host, userid, 'NEW',
+                                           ord(userid[0]))
             if seid is False :
                 return LoginError(u'已达最大上线数！')
             res.seid = seid
@@ -1166,12 +1191,12 @@ class UserAuth(Model):
     def msg(self,string):
         print string
 
-    def logout(self,userid,seid):
-        self.online.logout(userid,seid)
+    def logout(self, seid):
+        self.status.logout(seid)
 
-    def safe_logout(self,userid,seid):
+    def safe_logout(self,seid):
         try:
-            self.logout(userid,seid)
+            self.logout(seid)
         except:
             pass
 
@@ -1179,26 +1204,25 @@ class Action(Model):
 
     u'''
     High level operation about user's action.
-    using mod: board, online, post, mail, userinfo
+    using mod: board, status, post, mail, userinfo
     '''
 
-    def __init__(self,board,online,post,mail,userinfo,readmark):
+    def __init__(self,board,status,post,mail,userinfo,readmark):
         self.board = board
-        self.online = online
+        self.status = status
         self.post = post
         self.mail = mail
         self.userinfo = userinfo
         self.readmark = readmark
         
-    def enter_board(self,userid,sessionid,boardname):
-        self.online.enter_board(boardname,userid,sessionid)
-        self.online.set_state(userid,sessionid,mode.IN_BOARD)
+    def enter_board(self,sessionid,boardname):
+        self.status.enter_board(boardname)
 
-    def exit_board(self,userid,sessionid,boardname):
-        self.online.exit_board(boardname,userid,sessionid)
+    def exit_board(self,sessionid,boardname):
+        self.status.exit_board(boardname)
 
     def new_post(self,boardname,userid,title,content,
-                 addr,host,replyable,signature):
+                 addr,host,replyable,signature=''):
         bid = self.board.name2id(boardname)
         pid = self.post.add_post(
             boardname,

@@ -144,3 +144,10 @@ class FirstLoginFrame(BaseAuthedFrame):
 
     def initialize(self):
         self.goto('help','index')
+
+# @mark('goodbye')
+# class GoodByeFrame(BaseAuthedFrame):
+
+#     def initialize(self):
+#         manager.auth.logout(self.seid)
+#         self.close()

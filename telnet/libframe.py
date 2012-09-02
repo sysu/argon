@@ -560,7 +560,8 @@ class BaseBoardListFrame(BaseTableFrame):
     def sort(self, mode):
         if mode == 1 :
             self.boards.sort(key = lambda x: \
-                                manager.online.board_online(x[u'boardname'] or 0),
+                                 manager.status.board_online(x[u'boardname'] \
+                                                                 or 0),
                             reverse=True)
         elif mode == 2:
             self.boards.sort(key = lambda x: x[u'boardname'])

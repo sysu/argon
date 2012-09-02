@@ -52,7 +52,7 @@ class ReadPostFrame(BaseTextBoxFrame):
         # if not (hasattr(self.session, 'lastboard') and \
                 # getattr(self.session, 'lastboard')) or \
                 # self.session.lastboard.boardname != boardname :
-        manager.action.enter_board(self.userid, self.seid, boardname)
+        # manager.action.enter_board(self.seid, boardname)
             # try:
                 # index = map(lambda x:x['boardname'], self.boards).index(boardname)
             # except ValueError:  ############  impossible

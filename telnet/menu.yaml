@@ -5,7 +5,7 @@ main:
         - ['$USER',         (I)nfoEdit   个人资料设定,   user_space, i]
         - ['',              (P)layFilm     电影放映室,   movie,      p]
         - ['$AUTHED_USER',  (M)ail           处理信笺,   mail_menu,  m]
-        - ['',              (G)oodbye    离开逸仙时空,   goodbye,    g]
+        - ['',              (G)oodbye    离开逸仙时空,   finish,    g]
         - ['',              (T)est       测试键盘按键,   test_keyboard, t]
         - ['',              (O)Timeout   测试网络延时,   test_timeout, o]
         - ['$AUTHED_USER',  (B)ugReport      错误报告,   post_bug, b]

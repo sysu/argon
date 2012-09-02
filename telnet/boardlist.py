@@ -135,7 +135,7 @@ class BoardFrame(BaseTableFrame):
         self.perm = manager.query.get_board_ability(self.userid, board['boardname'])
         self.board = board
         self.boardname = board['boardname']
-        manager.action.enter_board(self.userid, self.seid, self.boardname)  ### aother entance in view.py/51
+        manager.action.enter_board(self.seid, self.boardname)  ### aother entance in view.py/51
         self.session.lastboard = board
         self._set_view_mode(0)
         self.default = default
@@ -145,7 +145,7 @@ class BoardFrame(BaseTableFrame):
 
     def clear(self):
         if hasattr(self, 'authed'):
-            manager.action.exit_board(self.userid, self.seid, self.boardname)
+            manager.action.exit_board(self.seid, self.boardname)
 
     mode_thead = ['NORMAL', 'GMODE', 'MMODE', 'TOPIC', 'ONETOPIC', 'AUTHOR']
 

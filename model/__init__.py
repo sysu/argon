@@ -23,7 +23,7 @@ def init_table(table_name):
 class CF:
 
     from globaldb import global_conn,global_cache
-    from Model import Section,Online,UserInfo,UserAuth,\
+    from Model import Section,Status,UserInfo,UserAuth,\
         Board,Post,Action,ReadMark,Mail,Permissions,UserSign,\
         Favourite, Clipboard, Disgest,FreqControl, Team, Admin,\
         Query, Deny
@@ -33,14 +33,14 @@ class CF:
     ch = global_cache
 
     section   = Section()
-    online    = Online(max_login=9999)
+    status    = Status()
     userinfo  = UserInfo()
     usersign  = UserSign()
     board     = Board()
     post      = Post()
     mail      = Mail()
     readmark  = ReadMark(post=post)
-    action    = Action(board,online,post,mail,userinfo,readmark)
+    action    = Action(board,status,post,mail,userinfo,readmark)
     perm      = Permissions()
     favourite = Favourite()
     clipboard = Clipboard()
@@ -48,19 +48,19 @@ class CF:
     freq      = FreqControl()
     team      = Team()
     userperm  = ArgoTeam(team, perm)
-    auth      = UserAuth(table=userinfo,online=online,userperm=userperm, favourite=favourite,
+    auth      = UserAuth(table=userinfo,status=status,userperm=userperm, favourite=favourite,
                          team=team)
     deny      = Deny()
     admin     = Admin(board, userperm, post, section, deny, userinfo, mail)
     query     = Query(board=board, userperm=userperm, perm=perm, favourite=favourite,
                       section=section, post=post, userinfo=userinfo, team=team)
     
-    loads = [section,online,userinfo,auth,board,post,readmark,mail,usersign,
+    loads = [section,status,userinfo,auth,board,post,readmark,mail,usersign,
              favourite,clipboard,disgest,freq, perm, team, userperm, admin, deny]
 
     use = {
         "section":section,
-        "online":online,
+        "status":status,
         "userinfo":userinfo,
         "auth":auth,
         "board":board,

@@ -30,11 +30,11 @@ class LoginDebugFrame(login.WelcomeFrame):
         # self.goto('post','Test1','3')
         pass
 
-@mark('finish')
-class FinishFrame(Frame):
+# @mark('finish')
+# class FinishFrame(Frame):
     
-    def finish(self, e=None):
-        raise BadEndInterrupt
+#     def finish(self, e=None):
+#         raise BadEndInterrupt
 
 #config.data['ROOT'] = 'debug'
 
