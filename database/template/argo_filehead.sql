@@ -25,5 +25,7 @@ CREATE TABLE IF NOT EXISTS `argo_filehead_${boardname}` (
     `originalfilename` varchar(32), /* M.123456789.A */
     `replyable` boolean NOT NULL,
 
+    `look_reply` boolean NOT NULL default false,
+
     PRIMARY KEY (`pid`)
 ) ENGINE=InnoDB  DEFAULT CHARSET=UTF8;

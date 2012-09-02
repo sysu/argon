@@ -527,6 +527,9 @@ class UserInfo(Model):
         return self.db.get("SELECT %s FROM `%s` WHERE userid = %%s" % (sql_what, self.__),
                            userid)
 
+    def user_exist(self, userid):
+        return True
+
 class Status(Model):
 
     u'''
@@ -1200,6 +1203,48 @@ class UserAuth(Model):
         except:
             pass
 
+class Notify(Model):
+
+    _mail = 'argo:notify_mail'
+    _notice = 'argo:notify_notice'
+    
+    def add_mail_notify(self, userid):
+        self.ch.hincrby(self._mail, userid)
+
+    def add_notice_notify(self, userid):
+        self.ch.hincrby(self._notice, userid)
+
+    def clear_mail_notify(self, userid):
+        self.ch.hdel(self._mail, userid)
+
+    def clear_notice_notify(self, userid):
+        self.ch.hdel(self._notice, userid)
+
+    def check_mail_notify(self, userid):
+        return self.ch.hget(self._mail, userid)
+
+    def check_notice_notify(self, userid):
+        return self.ch.hget(self._notice, userid)
+
+class Notice(Model):
+
+    _notice = 'argo:notice:%s'
+
+    max_num = 100
+
+    NOTICE_REPLY = 'r' # r:userid:boardname:pid
+    NOTICE_INVE = '@'
+    NOTICE_ADDF = 'f'
+
+    def add_notice(self, userid, *args):
+        key = self._notice % userid
+        self.ch.lpush(key, ':'.join(args))
+        self.ch.ltrim(key, 0, self.max_num)
+
+    def get_notice(self, userid, start, limit):
+        return self.ch.lrange(self._notice % userid,
+                              start, start+limit)
+
 class Action(Model):
 
     u'''
@@ -1244,7 +1289,8 @@ class Action(Model):
 
     def reply_post(self,boardname,userid,title,content,addr,
                    host,replyid,replyable,signature):
-        tid = self.post.pid2tid(boardname,replyid)
+        post = self.post.get_post(boardname, replyid)
+        tid = post['tid']
         bid = self.board.name2id(boardname)
         pid = self.post.add_post(
             boardname,
@@ -1261,6 +1307,13 @@ class Action(Model):
             )
         self.board.update_attr_plus1(bid,'total')
         self.readmark.set_read(userid, boardname, pid)
+        # if post['look_reply'] and self.userinfo.user_exist(post['owner']):
+        #     self.notice.add_notice(post['owner'],
+        #                            Notice.NOTICE_REPLY,
+        #                            userid,
+        #                            boardname,
+        #                            pid)
+        #     self.notify.add_notice_notify(post['owner'])
         return pid
 
     def update_post(self,boardname,userid,pid,content):
@@ -1281,6 +1334,7 @@ class Action(Model):
                                    replyid=0,
                                    **kwargs)
         self.mail.update_mail(touid, mid, tid=mid)
+        self.notify.add_mail_notify(touserid)
         return mid
 
     def reply_mail(self, userid, old_mail, **kwargs):
@@ -1293,6 +1347,7 @@ class Action(Model):
                                    **kwargs)
         myuid = self.userinfo.name2id(userid)
         self.mail.set_reply(myuid, old_mail['mid'])
+        self.notify.add_mail_notify(old_mail['fromuserid'])
         return res
 
     def del_mail(self,touserid,mid):

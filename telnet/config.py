@@ -188,6 +188,7 @@ hotkeys = {
         ac.k_down:"move_down",
         ac.k_page_up:"page_up",
         ac.k_page_down:"page_down",
+        " ":"page_down",
         },
     "boardlist":{
         ac.k_ctrl_be:"goto_history",
