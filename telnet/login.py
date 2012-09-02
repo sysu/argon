@@ -56,6 +56,7 @@ class WelcomeFrame(BaseFrame):
                 self.write(config.str['PROMPT_INPUT_USERID'])
                 userid = self.readline()
                 if not userid :
+                    self.writeln()
                     continue
                 if userid.endswith('#') :
                     self.session.set_charset('utf8')
