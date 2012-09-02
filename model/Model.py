@@ -1162,6 +1162,8 @@ class UserAuth(Model):
         res = self.table.get_user(userid)
         res.is_first_login = res['firstlogin'] == 0
 
+        userid = res['userid']
+
         if session:
             #set_state
             seid = self.status.new_session(host, userid, 'NEW',

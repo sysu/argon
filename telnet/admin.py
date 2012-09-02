@@ -367,8 +367,9 @@ class GetUserIdFrame(BaseAuthedFrame):
     def initialize(self, callback, **kwargs):
         self.cls()
         userid = self.readline(prompt=u'请输入要管理的帐号：')
-        if manager.userinfo.get_user(userid):
-            self.goto(callback, userid=userid, **kwargs)
+        user = manager.userinfo.get_user(userid)
+        if user :
+            self.goto(callback, userid=user['userid'], **kwargs)
         else:
             self.writeln(u'没有该用户！')
             self.pause()
@@ -599,9 +600,9 @@ class SetBoardDenyFrame(BaseAuthedFrame):
         user = manager.userinfo.get_user(userid)
         if not user :
             raise ValueError(u'没有该id！')
+        userid = user['userid']
         if manager.deny.get_deny(userid, self.boardname):
             raise ValueError(u'该id已经被封！')
-        userid = user['userid']
         why = self.readline(prompt=u'\r[K请输入封禁的原因：')
         if not why or len(why) >= 128 :
             raise ValueError(u'不合法的输入或中止输入！')

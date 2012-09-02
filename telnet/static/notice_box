@@ -4,7 +4,7 @@
 新通知总数：{{ total }}
 
 {% for nc in notices %}
-  [{% if loop.index <= total %}32;1{% else %}36{% endif %}m#{{ loop.index }}[m
+  [{% if loop.index <= total %}0;32;1{% else %}0;36{% endif %}m#{{ loop.index }}[m
 {% if nc[0] == '@' %}    [37;1m{{ nc[1] }}[m 在 [](/p/{{ nc[2] }}/{{ nc[3] }}) @ 了你一下 ！
 {%- else -%}    错误的通知
 {%- endif %}

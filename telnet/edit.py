@@ -95,14 +95,15 @@ class NewPostFrame(BaseEditFrame):
                                       replyable=self.attrs['replyable'],
                                       signature=self.signtext)
         invs = find_all_invert(text)
-        print invs
         if len(invs) >= 10:
             self.message(u'你@太多人啦！')
             self.pause()
         else:
-            userids = filter(manager.userinfo.user_exist,
-                             invs)
-            print userids
+            userids = []
+            for u in invs :
+                user = manager.userinfo.get_user(u)
+                if user :
+                    userids.append(user['userid'])
             manager.notice.add_inve(self.userid, self.boardname,
                                     pid, userids)
             for u in userids:
@@ -177,11 +178,12 @@ class ReplyPostFrame(BaseEditFrame):
         self.message(u'回复文章 -- %s' % self.title)
 
     def finish(self):
+        text = etelnet_to_style(self.fetch_all())
         pid = manager.action.reply_post(
             self.boardname,
             self.userid,
             self.title,
-            etelnet_to_style(self.fetch_all()),
+            text,
             self.session.ip,
             config.BBS_HOST_FULLNAME,
             self.replyid,
@@ -189,6 +191,20 @@ class ReplyPostFrame(BaseEditFrame):
             signature=self.signtext)
         board = manager.board.get_board(self.boardname)
         index = manager.post.get_rank_num(self.boardname, pid)
+        invs = find_all_invert(text)
+        if len(invs) >= 10:
+            self.message(u'你@太多人啦！')
+            self.pause()
+        else:
+            userids = []
+            for u in invs :
+                user = manager.userinfo.get_user(u)
+                if user :
+                    userids.append(user['userid'])
+            manager.notice.add_inve(self.userid, self.boardname,
+                                    pid, userids)
+            for u in userids:
+                manager.notify.add_notice_notify(u)
         self.goto('board', board=board, default=index)
 
 @mark('edit_post')
