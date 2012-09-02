@@ -1,0 +1,1 @@
+   {{ userid|width(-20) }} {{ uwidth(nickname, -20) }} {{ ip|width(-20) }} {{ status }}

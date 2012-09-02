@@ -11,7 +11,7 @@ from chaofeng.g import mark
 import login, menu,boardlist,edit,view,mail,game,special_frame ,admin,user
 import config
 # from model import db_orm
-from model import dbapi
+from model import dbapi, manager
 import datetime 
 import MySQLdb
 
@@ -41,5 +41,6 @@ class LoginDebugFrame(login.WelcomeFrame):
 ALL_MODULES = sys.modules.keys()
 
 if __name__ == '__main__' :
+    manager.status.clear_all()  ####################  ugly but work
     s = Server(mark[config.data['ROOT']])
     s.run()

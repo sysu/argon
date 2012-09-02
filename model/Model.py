@@ -622,7 +622,7 @@ class Status(Model):
         return self.ch.zrange(self._map, start, start+limit)
 
     def get_session_rank(self, start, limit):
-        return map(self.get_session, self.get_sessionid_rank)
+        return map(self.get_session, self.get_sessionid_rank(start, limit))
 
     def clear_all(self):
         all_sesions = self.ch.hkeys(self._ip)

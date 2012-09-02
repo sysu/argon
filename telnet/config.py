@@ -163,6 +163,8 @@ str = {
     'FORM_THEAD':u'[0;1;44m  项目名称                         项目属性                                   [m',
     'DENY_QUICK_HELP' : u'[m封禁[[32;1ma[m] 解除封禁[[32;1md[m] 返回[[32;1m.[m]',
     'DENY_THEAD' : u'[0;1;44m 流水号  封禁日期      被封者        被封原因                                 [m',
+    'USERONLINE_QUICK_HELP' : u'查看用户[[32;1m→[m,[32;1mRtn[m] 返回[[32;1m←[m]',
+    'USERONLINE_THEAD' : u'[0;1;44m     账号                   昵称               地址              状态                [m',
    }
 
 hotkeys = {
@@ -347,7 +349,13 @@ hotkeys = {
         "d":"remove_deny",
         ac.k_ctrl_c:"goto_back",
         ac.k_ctrl_l:"reload",
-        }
+        },
+    "useronline_table":{
+        },
+    "useronline":{
+        ac.k_left:"goto_back",
+        ac.k_right:"finish",
+        },    
     }
 
 user_options = {

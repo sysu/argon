@@ -353,3 +353,52 @@ class TestKeyBoardFrame(BaseAuthedFrame):
                                 self.session.ip,
                                 config.BBS_HOST_FULLNAME,
                                 replyable=False)
+
+@mark('user_online')
+class UserOnlineFrame(BaseTableFrame):
+
+    def top_bar(self):
+        self.writeln(self.render_str('top'))
+
+    def quick_help(self):
+        self.push(config.str['USERONLINE_QUICK_HELP'])
+        self.push('\r\n')
+
+    def print_thead(self):
+        self.write(config.str['USERONLINE_THEAD'])
+
+    def get_default_index(self):
+        return 0
+
+    def get_data(self, start, limit):
+        sessions = manager.status.get_session_rank(start, limit)
+        return map(self.wrapper_data, sessions)
+
+    def wrapper_data(self, li):
+        li['nickname'] = manager.userinfo.select_attr(li['userid'], 'nickname')['nickname']
+        print li
+        return li
+        
+    def get_total(self):
+        return manager.status.total_online()
+
+    def wrapper_li(self, li):
+        return self.render_str('useronline-li', **li)
+
+    def get(self, data):
+        if data in ac.ks_finish:
+            self.finish()
+        self.table.do_command(config.hotkeys['g_table'].get(data))
+        self.table.do_command(config.hotkeys['useronline_table'].get(data))
+        self.do_command(config.hotkeys['useronline'].get(data))
+
+    def catch_nodata(self, e):
+        raise ValueError(u'It is impossible no body online!')
+
+    def initialize(self):
+        super(UserOnlineFrame, self).initialize()
+
+    def finish(self):
+        session = self.table.fetch()
+        self.suspend('query_user', userid=session['userid'])
+
