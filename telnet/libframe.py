@@ -69,6 +69,23 @@ class BaseFrame(Frame):
         self.push(self.render_str(filename, **kwargs))
 
 class BaseAuthedFrame(BaseFrame):
+    
+    def place(self):
+        return config.mark2zhname.get(self.__mark__) or u''
+
+    def top_bar(self):
+        if self.session['lastboard'] :
+            right = u'%s区 [%s]' % (self.session['lastsection'],
+                                    self.session['lastboard'])
+        else:
+            right = u''
+        if manager.notify.check_mail_notify(self.userid):
+            tpl = 'top_notify'
+        elif manager.notify.check_notice_notify(self.userid):
+            tpl = 'top_notify_notice'
+        else :
+            tpl = 'top'
+        self.render(tpl, left=self.place(), right=right)
 
     # def write(self, data):
     #     super(BaseFrame, self).write(self.read())
@@ -259,15 +276,14 @@ class BaseSelectFrame(BaseAuthedFrame):
         '''
         raise NotImplementedError
 
-    def top_bar(self):
-        self.render('top')
+    PLACE = u'菜单'
 
     def bottom_bar(self):
         self.render('bottom')
 
     def notify(self, msg):
         self.write(ac.move2(0, 1))
-        self.render('top_msg', messages=msg)
+        self.render('top_msg', message=msg)
         self.menu.refresh_cursor_gently()
 
     def message(self, msg):
@@ -292,6 +308,10 @@ class BaseSelectFrame(BaseAuthedFrame):
         self.menu.restore()
 
     def get(self,data):
+        # has_new_mail = manager.notify.check_mail_notify(self.userid)
+        # if has_new_mail :
+        #     self.session.notify = 
+        #     self.notify(u'您有 %s 封未邮件！' % has_new_mail)
         if data in ac.ks_finish:
             self.finish()
         self.menu.send_shortcuts(data.lower())
@@ -351,9 +371,6 @@ class BaseTableFrame(BaseAuthedFrame):
 
     ### Handler
 
-    def top_bar(self):
-        raise NotImplementedError
-
     def quick_help(self):
         raise NotImplementedError
     
@@ -405,6 +422,7 @@ class BaseTableFrame(BaseAuthedFrame):
     def init_screen(self):
         self.cls()
         self.top_bar()
+        self.push('\r\n')
         self.quick_help()
         self.print_thead()
         self.bottom_bar()
@@ -486,9 +504,9 @@ class BaseBoardListFrame(BaseTableFrame):
 
     boards = []
 
-    def top_bar(self):
-        self.render('top')
-        self.writeln()
+    # def top_bar(self):
+    #     self.render('top')
+    #     self.writeln()
         
     def quick_help(self):
         self.writeln(config.str[u'BOARDLIST_QUICK_HELP'])
@@ -893,3 +911,7 @@ def wrapper_index(data, start):
     for index in range(len(data)):
         data[index]['index'] = index + start
     return data
+
+inv_re = re.compile(r'@(\w{3,20}) ')
+def find_all_invert(content):
+    return inv_re.findall(content)

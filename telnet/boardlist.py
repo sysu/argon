@@ -84,7 +84,22 @@ class BoardFrame(BaseTableFrame):
     '''
 
     def top_bar(self):
-        self.writeln(self.render_str('top'))
+        bm = self.board['bm']
+        mid = u'○ %s' % self.board['boardname']
+        vis_len = ac.pice_width(mid)
+        left = bm.replace(':', ',') if bm else u'诚征版主中'
+        if self.session['lastboard'] :
+            right = u'%s区 [%s]' % (self.session['lastsection'],
+                                    self.session['lastboard'])
+        else:
+            right = u''
+        if manager.notify.check_mail_notify(self.userid):
+            tpl = 'top_board_notify'
+        elif manager.notify.check_notice_notify(self.userid):
+            tpl = 'top_board_notify_notice'
+        else :
+            tpl = 'top_board'
+        self.render(tpl, left=left, mid=mid, right=right)
 
     def quick_help(self):
         self.writeln(config.str['BOARD_QUICK_HELP'])
@@ -136,7 +151,8 @@ class BoardFrame(BaseTableFrame):
         self.board = board
         self.boardname = board['boardname']
         manager.action.enter_board(self.seid, self.boardname)  ### aother entance in view.py/51
-        self.session.lastboard = board
+        self.session['lastboard'] = board['boardname']
+        self.session['lastsection'] = board['sid']
         self._set_view_mode(0)
         self.default = default
         super(BoardFrame, self).initialize()

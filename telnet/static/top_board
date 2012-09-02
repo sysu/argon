@@ -1,0 +1,1 @@
+{%- set half = (80-vis_len(mid))//2 -%}[0;44;33;1m{{ left|width(-half) }}[36m{{ mid }}[33m{{ right|width(half) }}[m

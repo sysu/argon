@@ -371,6 +371,15 @@ user_options = {
         }
     }
 
+mark2zhname = {
+    'main' : u'主选单',
+    'mail' : u'处理信笺区',
+    'user_space': u'个人资料设定',
+    'sys_admin': u'系统属性设置',
+    'boardlist': u'[讨论区列表]',
+    'get_mail': u'邮件选单',
+    }
+
 data_pool = {
     }
 

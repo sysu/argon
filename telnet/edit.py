@@ -6,7 +6,8 @@ sys.path.append('../')
 from chaofeng import ascii as ac
 from chaofeng.g import mark
 from model import manager
-from libframe import BaseAuthedFrame,BaseEditFrame, gen_quote
+from libframe import BaseAuthedFrame,BaseEditFrame, gen_quote,\
+    find_all_invert
 from datetime import datetime
 import config
 import random
@@ -84,14 +85,28 @@ class NewPostFrame(BaseEditFrame):
             self.goto_back()
 
     def finish(self):
+        text = etelnet_to_style(self.fetch_all())
         pid = manager.action.new_post(self.boardname,
                                       self.userid,
                                       self.attrs['title'],
-                                      etelnet_to_style(self.fetch_all()),
+                                      text,
                                       self.session.ip,
                                       config.BBS_HOST_FULLNAME,
                                       replyable=self.attrs['replyable'],
                                       signature=self.signtext)
+        invs = find_all_invert(text)
+        print invs
+        if len(invs) >= 10:
+            self.message(u'你@太多人啦！')
+            self.pause()
+        else:
+            userids = filter(manager.userinfo.user_exist,
+                             invs)
+            print userids
+            manager.notice.add_inve(self.userid, self.boardname,
+                                    pid, userids)
+            for u in userids:
+                manager.notify.add_notice_notify(u)
         index = manager.post.get_rank_num(self.boardname, pid)
         self.goto('board', board=self.board, default=index)
 

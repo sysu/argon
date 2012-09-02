@@ -15,7 +15,8 @@ main:
 mail:
         - ['',  (R)ead          览阅全部信笺, get_mail,  r, [16, 41]]
         - ['',  (S)end          发送站内信件, send_mail, s]
-        - ['',  (E)xit          回到主选单,   main,      e]
+        - ['',  (N)otice            查看通知, notice_box, n]
+        - ['',  (E)xit            回到主选单,   main,      e]
                 
 user_space:
         - ['', (I) 设定个人资料, user_editdata, i, [12, 6]]
@@ -71,6 +72,13 @@ sys_level:
         - ['',  1. 修改帐号的群组,  [sys_get_userid, {callback: 'sys_edit_user_team'}], '1']
         - ['',  2. 管理群组,        [sys_get_teamname, {callback: 'sys_edit_team_members'}], "2"]
         - ['',  3. 管理站务组,      [sys_edit_team_members, {teamname: 'SYS_SYSOPS'}], "3"]
+
+_zh_name :
+         main : 主菜单
+         mail : 处理信笺区
+         user_space : 个人资料设定
+         sys_admin : 系统属性设置
+         section : 分类讨论区
 
 # 不是真的menu，默认全部为无需权限，前面不需要写权限要求
 section:

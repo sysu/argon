@@ -25,9 +25,6 @@ class MailMenuFrame(NormalMenuFrame):
 @mark('get_mail')
 class GetMailFrame(BaseTableFrame):
 
-    def top_bar(self):
-        self.writeln(self.render_str('top'))
-
     def quick_help(self):
         self.writeln(config.str['MAIL_QUICK_HELP'])
 
@@ -59,6 +56,7 @@ class GetMailFrame(BaseTableFrame):
         self.goto_back()
 
     def initialize(self, default=None):
+        manager.notify.clear_mail_notify(self.userid)
         self.uid = self.session.user['uid']
         if default is None:
             default = self.get_total()

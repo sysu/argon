@@ -26,7 +26,7 @@ class CF:
     from Model import Section,Status,UserInfo,UserAuth,\
         Board,Post,Action,ReadMark,Mail,Permissions,UserSign,\
         Favourite, Clipboard, Disgest,FreqControl, Team, Admin,\
-        Query, Deny, Notify
+        Query, Deny, Notify, Notice
     from perm import ArgoTeam
     
     db = global_conn
@@ -47,6 +47,7 @@ class CF:
     freq      = FreqControl()
 
     notify    = Notify()
+    notice    = Notice()
     
     team      = Team()
     userperm  = ArgoTeam(team, perm)
@@ -60,7 +61,7 @@ class CF:
     
     loads = [section,status,userinfo,auth,board,post,readmark,mail,usersign,
              favourite,clipboard,disgest,freq, perm, team, userperm, admin,
-             deny, notify]
+             deny, notify, notice]
 
     use = {
         "section":section,
@@ -84,6 +85,7 @@ class CF:
         "query":query,
         "deny":deny,
         "notify":notify,
+        "notice":notice,
         }
 
     @classmethod

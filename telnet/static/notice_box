@@ -1,0 +1,13 @@
+[33;1m{{ session.user.userid }} 的通知盒子[m
+
+查询时间：{{ current() }}
+新通知总数：{{ total }}
+
+{% for nc in notices %}
+  [{% if loop.index <= total %}32;1{% else %}36{% endif %}m#{{ loop.index }}[m
+{% if nc[0] == '@' %}    [37;1m{{ nc[1] }}[m 在 [](/p/{{ nc[2] }}/{{ nc[3] }}) @ 了你一下 ！
+{%- else -%}    错误的通知
+{%- endif %}
+{% endfor %}
+
+[32;1m^R[m快速跳转到文章

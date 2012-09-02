@@ -1230,8 +1230,16 @@ class Notice(Model):
         self.ch.ltrim(key, 0, self.max_num)
 
     def get_notice(self, userid, start, limit):
-        return self.ch.lrange(self._notice % userid,
-                              start, start+limit)
+        return map(lambda x : x.split(':'),
+                   self.ch.lrange(self._notice % userid,
+                                  start, start+limit))
+
+    def add_inve(self, sponer, boardname, pid, userids):
+        notice = '@:%s:%s:%s' % (sponer, boardname, pid)
+        for u in userids:
+            key = self._notice % u
+            self.ch.lpush(key, notice)
+            self.ch.ltrim(key, 0, self.max_num)
 
 class Action(Model):
 

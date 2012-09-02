@@ -79,6 +79,7 @@ RENDER_GLOBALS = {
     "current":current_ctime,
     "three_part":three_part,
     "wrapper":ascii_wrapper,
+    "vis_len":ac.pice_width,
     }
 
 env = Environment(loader=FileSystemLoader('./static'),

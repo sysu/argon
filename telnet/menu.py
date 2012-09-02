@@ -44,6 +44,9 @@ class SelectFrame(BaseSelectFrame):
 @mark('menu')
 class NormalMenuFrame(BaseMenuFrame):
 
+    def place(self):
+        return config.menu['_zh_name'].get(self.menuname) or u'菜单'
+
     def initialize(self, menuname):
         self.set_menu(menuname)
         super(NormalMenuFrame, self).initialize()
@@ -87,6 +90,9 @@ class MainMenuFrame(NormalMenuFrame):
         
 @mark('sections')
 class SectionMenuFrame(BaseMenuFrame):
+
+    def place(self):
+        return config.menu['_zh_name']['section']
 
     second_start_point = (11,7)
 

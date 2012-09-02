@@ -63,8 +63,8 @@ class ReadPostFrame(BaseTextBoxFrame):
             # except ValueError:  ############  impossible
                 # self.pause()
                 # self.goto_back()
-        self.session.lastboard = manager.board.get_board(boardname)
-        self.board = board = self.session.lastboard
+        # self.session.lastboard = manager.board.get_board(boardname)
+        self.board = board = manager.board.get_board(boardname)
         try:
             self._read_post(board['boardname'], pid)
         except NullValueError as e:
@@ -116,7 +116,8 @@ class ReadPostFrame(BaseTextBoxFrame):
         self.goto('board', board=board, default=index)
 
     def reply(self):
-        _,w,_,_ = manager.query.get_board_ability(self.userid, self.session.lastboard['boardname'])
+        _,w,_,_ = manager.query.get_board_ability(self.userid,
+                                                  self.board['boardname'])
         w = w and self.post.replyable
         if w :
             self.suspend('reply_post', boardname=self.boardname, post=self.post)
@@ -157,3 +158,19 @@ class TutorialFrame(BaseTextBoxFrame):
 
     def finish(self,args=None):
         self.goto_back()
+
+@mark('notice_box')
+class NoticeBox(BaseTextBoxFrame):
+
+    def get_text(self):
+        notices=manager.notice.get_notice(self.userid, 0, 10)
+        return self.render_str('notice_box', total=self.total,
+                               notices=notices)
+
+    def finish(self, args=None):
+        self.goto_back()
+
+    def initialize(self):
+        self.total = manager.notify.check_notice_notify(self.userid) or 0
+        manager.notify.clear_notice_notify(self.userid)
+        super(NoticeBox, self).initialize()
