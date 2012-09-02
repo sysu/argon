@@ -418,7 +418,7 @@ class EditTeamMmembersFrame(BaseAuthedFrame):
         self.cls()
         self.teamname = teamname
         self.members = members = list(manager.team.all_members(teamname))
-        self.render('top')
+        self.top_bar()
         self.write(''.join([ac.move2(2,1),
                             config.str['EDIT_LIST_QUICK_HELP'],
                            '\r\n',
@@ -480,7 +480,7 @@ class EditTeamMmembersFrame(BaseAuthedFrame):
         self.cls()
         self.euserid = userid
         self.teams = teams = list(manager.team.user_teams(userid))
-        self.render('top')
+        self.top_bar()
         self.write(''.join([ac.move2(2,1),
                             config.str['EDIT_LIST_QUICK_HELP'],
                            '\r\n',
