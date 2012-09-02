@@ -673,7 +673,7 @@ class Mail(Model):
         try:
             return self.db.query("SELECT * FROM `%s` "
                                  "WHERE touserid=%%s "
-                                 "ORDER BY readmark, mid "
+                                 "ORDER BY mid "
                                  "LIMIT %%s,%%s" % (self.__(touid)), touserid,
                                  start, limit)
         except ProgrammingError as e:
