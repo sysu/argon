@@ -1,8 +1,12 @@
-[%#]发信人: {{ post.owner }} ({{ post.owner|user_attr('nickname') }}), 信区: {{ post.bid|bid2boardname }}
+[m发信人: {{ post.owner }} ({{ post.owner|user_attr('nickname') }}), 信区: {{ post.bid|bid2boardname }}
 标  题: {{ post.title }} 
 发信站: {{ post.fromhost }} ({{ post.posttime }})
 
-{{ post.content }}[%#]
+{{ post.content|bTelnet }}[m
+
+--
+
+{{ post.signature|bTelnet }}[m
 
 ※ 来源:．{{ BBS_HOST_FULLNAME|wrapper(bold) }} [FROM: {{ post.fromaddr }}]
 本文id：{{ post.pid }}

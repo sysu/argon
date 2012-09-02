@@ -6,6 +6,7 @@ from jinja2 import Environment,FileSystemLoader
 from chaofeng import ascii as ac
 from model import manager
 from datetime import datetime
+from libformat import style2telnet
 # from chaofeng.g import static
 
 def ascii_format(source,background=None,font=None):
@@ -52,6 +53,9 @@ def current_ctime():
 def rightalign(source):
     return ac.movex(-len(source)) + source
 
+def n2rn(source):
+    return source.replace('\n', '\r\n')
+
 RENDER_FILTERS = {
     "uid":userid2uid,
     "user_attr":userid2info,
@@ -60,7 +64,8 @@ RENDER_FILTERS = {
     "bid2boardname":bid2boardname,
     "width":ascii_width,
     "post_mark":flag2state,
-    "right":rightalign
+    "right":rightalign,
+    "bTelnet":style2telnet,
     }
 
 RENDER_TESTS = {}

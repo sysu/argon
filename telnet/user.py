@@ -102,13 +102,16 @@ class NickDataFrame(BaseMenuFrame):
 
     def finish(self):
         a = self.menu.fetch()
-        self.suspend('edit_text', filename=a , callback=self.update_user_attr, text=self.user[a] or u'')
+        text = self.user[a].replace('\n', '\r\n') or ''
+        self.suspend('edit_text', filename=a , callback=self.update_user_attr,
+                     text=text)
 
     def update_user_attr(self, filename, text):
         self.cls()
         args = {
-            filename:text
+            filename:text.replace('\r\n', '\n')
             }
+        print ('d', args[filename])
         try:
             manager.userinfo.update_user(self.userid, **args)
         except None:      ##############  Notice the max buffer len.
@@ -159,10 +162,12 @@ class EditSignFrame(BaseTextBoxFrame):
 
     def get_text(self):
         self.signs = manager.usersign.get_all_sign(self.userid)
-        return self.render_str('sign-t', signs=self.signs)
+        return self.render_str('sign-t',
+                               signs=map(lambda x: x.replace('\n', '\r\n'),
+                                         self.signs))
 
     def get_raw_text(self):
-        return u'\r\n'.join(self.signs)
+        return u'\n'.join(self.signs)
 
     def set_sign(self):
         self.suspend('edit_text', filename=u'签名档', callback=self.save_sign,

@@ -13,7 +13,7 @@ from chaofeng.ui import TextEditor, FinitePagedTable, Animation, ColMenu,\
 import config
 from template import env
 from model import manager
-from libformat import telnet2style, style2telnet
+from libformat import telnet2style
 
 class BaseFrame(Frame):
 
@@ -758,9 +758,6 @@ class BaseTextBoxFrame(BaseAuthedFrame):
     and add new key/value into them.
     '''
 
-    def tidy_text(self, text):
-        return style2telnet(text)
-
     def get_text(self):
         raise NotImplementedError
 
@@ -769,7 +766,7 @@ class BaseTextBoxFrame(BaseAuthedFrame):
         self.textbox.fix_bottom()
 
     def reset_text(self, text):
-        self.textbox.set_text(self.tidy_text(self.get_text()))
+        self.textbox.set_text(self.get_text())
         self.restore()
 
     def message(self,msg):
@@ -787,7 +784,7 @@ class BaseTextBoxFrame(BaseAuthedFrame):
         
     def initialize(self):
         super(BaseTextBoxFrame, self).initialize()
-        self.textbox = self.load(TextBox, self.tidy_text(self.get_text()), self.finish)
+        self.textbox = self.load(TextBox, self.get_text(), self.finish)
         self.restore()
 
     def _go_link(self,line):
@@ -872,3 +869,12 @@ def list_split(data, height):
 def tidy_anim(text, height):
     l = text.split(u'\r\n')
     return list(chunks(l, height))
+
+def gen_quote(post):
+    max_quote_line = 5
+    owner = manager.userinfo.get_user(post['owner'])
+    return ''.join([
+            u'\n【 在 %s ( %s ) 的大作中提到: 】\n:' % (owner['userid'],
+                                                   owner['nickname']),
+            '\n:'.join(post['content'].split('\n')[:max_quote_line]),
+            ])

@@ -125,7 +125,7 @@ TABLE_KEY_MAPS = {
 str = {
     "PROMPT_INPUT_PASSWD":u"请输入密码：",
     "PROMPT_INPUT_USERID":u"请输入帐号：",
-    "PROMPT_GUEST_UNABLE_TO_USER":u"用户名不可用",
+    "PROMPT_GUEST_UNABLE_TO_USE":u"抱歉，暂时不支持游客登录！\r\n",
     "PROMPT_AUTH_FAILED":u"认证失败，帐号或密码错误。",
     "PROMPT_INPUT_USERID_REG":u'请输入帐号名称 (Enter User ID, leave blank to abort):\r\n',
     "PROMPT_INPUT_PASSWD_REG":u'请设定您的密码 (Setup Password): ',

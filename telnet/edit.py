@@ -6,11 +6,12 @@ sys.path.append('../')
 from chaofeng import ascii as ac
 from chaofeng.g import mark
 from model import manager
-from libframe import BaseAuthedFrame,BaseEditFrame
+from libframe import BaseAuthedFrame,BaseEditFrame, gen_quote
 from datetime import datetime
 import config
 import random
 from libdecorator import need_perm
+from libformat import etelnet_to_style, style_to_etelnet
 
 @mark('new_post')
 class NewPostFrame(BaseEditFrame):
@@ -66,14 +67,16 @@ class NewPostFrame(BaseEditFrame):
 
     @need_perm
     def initialize(self, board):
+        self.board = board
         self.boardname = board['boardname']
         self.cls()
         self.attrs = self.read_attrs()
         if self.attrs :
             sign = manager.usersign.get_sign(self.userid, self.attrs['usesign']-1) \
-                if self.attrs['usesign'] else ''            
-            text = self.render_str('base_post-t', sign=sign)
-            super(NewPostFrame, self).initialize(text=text)
+                if self.attrs['usesign'] else ''
+            self.signtext = sign
+            # text = self.render_str('base_post-t', sign=sign)
+            super(NewPostFrame, self).initialize()
             self.message(u'写新文章 -- %s' % self.attrs['title'])
         else:
             self.write(u'放弃发表新文章')
@@ -81,16 +84,16 @@ class NewPostFrame(BaseEditFrame):
             self.goto_back()
 
     def finish(self):
-        manager.action.new_post(self.boardname,
-                                self.userid,
-                                self.attrs['title'],
-                                self.fetch_all(),
-                                self.session.ip,
-                                config.BBS_HOST_FULLNAME,
-                                replyable=self.attrs['replyable'])
-        # self.message(u'发表文章成功！')
-        # self.pause()
-        self.goto_back()
+        pid = manager.action.new_post(self.boardname,
+                                      self.userid,
+                                      self.attrs['title'],
+                                      etelnet_to_style(self.fetch_all()),
+                                      self.session.ip,
+                                      config.BBS_HOST_FULLNAME,
+                                      replyable=self.attrs['replyable'],
+                                      signature=self.signtext)
+        index = manager.post.get_rank_num(self.boardname, pid)
+        self.goto('board', board=self.board, default=index)
 
 @mark('reply_post')
 class ReplyPostFrame(BaseEditFrame):
@@ -149,22 +152,29 @@ class ReplyPostFrame(BaseEditFrame):
         self.title = post['title'] if post['title'].startswith('Re:')\
             else 'Re: %s' % post['title']
         self.attrs = self.read_attrs()
-        super(ReplyPostFrame, self).initialize()
+        if not self.attrs :
+            self.goto_back()
+        self.title = self.attrs['title']
+        self.signtext = manager.usersign.get_sign(self.userid, self.attrs['usesign']-1) \
+            if self.attrs['usesign'] else ''
+        text = gen_quote(post)
+        super(ReplyPostFrame, self).initialize(text=style_to_etelnet(text))
         self.message(u'回复文章 -- %s' % self.title)
 
     def finish(self):
-        manager.action.reply_post(
+        pid = manager.action.reply_post(
             self.boardname,
             self.userid,
             self.title,
-            self.fetch_all(),
+            etelnet_to_style(self.fetch_all()),
             self.session.ip,
             config.BBS_HOST_FULLNAME,
             self.replyid,
-            replyable=True)
-        # self.message(u'回复文章成功！')
-        # self.pause()
-        self.goto_back()
+            replyable=True,
+            signature=self.signtext)
+        board = manager.board.get_board(self.boardname)
+        index = manager.post.get_rank_num(self.boardname, pid)
+        self.goto('board', board=board, default=index)
 
 @mark('edit_post')
 class EditPostFrame(BaseEditFrame):
@@ -186,7 +196,7 @@ class EditPostFrame(BaseEditFrame):
         manager.action.update_post(self.boardname,
                                    self.userid,
                                    self.pid,
-                                   self.fetch_all())
+                                   etelnet_to_style(self.fetch_all()))
         # self.message(u'编辑文章成功！')
         # self.pause()
         self.goto_back()

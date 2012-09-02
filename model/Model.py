@@ -1197,7 +1197,8 @@ class Action(Model):
     def exit_board(self,userid,sessionid,boardname):
         self.online.exit_board(boardname,userid,sessionid)
 
-    def new_post(self,boardname,userid,title,content,addr,host,replyable):
+    def new_post(self,boardname,userid,title,content,
+                 addr,host,replyable,signature):
         bid = self.board.name2id(boardname)
         pid = self.post.add_post(
             boardname,
@@ -1208,7 +1209,8 @@ class Action(Model):
             replyid=0,
             fromaddr=addr,
             fromhost=host,
-            replyable=replyable
+            replyable=replyable,
+            signature=signature,
             )
         self.post.update_post(boardname,pid,tid=pid)
         self.board.update_attr_plus1(bid,'total')
@@ -1216,7 +1218,8 @@ class Action(Model):
         self.readmark.set_read(userid, boardname, pid)
         return pid
 
-    def reply_post(self,boardname,userid,title,content,addr,host,replyid,replyable):
+    def reply_post(self,boardname,userid,title,content,addr,
+                   host,replyid,replyable,signature):
         tid = self.post.pid2tid(boardname,replyid)
         bid = self.board.name2id(boardname)
         pid = self.post.add_post(
@@ -1229,7 +1232,8 @@ class Action(Model):
             fromaddr=addr,
             fromhost=host,
             tid=tid,
-            replyable=replyable
+            replyable=replyable,
+            signature=signature,
             )
         self.board.update_attr_plus1(bid,'total')
         self.readmark.set_read(userid, boardname, pid)
