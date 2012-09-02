@@ -294,8 +294,6 @@ hotkeys = {
         # ac.k_ctrl_a:"jump_man",
         ac.k_ctrl_r:"jump_from_screen",
         "h":"show_help",
-        "R":"reply_post",
-        "r":"reply_post",
         },
     "view_textbox":{
         ac.k_up : "move_up",
@@ -327,6 +325,8 @@ hotkeys = {
         "j":"move_down",     "n":"move_down",
         "P":"page_up",       "N":"page_down",
         "$":"goto_last",
+        ac.k_home:"goto_first",
+        ac.k_end:"goto_last",
         },
     "edit_list":{
         "a":"add",

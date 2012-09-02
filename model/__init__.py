@@ -26,7 +26,7 @@ class CF:
     from Model import Section,Status,UserInfo,UserAuth,\
         Board,Post,Action,ReadMark,Mail,Permissions,UserSign,\
         Favourite, Clipboard, Disgest,FreqControl, Team, Admin,\
-        Query, Deny
+        Query, Deny, Notify
     from perm import ArgoTeam
     
     db = global_conn
@@ -40,23 +40,27 @@ class CF:
     post      = Post()
     mail      = Mail()
     readmark  = ReadMark(post=post)
-    action    = Action(board,status,post,mail,userinfo,readmark)
     perm      = Permissions()
     favourite = Favourite()
     clipboard = Clipboard()
     disgest   = Disgest()
     freq      = FreqControl()
+
+    notify    = Notify()
+    
     team      = Team()
     userperm  = ArgoTeam(team, perm)
     auth      = UserAuth(table=userinfo,status=status,userperm=userperm, favourite=favourite,
                          team=team)
+    action    = Action(board,status,post,mail,userinfo,readmark, notify)
     deny      = Deny()
     admin     = Admin(board, userperm, post, section, deny, userinfo, mail)
     query     = Query(board=board, userperm=userperm, perm=perm, favourite=favourite,
                       section=section, post=post, userinfo=userinfo, team=team)
     
     loads = [section,status,userinfo,auth,board,post,readmark,mail,usersign,
-             favourite,clipboard,disgest,freq, perm, team, userperm, admin, deny]
+             favourite,clipboard,disgest,freq, perm, team, userperm, admin,
+             deny, notify]
 
     use = {
         "section":section,
@@ -79,6 +83,7 @@ class CF:
         "admin":admin,
         "query":query,
         "deny":deny,
+        "notify":notify,
         }
 
     @classmethod

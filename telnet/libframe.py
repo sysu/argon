@@ -879,3 +879,17 @@ def gen_quote(post):
                                                    owner['nickname']),
             '\n:'.join(post['content'].split('\n')[:max_quote_line]),
             ])
+
+def gen_quote_mail(mail):
+    max_quote_line = 5
+    owner = manager.userinfo.get_user(mail['fromuserid'])
+    return ''.join([
+            u'\n【 在 %s ( %s ) 的来信中提到: 】\n:' % (owner['userid'],
+                                                        owner['nickname']),
+            '\n:'.join(mail['content'].split('\n')[:max_quote_line])
+            ])
+
+def wrapper_index(data, start):
+    for index in range(len(data)):
+        data[index]['index'] = index + start
+    return data

@@ -1,1 +1,1 @@
- {#{ num|string|width(3) }#} {{ 'N rr'[readmark] }} {{ fromuserid|width(-12) }} {{ sendtime.strftime("%b %d") }}  {{ '★' if tid==pid }} {{ title }}
+ {{ index|string|width(3) }} {{ 'N rr'[readmark] }} {{ fromuserid|width(-12) }} {{ sendtime.strftime("%b %d") }}  {{ '★' if tid==pid }} {{ title }}

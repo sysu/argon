@@ -24,6 +24,11 @@ class ViewTextFrame(BaseTextBoxFrame):
 @mark('post')
 class ReadPostFrame(BaseTextBoxFrame):
 
+    hotkeys = {
+        "R":"reply",
+        "r":"reply",
+        }
+
     @staticmethod
     def try_jump(self,args):
         try:
@@ -110,13 +115,20 @@ class ReadPostFrame(BaseTextBoxFrame):
         index = manager.post.get_rank_num(self.boardname, self.pid)
         self.goto('board', board=board, default=index)
 
-    def reply_post(self):
+    def reply(self):
         _,w,_,_ = manager.query.get_board_ability(self.userid, self.session.lastboard['boardname'])
         w = w and self.post.replyable
         if w :
             self.suspend('reply_post', boardname=self.boardname, post=self.post)
         else:
             self.message(u'该文章禁止回复！')
+
+    def get(self, char):
+        if char in ac.ks_finish:
+            self.finish(True)
+        self.textbox.do_command(config.hotkeys['view_textbox'].get(char))
+        self.do_command(config.hotkeys['view'].get(char))
+        self.do_command(self.hotkeys.get(char))
 
 @mark('view_clipboard')
 class ViewClipboardFrame(BaseTextBoxFrame):

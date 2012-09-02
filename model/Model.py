@@ -669,19 +669,13 @@ class Mail(Model):
                 self.send_mail(touid, **kwargs)
             raise e
 
-    def _query_mail(self, touid, touserid, limit, cond):
+    def get_mail(self, touid, touserid, start, limit):
         try:
-            if limit > 0:
-                # sql = "SELECT mid,fromuserid,touserid,attachidx,tid,replyid,"\
-                #     "title,sendtime,fromaddr,readmark,content,quote,signature, "\
-                #     "count(*)as num FROM `%s` WHERE touserid=%%s %s ORDER BY mid LIMIT %%s"%\
-                #     (self.__(touid), cond)#'AND %s'%cond if cond else '')
-                sql = "SELECT * FROM `%s` WHERE touserid=%%s %s ORDER BY mid LIMIT %%s"%\
-                    (self.__(touid), cond)
-            else:
-                sql = "SELECT * FROM `%s` WHERE touserid=%%s %s ORDER BY mid DESC LIMIT %%s"%\
-                    (self.__(touid), cond)#'AND %s'%cond if cond else '')
-            return self.db.query(sql, touserid, abs(limit))
+            return self.db.query("SELECT * FROM `%s` "
+                                 "WHERE touserid=%%s "
+                                 "ORDER BY readmark, mid "
+                                 "LIMIT %%s,%%s" % (self.__(touid)), touserid,
+                                 start, limit)
         except ProgrammingError as e:
             if e.args[0] == 1146 : # Table NOT EXIST
                 self._create_table(self._tableid(touid))
@@ -691,33 +685,22 @@ class Mail(Model):
 
     def one_mail(self, touid, mid):
         return self.table_get_by_key(self.__(touid), 'mid', mid)
-
-    def get_mail(self, touid, touserid, num, limit):
-        # print (touid, touseridm, num, limit)
-        if limit > 0 :
-            return self._query_mail(touid, touserid, limit, '' if num is None else 'AND mid>=%s' % num)
-        else :
-            res = self._query_mail(touid, touserid, limit, '' if num is None else 'AND mid<=%s' % num)
-            res.reverse()
-            return res
     
     def get_mail_total(self, touid, touserid):
         res = self.db.get("SELECT count(mid) as total FROM `%s` WHERE touserid = %%s" % self.__(touid), touserid)
         r = res.get('total')
         return int(r) if r else 0 
 
-    def prev_mail_mid(self, touid, mid):
-        res = self.db.get("SELECT mid FROM `%s` WHERE mid < %s ORDER BY mid DESC LIMIT 1" %\
-                              (self.__(touid),mid))
-        return res and res['mid']
+    def prev_mail(self, userid, touid, mid):
+        return self.db.get("SELECT * FROM `%s` WHERE mid < %s ORDER BY mid DESC LIMIT 1" %\
+                               (self.__(touid),mid))
 
-    def next_mail_mid(self, touid, mid):
-        res = self.db.get("SELECT mid FROM `%s` WHERE mid > %s ORDER BY mid LIMIT 1" %\
-                              (self.__(touid),mid))
-        return res and res['mid']
+    def next_mail(self, userid, touid, mid):
+        return self.db.get("SELECT * FROM `%s` WHERE mid > %s ORDER BY mid LIMIT 1" %\
+                               (self.__(touid),mid))
 
-    def get_new_mail(self, touid, touserid, num, limit):
-        return self._query_mail(touid, touserid, limit, 'AND mid>=%s AND readmark = 0'%num)
+    # def get_new_mail(self, touid, touserid, num, limit):
+    #     return self._query_mail(touid, touserid, limit, 'AND mid>=%s AND readmark = 0'%num)
     
     def get_last_mid(self, touid, touserid):
         res = self.db.get("SELECT max(mid) as maxid FROM `%s` WHERE touserid=%%s" % self.__(touid), touserid)
@@ -739,6 +722,11 @@ class Mail(Model):
         sql = "UPDATE `%s` SET readmark = readmark | 3 WHERE mid = %%s" %\
             self.__(uid)
         self.db.execute(sql, mid)
+
+    def get_rank(self, userid, uid, mid):
+        return self.db.get("SELECT count(*) FROM %s "
+                           "WHERE mid<=%%s AND touserid=%%s" % self.__(uid),
+                           mid, userid)['count(*)']
 
 class Disgest(Model):
 
@@ -1252,13 +1240,14 @@ class Action(Model):
     using mod: board, status, post, mail, userinfo
     '''
 
-    def __init__(self,board,status,post,mail,userinfo,readmark):
+    def __init__(self,board,status,post,mail,userinfo,readmark, notify):
         self.board = board
         self.status = status
         self.post = post
         self.mail = mail
         self.userinfo = userinfo
         self.readmark = readmark
+        self.notify = notify
         
     def enter_board(self,sessionid,boardname):
         self.status.enter_board(boardname)
@@ -1321,10 +1310,6 @@ class Action(Model):
                               pid,
                               owner = userid,
                               content=content)
-
-    def get_rebox_mail(self,userid,offset,limit=20):
-        uid = self.userinfo.name2id(userid)
-        return self.mail.get_mail_to_uid(uid,offset,limit)
     
     def send_mail(self, fromuserid, touserid, **kwargs):
         touid = self.userinfo.name2id(touserid)
@@ -1354,8 +1339,8 @@ class Action(Model):
         touid = self.userinfo.name2id(touserid)
         return self.mail.del_mail(touid, mid)
 
-    def get_mail(self, userid, num, limit):
-        touid = self.userinfo.name2id(userid)
+    def get_mail(self, userid, num, limit, touid=None):
+        touid = touid or self.userinfo.name2id(userid)
         return self.mail.get_mail(touid, userid, num, limit)
 
     def get_new_mail(self, userid, num, limit):
