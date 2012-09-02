@@ -356,9 +356,6 @@ class TestKeyBoardFrame(BaseAuthedFrame):
 @mark('user_online')
 class UserOnlineFrame(BaseTableFrame):
 
-    def top_bar(self):
-        self.writeln(self.render_str('top'))
-
     def quick_help(self):
         self.push(config.str['USERONLINE_QUICK_HELP'])
         self.push('\r\n')

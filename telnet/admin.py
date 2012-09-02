@@ -39,7 +39,7 @@ class NewSectionsFrame(BaseAuthedFrame):
 
     def initialize(self):
         self.cls()
-        self.render('top')
+        self.top_bar()
         text = self.render_str('hint/new_section').split('\r\n----\r\n')
         self.form = self.load(Form, [
                 ('sid', text[0], self.handler_sid),
@@ -112,7 +112,7 @@ class EditSectionFrame(BaseAuthedFrame):
             self.pause()
             self.goto_back()
         self.cls()
-        self.render('top')
+        self.top_bar()
         text = self.render_str('hint/edit_section').split('\r\n----\r\n')
         self.form = self.load(Form, [
                 ('sectionname', text[0], self.handler_sectionname),
@@ -151,7 +151,7 @@ class NewBoardFrame(BaseAuthedFrame):
 
     def initialize(self):
         self.cls()
-        self.render('top')
+        self.top_bar()
         text = self.render_str('hint/new_board').split('\r\n----\r\n')
         self.form = self.load(Form, [
                 ('boardname', text[0], self.handler_boardname),
@@ -217,7 +217,7 @@ class EditBoardAttrFrame(BaseAuthedFrame):
             self.pause()
             self.goto_back()
         self.cls()
-        self.render('top')
+        self.top_bar()
         text = self.render_str('hint/edit_board').split('\r\n----\r\n')
         self.form = self.load(Form, [
                 ('description', text[0], self.handler_description),
@@ -566,8 +566,8 @@ class SetBoardDenyFrame(BaseAuthedFrame):
     def initialize(self, boardname):
         self.boardname = boardname
         self.cls()
-        self.write(''.join([self.render_str('top'),
-                            '\r\n',
+        self.top_bar()
+        self.write(''.join(['\r\n',
                             config.str['DENY_QUICK_HELP'],
                             '\r\n',
                             config.str['DENY_THEAD']]))

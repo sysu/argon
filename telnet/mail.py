@@ -31,11 +31,6 @@ class GetMailFrame(BaseTableFrame):
     def print_thead(self):
         self.writeln(config.str['MAIL_THEAD'])
 
-    def notify(self, msg):
-        self.write(ac.move2(0, 1))
-        self.render('top_msg', messages=msg)
-        self.table.restore_cursor_gently()
-
     def get_default_index(self):
         return self.default
 
