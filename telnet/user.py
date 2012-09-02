@@ -111,7 +111,6 @@ class NickDataFrame(BaseMenuFrame):
         args = {
             filename:text.replace('\r\n', '\n')
             }
-        print ('d', args[filename])
         try:
             manager.userinfo.update_user(self.userid, **args)
         except None:      ##############  Notice the max buffer len.
@@ -376,7 +375,6 @@ class UserOnlineFrame(BaseTableFrame):
 
     def wrapper_data(self, li):
         li['nickname'] = manager.userinfo.select_attr(li['userid'], 'nickname')['nickname']
-        print li
         return li
         
     def get_total(self):
@@ -402,3 +400,6 @@ class UserOnlineFrame(BaseTableFrame):
         session = self.table.fetch()
         self.suspend('query_user', userid=session['userid'])
 
+    def send_mail(self):
+        session = self.table.fetch()
+        self.suspend('send_mail', touserid=session['userid'])
