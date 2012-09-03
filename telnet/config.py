@@ -384,3 +384,34 @@ data_pool = {
     }
 
 import _dark as dark
+
+shortcuts = {
+    'menu':{
+        ac.k_right:"_right_or_finish",
+        ac.k_left:"_left_or_finish",
+        }
+    'menu_ui':{
+        ac.k_down:"move_down",
+        ac.k_up:"move_up",
+        },
+    'boardlist':{
+        "/":"_search",        "q":"go_back",
+        "e":"go_back",        ac.k_left:"go_back",
+        "s":"_change_sort",   
+        },
+    'boardlist_ui':{
+        "k":"move_up",        ac.k_up:"move_up",
+        "j":"move_down",      ac,k_down:"move_down",
+        'P':'page_up',          ac.k_ctrl_b:'page_up',
+        ac.k_page_up:"page_up", 'b':'page_up',
+        'N':'page_down',            ac.k_ctrl_f:'page_down',
+        ac.k_page_down:"page_down", ' ':'page_down',
+        ac.k_home:'goto_first',     "$":"goto_last",
+        ac.k_end:"goto_last",
+        },
+    'boardlist_fetch_do':{
+        "u":"query_author",
+        ac.k_ctrl_a : "query_board",
+        ac.k_ctrl_e : "change_board_attr",
+        },
+    }

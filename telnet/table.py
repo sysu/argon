@@ -1,115 +1,3 @@
-class BaseBoardListFrame(BaseAuthedFrame):
-
-    def enter_board(self, board):
-        self.goto('_board_o', board=board)
-
-    def go_back(self):
-        self.goto('section')
-
-    def query_board(self, board):
-        self.suspend('_query_board_o', board=board)
-
-    def query_user(self, board):
-        self.suspend('query_user', userid=board['userid'])
-
-    def change_board_attr(self, board):
-        self.suspend('_sys_set_board_attr_o', board=board)
-
-    def catch_nodata(self):
-        self.write(u'没有讨论区！')
-        self.goto_back()
-
-    SORT_KEY_FUNS = (
-        lambda x : x['bid'],
-        lambda x : manager.status.board_online(x['boardname']) or 0,
-        lambda x : x['boardname'],
-        lambda x : x['description'],
-        )
-    _SORT_MODE_COUNT = len(SORT_KEY_FUNS)
-
-    def get(self, char):
-        if char == ac.k_finish :
-            self._fetch_board_do('enter_board')
-        self.do_command(config.shortcuts['boardlist'].get(char))
-        self._table.do_command(config.shortcuts['boardlist_ui'].get(char))
-        if char in config.shortcuts['boardlist_fetch_do'] :
-            self._fetch_board_do(config.shortcuts['boardlist_fetch_do'][char])
-
-    def setup(self, boards, mode=0, default=0):
-        self._boards = boards
-        self._total = len(boards)
-        try:
-            self._table = self.load(FinitePagedTable, self._get_board_range,
-                                    self._wrapper_li, self._get_total,
-                                    start_num=default,
-                                    start_line=self._TABEL_START_LINE,
-                                    height=self._TABEL_HEIGHT)
-        except NullValueError as e:
-            self.catch_nodata(e)
-            raise ValueError
-        if mode :
-            if 0 < mode < self._SORT_MODE_COUNT :
-                self._boards.sort(key=self._SORT_KEY_FUNC[mode])
-            else :
-                mode = 0
-        self._sort_mode = mode
-        self._init_screen()
-        
-    def _init_screen(self)
-        self.cls()
-        self.top_bar()
-        self.push('\r\n')
-        self.push(config.str['BOARDLIST_QUICK_HELP'])
-        self.push(config.str['BOARDLIST_THEAD'])
-        self.bottom_bar()
-        self._table.restore_screen()
-
-    def restore(self):
-        try:
-            self._table.goto(self.table.fetch_num())
-        except TableLoadNoDataError:
-            self.catch_nodata()
-        else:
-            self._init_screen()
-
-    def _goto_last(self):
-        self._table.goto(self._total - 1)
-
-    def _goto_line(self):
-        no = self.readnum()
-        if no is not False:
-            self._table.goto(no)
-        else:
-            self._table.refresh_cursor_gently()
-
-    def _goto_with_prefix(self, prefix):
-        data = self._boards
-        prefix = prefix.lower()
-        for index,item in enumerate(data):
-            if item[u'boardname'].lower().startswith(prefix):
-                self._table.restore_cursor_gently()
-                self._table.goto(index)
-                return True
-        return False
-
-    def _search(self):
-        self.read_with_hook(hook = lambda x : self.goto_with_prefix(x),
-                            prompt=u'搜寻讨论区：')
-        self._table.restore_cursor_gently()
-
-    def _change_sort(self):
-        self._sort_mode += 1
-        if 0 < self._sort_mode < self._SORT_MODE_COUNT :
-            self._boards.sort(key=self._SORT_KEY_FUNC[self._sort_mode])
-        else:
-            self._boards.sort(key=self._SORT_KEY_FUNC[0])
-            self._sort_mode = 0
-        self._table.goto(self._table.fetch_num())
-
-    def _fetch_board_do(self, attrname):
-        board = self._table.fetch()
-        getattr(self, attrname)(board)
-
 #!/usr/bin/python2
 # -*- coding: utf-8 -*-
 
@@ -124,6 +12,251 @@ from libframe import BaseBoardListFrame,BaseTableFrame,BaseTextBoxFrame
 from libtelnet import zh_format_d
 from libdecorator import need_perm
 import config
+
+class BaseTableFrame(BaseAuthedFrame):
+
+    ### Handler
+
+    def quick_help(self):
+        raise NotImplementedError
+    
+    def print_thead(self):
+        raise NotImplementedError
+
+    def notify(self, msg):
+        raise NotImplementedError
+
+    def get_default_index(self):
+        raise NotImplementedError
+
+    def get_data(self, start, limit):
+        raise NotImplementedError
+
+    def wrapper_li(self, li):
+        raise NotImplementedError
+    
+    def get_total(self):
+        raise NotImplementedError
+
+    def catch_nodata(self, e):
+        raise NotImplementedError(u'What to do while cannot catch anything [%s] ' % e.message)
+
+    def load_table(self):
+        try:
+            return self.load(FinitePagedTable, self.get_data, self.wrapper_li,
+                             get_last=self.get_total,
+                             start_num=self.get_default_index(),
+                             start_line=4, height=20)
+        except NullValueError as e:
+            self.catch_nodata(e)
+            self.goto_back()
+                           
+    def initialize(self):
+        super(BaseTableFrame, self).initialize()
+        self.table = self.load_table()
+        self.init_screen()
+
+    def bottom_bar(self):
+        self.render(u'bottom')
+
+    def message(self, msg):
+        self.session.message = msg
+        self.write(ac.move2(24, 1))
+        self.render(u'bottom_msg', message=msg)
+        self.table.restore_cursor_gently()
+        
+    def init_screen(self):
+        self.cls()
+        self.top_bar()
+        self.push('\r\n')
+        self.quick_help()
+        self.print_thead()
+        self.bottom_bar()
+        self.table.restore_screen()
+
+    def restore(self):
+        try:
+            # self.table.reload()        ###############   Ugly!!!
+            self.table.goto(self.get_default_index())
+        except TableLoadNoDataError:
+            self.goto_back()
+        else:
+            self.init_screen()
+
+    def get(self, data):
+        if data in ac.ks_finish:
+            self.finish()
+        self.table.do_command(config.hotkeys['table_table'].get(data))
+        self.do_command(config.hotkeys['table'].get(data))
+
+    def read_lbd(self, reader):
+        u'''
+        Wrapper real read function.
+        '''
+        self.write(u''.join((ac.move2(24,1),  ac.kill_line)))
+        res = reader()
+        self.write(u'\r')
+        self.bottom_bar()
+        self.table.restore_cursor_gently()
+        return res
+
+    def readline(self, acceptable=ac.is_safe_char, finish=ac.ks_finish,\
+                     buf_size=20, prompt=u'', prefix=u''):
+        return self.read_lbd(lambda : super(BaseTableFrame, self).\
+                                 readline(acceptable, finish, 
+                                          buf_size, prompt, prefix=prefix))
+
+    def readnum(self, prompt=u''):
+        no = self.readline(acceptable=lambda x:x.isdigit(),
+                           buf_size=8,  prompt=prompt)
+        if no :
+            return int(no) - 1
+        else :
+            return False
+
+    def read_with_hook(self, hook, buf_size=20, prompt=u''):
+        self.write(u''.join((ac.move2(2,1),
+                            ac.kill_line)))
+        if prompt:
+            self.write(prompt)
+        buf = []
+        while len(buf) < buf_size:
+            ds = self.read_secret()
+            ds = ds or ds[0]
+            if ds == ac.k_backspace:
+                if buf:
+                    data = buf.pop()
+                    self.write(ac.backspace)
+                continue
+            elif ds in ac.ks_finish:
+                break
+            elif ds == ac.k_ctrl_c:
+                buf = False
+                break
+            else:
+                if ds.isalnum() :
+                    buf.append(ds)
+                    self.write(ds)
+                    hook(u''.join(buf))
+        self.write(u'\r')
+        self.quick_help()
+        self.table.restore_cursor_gently()
+        if buf is False :
+            return buf
+        else:
+            return u''.join(buf)                
+    
+class BaseBoardListFrame(BaseTableFrame):
+
+    boards = []
+
+    # def top_bar(self):
+    #     self.render('top')
+    #     self.writeln()
+        
+    def quick_help(self):
+        self.writeln(config.str[u'BOARDLIST_QUICK_HELP'])
+
+    def print_thead(self):
+        self.writeln(config.str[u'BOARDLIST_THEAD'])
+
+    def notify(self, msg):
+        self.write(ac.move2(0, 1))
+        self.render(u'top_msg', messages=msg)
+        self.table.restore_cursor_gently()
+
+    def get_default_index(self):
+        raise NotImplementedError
+
+    def get_data(self, start, limit):
+        raise NotImplementedError
+    
+    def wrapper_li(self, li):
+        return self.render_str(u'boardlist-li', **li)
+
+    def get(self, data):
+        if data in ac.ks_finish:
+            self.finish()
+        self.table.do_command(config.hotkeys['g_table'].get(data))
+        self.table.do_command(config.hotkeys['boardlist_table'].get(data))
+        self.do_command(config.hotkeys['boardlist'].get(data))
+        if data in config.hotkeys['boardlist_jump']:
+            self.suspend(config.hotkeys['boardlist_jump'][data])
+            
+    def finish(self):
+        self.suspend(u'board', board=self.table.fetch())
+    
+    def catch_nodata(self, e):
+        self.cls()
+        self.writeln(u'没有讨论区！')
+        self.pause()
+        self.goto_back()
+
+    ######################
+
+    def goto_last(self):
+        self.table.goto(self.board_total-1)
+
+    def goto_line(self):
+        no = self.readnum()
+        if no is not False:
+            self.table.goto(no)
+        else:
+            self.table.refresh_cursor_gently()
+            self.message(u'放弃输入')
+
+    def goto_with_prefix(self,prefix):  # // Ugly but work.
+        data = self.boards
+        prefix = prefix.lower()
+        for index,item in enumerate(data):
+            if item[u'boardname'].lower().startswith(prefix):
+                self.write(ac.save)
+                self.table.restore_cursor_gently()
+                self.table.goto(index)
+                self.write(ac.restore)
+                return
+            
+    def search(self):
+        self.read_with_hook(hook = lambda x : self.goto_with_prefix(x) ,
+                            prompt=u'搜寻讨论区：')
+        self.table.restore_cursor_gently()
+
+    def sort(self, mode):
+        if mode == 1 :
+            self.boards.sort(key = lambda x: \
+                                 manager.status.board_online(x[u'boardname'] \
+                                                                 or 0),
+                            reverse=True)
+        elif mode == 2:
+            self.boards.sort(key = lambda x: x[u'boardname'])
+        elif mode == 3:
+            self.boards.sort(key = lambda x: x[u'description'])
+        else:
+            self.boards.sort(key = lambda x:x[u'bid'])
+        self.table.goto(self.table.fetch_num())
+
+    def change_sort(self):
+        self.sort_mode += 1
+        if self.sort_mode > 3 :
+            self.sort_mode = 0
+        self.sort(self.sort_mode)
+        self.restore()
+        self.message(config.str[u'MSG_BOARDLIST_MODE_%s'%self.sort_mode])
+
+    def watch_board(self):
+        self.suspend(u'query_board', board=self.table.fetch())
+
+    def add_to_fav(self):
+        manager.favourite.add(self.userid, self.table.fetch()[u'bid'])
+        self.message(u'预定版块成功！')
+
+    def remove_fav(self):
+        manager.favourite.remove(self.userid, self.table.fetch()[u'bid'])
+        self.message(u'取消预定版块成功！')
+
+    def show_help(self):
+        self.suspend('help', page='boardlist')
+
 
 @mark('boardlist')
 class NormalBoardListFrame(BaseBoardListFrame):

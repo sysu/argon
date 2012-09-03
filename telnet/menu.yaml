@@ -78,7 +78,7 @@ _zh_name :
          mail : 处理信笺区
          user_space : 个人资料设定
          sys_admin : 系统属性设置
-         section : 分类讨论区
+         sections : 分类讨论区
 
 # 不是真的menu，默认全部为无需权限，前面不需要写权限要求
 section:
