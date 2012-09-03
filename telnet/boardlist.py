@@ -42,7 +42,9 @@ class NormalBoardListFrame(BaseBoardListFrame):
         super(NormalBoardListFrame, self).initialize()
 
     def change_board_attr(self):
-        self.suspend('sys_set_boardattr', boardname=self.table.fetch()['boardname'])
+        boardname = self.table.fetch()['boardname']
+        if manager.query.get_board_ability(self.userid, boardname)[3]:
+            self.suspend('sys_set_boardattr', boardname=boardname)
 
 @mark('favourite')
 class FavouriteFrame(BaseBoardListFrame):
