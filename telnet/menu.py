@@ -18,12 +18,12 @@ class BaseMenuFrame(BaseAuthedFrame):
         raise NotImplementedError
 
     def goto_prev(self):
-        raise NotImplementedError
+        self.goto_back()
 
-    def setup(self, title, background, menu, default=0):
+    def setup(self, title, background, menu, height=None, default=0):
         self._title = title
         self._menu = self.load(ColMenu)
-        self._menu.setup(menu, hover=default)
+        self._menu.setup(menu, hover=default, height=height)
         self._menu_background = background
         self._anim = self.load(Animation, self._get_anim(),
                                start_line=self._ANIM_START_LINE)
@@ -47,7 +47,7 @@ class BaseMenuFrame(BaseAuthedFrame):
     def restore(self):
         self.cls()
         self.top_bar()
-        self.push(self.render_str('bottom'))
+        self.bottom_bar()
         self.push(ac.move2(self._MENU_START_LINE, 1))
         self.push(self._menu_background)
         self._anim.launch()
@@ -58,7 +58,10 @@ class BaseMenuFrame(BaseAuthedFrame):
         self.goto_next(args)
 
     def _right_or_finish(self):
-        if not self._menu.move_right() :
+        res =  self._menu.move_right()
+        print res
+        if not res :
+        # if not self._menu.move_right() :
             self._finish()
 
     def _left_or_finish(self):
@@ -79,18 +82,13 @@ class ConfigMenuFrame(BaseMenuFrame):
             else:
                 buf.append(op[1:])
         if not buf:
-            self.writeln(u'你无权进入这个菜单！')
-            self.pause()
-            self.goto_back()
+            self.pause_back(u'你无权进入这个菜单！')
         menu = ColMenu.tidy_data(buf)
         if ('menu_%s' % menuname) in config.all_static_file:
             background = self.render_str('menu_%s' % menuname)
         else:
             background = ''
         self.setup(title, background, menu)
-
-    def goto_prev(self):
-        self.goto_back()
 
     def goto_next(self, option):
         if isinstance(option, str):
@@ -121,14 +119,11 @@ class SectionMenuFrame(BaseMenuFrame):
             section_d[0] += (self._SECOND_COL,)
         menu = ColMenu.tidy_data(section_d + config.menu['section'])
         background = self.render_str('menu_section')
-        self.setup(title, background, menu)
+        self.setup(title, background, menu, height=height)
     
     def _wrapper_li(self, x):
         return (self.render_str('section-li', index=x[0], **x[1]),
                 ('boardlist', {"sid":x[1]['sid']}), str(x[0]))
-
-    def goto_prev(self):
-        self.goto('main')
 
     def goto_next(self, option):
         if isinstance(option, str):

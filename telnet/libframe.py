@@ -87,6 +87,9 @@ class BaseAuthedFrame(BaseFrame):
             tpl = 'top'
         self.render(tpl, left=self.place(), right=right)
 
+    def bottom_bar(self):
+        self.push(self.render_str('bottom'))
+
     # def write(self, data):
     #     super(BaseFrame, self).write(self.read())
     #     super(BaseFrame, self).write(data)
@@ -164,6 +167,11 @@ class BaseAuthedFrame(BaseFrame):
         if self.stack:
             self.wakeup(self.stack.pop())
 
+    def pause_back(self, prompt):
+        self.writeln(prompt)
+        self.pause()
+        self.goto_back()
+
     # Additional Handle
 
     def restore(self):
@@ -198,7 +206,8 @@ class BaseAuthedFrame(BaseFrame):
         if command :
             getattr(self, command)()
 
-    def readline(self,acceptable=ac.is_safe_char,finish=ac.ks_finish,buf_size=20, prompt=u'', prefix=u''):
+    def safe_readline(self,acceptable=ac.is_safe_char,
+                      finish=ac.ks_finish,buf_size=20, prompt=u'', prefix=u''):
         '''
         Return the string when `finish` key recv, return False while recv a k_ctrl_c
         '''
@@ -226,7 +235,61 @@ class BaseAuthedFrame(BaseFrame):
                     self.write(char)
         return u''.join(buf)
 
-    readline_safe = readline
+    # def read_lbd(self, reader):
+    #     u'''
+    #     Wrapper real read function.
+    #     '''
+    #     self.write(u''.join((ac.move2(24,1),  ac.kill_line)))
+    #     res = reader()
+    #     self.write(u'\r')
+    #     self.bottom_bar()
+    #     self._table.restore_cursor_gently()
+    #     return res
+
+    # def readline(self, acceptable=ac.is_safe_char, finish=ac.ks_finish,\
+    #                  buf_size=20, prompt=u'', prefix=u''):
+    #     return self.read_lbd(lambda : self.safe_readline(acceptable, finish, 
+    #                                       buf_size, prompt, prefix=prefix))
+
+    def readnum(self, prompt=u''):
+        no = self.readline(acceptable=lambda x:x.isdigit(),
+                           buf_size=8,  prompt=prompt)
+        if no :
+            return int(no) - 1
+        else :
+            return False
+
+    def read_with_hook(self, hook, buf_size=20, prompt=u''):
+        self.write(u''.join((ac.move2(2,1),
+                            ac.kill_line)))
+        if prompt:
+            self.write(prompt)
+        buf = []
+        while len(buf) < buf_size:
+            ds = self.read_secret()
+            ds = ds or ds[0]
+            if ds == ac.k_backspace:
+                if buf:
+                    data = buf.pop()
+                    self.write(ac.backspace)
+                continue
+            elif ds in ac.ks_finish:
+                break
+            elif ds == ac.k_ctrl_c:
+                buf = False
+                break
+            else:
+                if ds.isalnum() :
+                    buf.append(ds)
+                    self.write(ds)
+                    hook(u''.join(buf))
+        self.write(u'\r')
+        self.quick_help()
+        self.table.restore_cursor_gently()
+        if buf is False :
+            return buf
+        else:
+            return u''.join(buf)                
     
     def select(self,msg,options,finish=ac.ks_finish):
         if options :
@@ -442,63 +505,6 @@ class BaseTableFrame(BaseAuthedFrame):
             self.finish()
         self.table.do_command(config.hotkeys['table_table'].get(data))
         self.do_command(config.hotkeys['table'].get(data))
-
-    def read_lbd(self, reader):
-        u'''
-        Wrapper real read function.
-        '''
-        self.write(u''.join((ac.move2(24,1),  ac.kill_line)))
-        res = reader()
-        self.write(u'\r')
-        self.bottom_bar()
-        self.table.restore_cursor_gently()
-        return res
-
-    def readline(self, acceptable=ac.is_safe_char, finish=ac.ks_finish,\
-                     buf_size=20, prompt=u'', prefix=u''):
-        return self.read_lbd(lambda : super(BaseTableFrame, self).\
-                                 readline(acceptable, finish, 
-                                          buf_size, prompt, prefix=prefix))
-
-    def readnum(self, prompt=u''):
-        no = self.readline(acceptable=lambda x:x.isdigit(),
-                           buf_size=8,  prompt=prompt)
-        if no :
-            return int(no) - 1
-        else :
-            return False
-
-    def read_with_hook(self, hook, buf_size=20, prompt=u''):
-        self.write(u''.join((ac.move2(2,1),
-                            ac.kill_line)))
-        if prompt:
-            self.write(prompt)
-        buf = []
-        while len(buf) < buf_size:
-            ds = self.read_secret()
-            ds = ds or ds[0]
-            if ds == ac.k_backspace:
-                if buf:
-                    data = buf.pop()
-                    self.write(ac.backspace)
-                continue
-            elif ds in ac.ks_finish:
-                break
-            elif ds == ac.k_ctrl_c:
-                buf = False
-                break
-            else:
-                if ds.isalnum() :
-                    buf.append(ds)
-                    self.write(ds)
-                    hook(u''.join(buf))
-        self.write(u'\r')
-        self.quick_help()
-        self.table.restore_cursor_gently()
-        if buf is False :
-            return buf
-        else:
-            return u''.join(buf)                
 
 class BaseBoardListFrame(BaseTableFrame):
 

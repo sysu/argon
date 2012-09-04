@@ -306,14 +306,16 @@ class Post(Model):
         from string import Template
         with open(config.SQL_TPL_DIR + 'template/argo_filehead.sql') as f :
             board_template = Template(f.read())
-            self.execute_paragraph(board_template.safe_substitute(boardname=boardname))
+            self.execute_paragraph(board_template.safe_substitute(
+                    boardname=boardname))
 
     def _create_table_junk(self, boardname, **kwargs):
         import config
         from string import Template
         with open(config.SQL_TPL_DIR + 'template/argo_filehead_junk.sql') as f :
             board_template = Template(f.read())
-            self.execute_paragraph(board_template.safe_substitute(boardname=boardname))
+            self.execute_paragraph(board_template.safe_substitute(
+                    boardname=boardname))
 
     def _move_post(self, tablename, pid, new_tablename):
         self.db.execute("INSERT INTO `%s` (%s) "
@@ -329,21 +331,22 @@ class Post(Model):
         self.db.execute("INSERT INTO `%s` (%s) "
                         "SELECT %s "
                         "FROM `%s` "
-                        "WHERE pid>=%%s AND pid<%%s" % (new_tablename, self.all_attrs_str,
-                                                        self.all_attrs_str, tablename),
+                        "WHERE pid>=%%s AND pid<%%s AND not flag" % \
+                            (new_tablename, self.all_attrs_str,
+                             self.all_attrs_str, tablename),
                         start, end)
         return self.db.execute("DELETE FROM %s "
-                               "WHERE pid>=%%s AND pid<%%s" % tablename, start, end)
+                               "WHERE pid>=%%s AND pid<%%s AND not flag" % tablename, start, end)
 
     def _move_post_many(self, tablename, new_tablename, pids):
         self.db.executemany("INSERT INTO `%s` (%s) "
                             "SELECT %s "
                             "FROM `%s` "
-                            "WHERE pid=%%s" % (new_tablename, self.all_attrs_str,
-                                               self.all_attrs_str, tablename),
+                            "WHERE pid=%%s AND not flag" % (new_tablename, self.all_attrs_str,
+                                                            self.all_attrs_str, tablename),
                             pids)
         return self.db.executemany("DELETE FROM %s "
-                                   "WHERE pid=%%s" % tablename, pids)
+                                   "WHERE pid=%%s AND not flag" % tablename, pids)
 
     def remove_post_junk(self, boardname, pid):
         return self._move_post(self.__(boardname), pid,
@@ -382,11 +385,43 @@ class Post(Model):
 
     #####################
 
+    FILTER_G = 'flag & 1'
+    FILTER_M = 'flag & 2'
+    FILTER_O = 'replyid=0'
+
+    def sql_filter_tid(self, tid):
+        return 'tid=%s' % self.db.escape_string(str(tid))
+
+    def sql_filter_owner(self, owner):
+        return 'tid=%s' % self.db.escape_string(owner)
+
+    def sql_and(self,buf):
+        return ' AND '.join(buf)
+
     def get_posts(self, boardname, num, limit):
         res = self.db.query("SELECT * FROM `%s` ORDER BY pid LIMIT %%s,%%s" %\
                             self.__(boardname), num, limit)
         return self._wrap_index(res, num)
 
+    def get_posts_loader(self, boardname, cond=''):
+        if cond :
+            sql = "SELECT * FROM `%s` WHERE %s ORDER BY pid LIMIT %%s,%%s" % \
+                (self.__(boardname), cond)
+        else:
+            sql = "SELECT * FROM `%s` ORDER BY pid LIMIT %%s,%%s" % \
+                self.__(boardname)
+        return lambda start, limit: self._wrap_index(
+            self.db.query(sql, start, limit), start,
+            )
+
+    def get_posts_counter(self, boardname, cond=''):
+        if cond :
+            sql = "SELECT count(*) FROM `%s` WHERE %s" % \
+                (self.__(boardname), cond)
+        else:
+            sql = "SELECT count(*) FROM `%s`" % self.__(boardname)
+        return lambda : self.db.get(sql)['count(*)']
+        
     def get_posts_total(self, boardname):
         return self.db.get("SELECT count(*) FROM %s" % self.__(boardname))['count(*)']
 
@@ -608,7 +643,7 @@ class Status(Model):
         self.ch.hincrby(self._boardonline, boardname, -1)
 
     def board_online(self, boardname):
-        return self.ch.hget(self._boardonline, boardname)
+        return self.ch.hget(self._boardonline, boardname) or 0
 
     def get_rank(self, sessionid):
         return self.ch.zrank(self._map, sessionid)
@@ -631,6 +666,7 @@ class Status(Model):
         all_sesions = self.ch.hkeys(self._ip)
         for s in all_sesions:
             self.logout(s)
+        self.ch.delete(self._boardonline)
             
 class Mail(Model):
 
@@ -1517,9 +1553,9 @@ class Query:
             boards = self.board.get_by_sid(sid)
         return self._wrap_perm(userid, boards)
 
-    # def get_board_by_name(self, userid, boardname):
-    #     board = self.board.get_board(boardname)
-    #     # return self._wrap_perm()    
+    def get_board_by_name(self, userid, boardname):
+        board = self.board.get_board(boardname)
+        # return self._wrap_perm()    
 
     def get_all_favourite(self, userid):
         bids = self.favourite.get_all(userid)
