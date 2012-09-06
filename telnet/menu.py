@@ -18,7 +18,7 @@ class BaseMenuFrame(BaseAuthedFrame):
         raise NotImplementedError
 
     def goto_prev(self):
-        raise NotImplementedError
+        self.goto_back()
 
     def setup(self, title, background, menu, height=None, default=0):
         self._title = title
@@ -80,11 +80,11 @@ class BaseMenuFrame(BaseAuthedFrame):
             self.pause_back(u'你无权进入这个菜单！')
         return ColMenu.tidy_data(buf)
 
-    def goto_mark_or_args(self, args):
+    def suspend_mark_or_args(self, args):
         if isinstance(args, str):
-            self.goto(args)
+            self.suspend(args)
         else:
-            self.goto(args[0], **args[1])
+            self.suspend(args[0], **args[1])
 
 @mark('main')
 class MainMenuFrame(BaseMenuFrame):
@@ -93,8 +93,7 @@ class MainMenuFrame(BaseMenuFrame):
     DEFAULT_NAME = config.menu['__zhname__']['main']
 
     def goto_next(self, hover):
-        self.session['menu_default']['__main__'] = hover
-        self.goto_mark_or_args(self._menu.get_real(hover))
+        self.suspend_mark_or_args(self._menu.get_real(hover))
 
     def goto_prev(self):
         self._menu.send_shortcuts(self._GOTO_BACK_CODE)
@@ -103,8 +102,7 @@ class MainMenuFrame(BaseMenuFrame):
         title = self.DEFAULT_NAME
         background = self.render_str('menu_main')
         menu = self.tidy_perm_menu(config.menu['__main__'])
-        default = self.session['menu_default'].pop('__main__', 0)
-        self.setup(title, background, menu, default=default)
+        self.setup(title, background, menu)
 
 @mark('sections')
 class SectionMenuFrame(BaseMenuFrame):
@@ -123,20 +121,17 @@ class SectionMenuFrame(BaseMenuFrame):
             section_d[0] += (self._SECOND_COL,)
         menu = ColMenu.tidy_data(section_d + config.menu['__section__'])
         background = self.render_str('menu_section')
-        default = self.session['menu_default'].pop('__section__', 0)
-        self.setup(title, background, menu, height=height, default=default)
+        self.setup(title, background, menu, height=height)
     
     def _wrapper_li(self, x):
         return (self.render_str('section-li', index=x[0], **x[1]),
                 ('boardlist', {"sid":x[1]['sid']}), str(x[0]))
 
     def goto_next(self, hover):
-        if hover != self._menu.fetch_lastnum() :
-            self.session['menu_default']['__section__'] = hover
-        self.goto_mark_or_args(self._menu.get_real(hover))
+        self.suspend_mark_or_args(self._menu.get_real(hover))
 
     def goto_prev(self):
-        self.goto_next(self._menu.fetch_lastnum())
+        self.goto_back()
 
 @mark('menu')
 class ConfigMenuFrame(BaseMenuFrame):
@@ -149,17 +144,13 @@ class ConfigMenuFrame(BaseMenuFrame):
             background = self.render_str('menu_%s' % menuname)
         else:
             background = ''
-        default = self.session['menu_default'].pop(menuname, 0)
         self.setup(title, background, menu, default=default)
 
     def goto_next(self, hover):
-        self.session['menu_default'][self.menuname] = hover
         self.goto_mark_or_args(self._menu.get_real(hover))
 
     def goto_prev(self):
-        self.goto_mark_or_args(
-            self._menu.get_real(
-                self._menu.fetch_lastnum()))
+        self.goto_back()
 
 # @mark('movie')
 # class PlayMovie(BaseAuthedFrame):

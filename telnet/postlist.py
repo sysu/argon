@@ -67,10 +67,6 @@ class BasePostListFrame(BaseAuthedFrame):
         self._table.restore_screen()
 
     def restore(self):
-        if self.session['board_flash'] :
-            default = self.session['board_flash']
-            self.session.pop('board_flash')
-            self._table.setup(default)
         self._init_screen()
 
 class BaseBoardFrame(BasePostListFrame):
@@ -92,6 +88,9 @@ class BaseBoardFrame(BasePostListFrame):
         else :
             tpl = 'top_board'
         self.render(tpl, left=left, mid=mid, right=right)
+
+    def get_pid_rank(self, pid):
+        raise NotImplementedError
                 
     def setup(self, board, thead, dataloader, counter, default=0):
         self.board = board
@@ -105,8 +104,28 @@ class BaseBoardFrame(BasePostListFrame):
     def finish(self, post):
         self.suspend('post', boardname=self.boardname, pid=post['pid'])
 
+    def restore(self):
+        if self.session['board_flash'] :
+            default = self.get_pid_rank(self.session['board_flash'])
+            self.session.pop('board_flash')
+        else:
+            default = self._table.fetch_num()
+        try:
+            try:
+                self._table.setup(default)
+            except NullValueError:
+                self._table.setup(0)
+        except NullValueError:
+            self.catch_nodata()
+            raise ValueError
+        self._init_screen()
+
     def new_post(self):
         self.suspend('new_post', boardname=self.boardname)
+
+    def reply_post(self, post):
+        self.suspend('_reply_post_o', boardname=self.boardname,
+                     post=post)
 
     def reply_to_author(self, post):
         self.suspend('send_mail', touserid=post['owner'])
@@ -164,7 +183,11 @@ class BaseBoardFrame(BasePostListFrame):
             self.suspend('sys_set_board_deny', boardname=self.boardname)
         
     def _wrapper_li(self, post):
-        return self.render_str('board-li', **post)
+        return self.render_str('board-li',
+                               readmark=manager.readmark.is_read(self.userid,
+                                                                 self.boardname,
+                                                                 post['pid']),
+                               **post)
 
     def _goto_line(self):
         no = self.readnum(prompt=u'跳转到哪篇文章？')
@@ -214,10 +237,17 @@ class BoardFrame(BaseBoardFrame):
     shortcuts_fetch_do = config.shortcuts['board_fetch']
     shortcuts_update = config.shortcuts['board_update']
 
+    def next_frame(self, post):
+        self.suspend('_view_post_o', post=post)
+
     def initialize(self, board, default=0):
         dataloader = manager.post.get_posts_loader(board['boardname'])
         counter = manager.post.get_posts_counter(board['boardname'])
+        self.session['last_board_attr'] = board
         self.setup(board, self.THEAD, dataloader, counter, default)
+
+    def get_pid_rank(self, pid):
+        return manager.post.get_rank_num(self.boardname, pid)
     
     def catch_nodata(self):
         self.cls()
@@ -253,7 +283,7 @@ class BoardFrame(BaseBoardFrame):
                 self.message(u'错误的输入')
 
     def clear_readmark(self):
-        last = self.get_last_pid()
+        last = manager.post.get_last_pid(self.boardname)
         manager.readmark.clear_unread(self.userid, self.boardname, last)
         self.reload()
 
@@ -277,17 +307,23 @@ class BoardFilterPostFrame(BaseBoardFrame):
         "u": lambda owner : manager.post.sql_filter_owner(owner),
         }
 
+    def get_pid_rank(self, pid):
+        return manager.post.get_rank_num_cond(self.boardname,
+                                              pid,
+                                              self.cond)
+
     def initialize(self, board, mode, default=0, **kwargs):
+        self.cond = self.ALL_MODE[mode](**kwargs)
         dataloader = manager.post.get_posts_loader(board['boardname'],
-                                                   self.ALL_MODE[mode](**kwargs))
+                                                   self.cond)
         counter = manager.post.get_posts_counter(board['boardname'],
-                                                 self.ALL_MODE[mode](**kwargs))
+                                                 self.cond)
         thead = config.str['BOARD_%s_MODE_THEAD' % mode]
         self.setup(board, thead, dataloader, counter, default)
 
 @mark('board')
 class BoardFrame(BaseAuthedFrame):
 
-    def initialize(self, boardname, default=0):
+    def initialize(self, boardname, prev, default=0):
         board = manager.query.get_board_by_name(boardname)
-        self.goto('_board_o', board, default)
+        self.goto('_board_o', board, prev, default)

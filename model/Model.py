@@ -9,6 +9,9 @@ from datetime import datetime
 import mode
 import random
 # import perm
+import logging
+
+logger = logging.getLogger('model')
 
 class MetaModel(type):
 
@@ -217,6 +220,7 @@ class Board(Model):
         return self.table_delete_by_key(self.__, 'bid', bid)
     
     def name2id(self,boardname):
+        logger.debug('name2id -- %s',boardname)
         d = self.table_select_by_key(self.__, 'bid', 'boardname', boardname)
         return d and d['bid']
     
@@ -383,6 +387,13 @@ class Post(Model):
                            'ORDER BY pid' % self.__(boardname),
                            pid)['count(*)']
 
+    def get_rank_num_cond(self, boardname, pid, cond):
+        return self.db.get('SELECT count(*) '
+                           'FROM `%s` '
+                           'WHERE pid<%%s AND %s '
+                           'ORDER BY pid' % (self.__(boardname), cond),
+                           pid)['count(*)']
+
     #####################
 
     FILTER_G = 'flag & 1'
@@ -468,20 +479,44 @@ class Post(Model):
     ####################
 
     def get_last_pid(self,boardname):
-        res = self.db.get("SELECT pid FROM `%s` ORDER BY pid DESC LIMIT 1" % \
-                              self.__(boardname))
-        return res and res['pid']
+        return self.ch.hget(self.lastp, boardname) 
+        # res = self.db.get("SELECT pid FROM `%s` ORDER BY pid DESC LIMIT 1" % \
+        #                       self.__(boardname))
+        # return res and res['pid']
+
+    def get_post_loader(self, boardname):
+        sql_next = "SELECT * FROM `%s` WHERE pid > %%s ORDER BY pid LIMIT 1" % self.__(boardname)
+        sql_prev = "SELECT * FROM `%s` WHERE pid < %%s ORDER BY pid DESC LIMIT 1" % self.__(boardname)
+        fun = self.db.get
+        return (lambda pid : fun(sql_next, pid),
+                lambda pid : fun(sql_prev, pid))
+
+    def get_topic_post_loader(self, boardname, tid):
+        assert isinstance(tid, long)
+        sql_next = "SELECT * FROM `%s` WHERE pid > %%s AND tid=%s ORDER BY pid LIMIT 1" % (self.__(boardname), tid)
+        sql_prev = "SELECT * FROM `%s` WHERE pid < %%s AND tid=%s ORDER BY pid DESC LIMIT 1" % (self.__(boardname), tid)
+        fun = self.db.get
+        return (lambda pid : fun(sql_next, pid),
+                lambda pid : fun(sql_prev, pid))
 
     def get_post(self,boardname,pid):
         return self.table_get_by_key(self.__(boardname), 'pid', pid)
 
+    def prev_post(self, boardname, pid):
+        return self.db.get("SELECT * FROM `%s` WHERE pid < %%s ORDER BY pid DESC LIMIT 1"%\
+                               self.__(boardname), pid)
+
+    def next_post(self, boardname, pid):
+        return self.db.get("SELECT * FROM `%s` WHERE pid > %%s ORDER BY pid LIMIT 1" %\
+                               self.__(boardname), pid)
+
     def prev_post_pid(self,boardname,pid):
-        res = self.db.get("SELECT pid FROM `%s` WHERE pid < %s ORDER BY pid DESC LIMIT 1" %\
-                              (self.__(boardname),pid))
+        res = self.db.get("SELECT pid FROM `%s` WHERE pid < %%s ORDER BY pid DESC LIMIT 1" %\
+                              self.__(boardname), pid)
         return res and res['pid']
 
     def next_post_pid(self,boardname,pid):
-        res = self.db.get("SELECT pid FROM `%s` WHERE pid > %s ORDER BY pid LIMIT 1" %\
+        res = self.db.get("SELECT pid FROM `%s` WHERE pid > %%s ORDER BY pid LIMIT 1" %\
                               (self.__(boardname),pid))
         return res and res['pid']
 

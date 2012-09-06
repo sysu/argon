@@ -1,1 +1,1 @@
- {{ (index+1)|string|width(4) }} {{ flag|post_mark }} {{ ' ' if manager.readmark.is_read(user.userid, manager.board.id2name(bid),pid) else 'N' }}  {{ owner|width(-15) }}{{ posttime.strftime("%b %d") }}    {{ ' ' if replyable else '[1;4;33mx[m' }}{{ '● ' if replyid == 0 }}{{ title }}
+ {{ (index+1)|string|width(4) }} {{ flag|post_mark }} {{ ' ' if readmark else 'N' }}  {{ owner|width(-15) }}{{ posttime.strftime("%b %d") }}    {{ ' ' if replyable else '[1;4;33mx[m' }}{{ '● ' if replyid == 0 }}{{ title }}

@@ -5,11 +5,14 @@ import random
 from chaofeng.g import mark
 from chaofeng.ui import TextEditor, TextEditorAreaMixIn
 import chaofeng.ascii as ac
-from libframe import BaseAuthedFrame
+from libframe import BaseAuthedFrame, gen_quote
 from model import manager
 import config
+import functools
 
-class Editor(TextEditor, TextEditorAreaMixIn):
+class RNEditor(TextEditor, TextEditorAreaMixIn):
+
+    ESCAPE_LINE = '\n'
 
     fground_string = dict((str(x), (u'[#3%s]', u'[%#]')) for x in range(0,8))
     bground_string = dict((str(x), (u'[#4%s]', u'[%#]')) for x in range(0,8))
@@ -63,16 +66,26 @@ class Editor(TextEditor, TextEditorAreaMixIn):
         self.fix_cursor()
 
     def do_command(self, cmd):
-        getattr(self, cmd)()
-        self.bottom_bar()
+        if cmd :
+            getattr(self, cmd)()
+            self.bottom_bar()
 
     def fetch_all(self):
-        text = super(Editor, self).fetch_all()
+        text = super(RNEditor, self).fetch_all()
         return text.replace(self.esc, ac.esc)
 
     def fetch_lines(self):
         text = self.fetch_all()
         return text.split('\r\n')
+
+    def backup(self, text):
+        manager.action.send_mail('archive_', self.userid,
+                                 content=text)
+        self.restore_screen()
+
+class Editor(RNEditor):
+
+    ESCAPE_LINE = '\n'
 
 class BaseEditFrame(BaseAuthedFrame):
 
@@ -82,22 +95,31 @@ class BaseEditFrame(BaseAuthedFrame):
     def setup(self, text, spoint=0):
         assert isinstance(text, unicode)
         self._editor = self.load(Editor, text, spoint)
-        self._editor.restore_screen()
-        self.bottom_bar()
+        self.restore_screen()
 
     def _init_screen(self):
         self._editor.restore_screen()
 
     def get(self, char):
         if char in self.shortcuts:
-            self.do_command(self.shortcuts.get(char))
+            self.do_command(self.shortcuts[char])
         elif char in self.shortcuts_ui :
-            self._editor.do_command(char)
+            self._editor.do_command(self.shortcuts_ui[char])
         elif ac.is_safe_char(char):
             self._editor.insert_char(char)
 
+    def restore_screen(self):
+        self._editor.restore_screen()
+        self._editor.bottom_bar()
+
 @mark('new_post')
 class NewPostFrame(BaseEditFrame):
+
+    shortcuts = {
+        ac.k_ctrl_w:"finish",
+        }
+
+    shortcuts_ui = config.shortcuts['edit_ui']
 
     def update_attr(self, attrs):
         self.render('edit_head', **attrs)
@@ -149,240 +171,225 @@ class NewPostFrame(BaseEditFrame):
         attrs = self.read_attrs(manager.usersign.get_sign_num(self.userid),
                                 boardname, True)
         if attrs :
-            self.signtext = manager.usersign.get_sign(
+            attrs['signtext'] = manager.usersign.get_sign(
                 self.userid, attrs['usesign']-1) \
                 if attrs['usesign'] else ''
+            self._attrs = attrs
             self.setup(u'')
         else:
             self.pause_back(u'放弃发表新文章')
 
     def finish(self):
-        pass
-        
-# import sys
-# sys.path.append('../')
+        self.cls()
+        self.push(u'文章处理：\r\n')
+        self.push(u'l) 发表文章 r)寄回信箱 t)修改标题 a)取消发文 e)再编辑？: ')
+        char = self.readchar(acceptable=lambda x:x in 'lrtae',
+                             cancel='a', default=u'l')
+        if char == 'l':
+            self.publish_and_goto_back(self._attrs, self._editor.fetch_all())
+        if char == 'r':
+            self.backup(self._editor.fetch_all())
+        if char == 't':
+            self.modify_title()
+        if char == 'a':
+            self.goto_back()
 
-# from chaofeng import ascii as ac
-# from chaofeng.g import mark
-# from model import manager
-# from libframe import BaseAuthedFrame,BaseEditFrame, gen_quote,\
-#     find_all_invert
-# from datetime import datetime
-# import config
-# import random
-# from libdecorator import need_perm
-# from libformat import etelnet_to_style, style_to_etelnet
+    def publish_and_goto_back(self, attrs, text):
+        pid = manager.action.new_post(attrs['boardname'],
+                                      self.userid,
+                                      attrs['title'],
+                                      text,
+                                      self.session.ip,
+                                      config.BBS_HOST_FULLNAME,
+                                      replyable=attrs['replyable'],
+                                      signature=attrs['signtext'])
+        self.session['board_flash'] = pid
+        self.goto_back()
 
-# @mark('new_post')
-# class NewPostFrame(BaseEditFrame):
+    def modify_title(self):
+        self.push(u'\r\n开始编辑标题，[32m^C[m取消\r\n')
+        self.push(u'现在的标题：%s\r\n' % self._attrs['title'])
+        self.push(u'修改为：')        
+        title = self.readline()
+        if title :
+            self._attrs['title'] = title
+            self.push(u'\r\n修改成功！')
+            self.pause()
+        self.restore_screen()
 
-#     def check_perm(self, board):
-#         _,w,_,_ = manager.query.get_board_ability(self.session.user.userid, board['boardname'])
-#         return w or u'该版禁止发文或你没有相应的权限！'
+@mark('_reply_post_o')
+class ReplyPostFrame(BaseEditFrame):
 
-#     @need_perm
-#     def initialize(self, board):
-#         self.board = board
-#         self.boardname = board['boardname']
-#         self.cls()
-#         self.attrs = self.read_attrs()
-#         if self.attrs :
-#             sign = manager.usersign.get_sign(self.userid, self.attrs['usesign']-1) \
-#                 if self.attrs['usesign'] else ''
-#             self.signtext = sign
-#             # text = self.render_str('base_post-t', sign=sign)
-#             super(NewPostFrame, self).initialize()
-#             self.message(u'写新文章 -- %s' % self.attrs['title'])
-#         else:
-#             self.write(u'放弃发表新文章')
-#             self.pause()
-#             self.goto_back()
+    shortcuts = {
+        ac.k_ctrl_w : "finish",
+        }
 
-#     def finish(self):
-#         text = etelnet_to_style(self.fetch_all())
-#         pid = manager.action.new_post(self.boardname,
-#                                       self.userid,
-#                                       self.attrs['title'],
-#                                       text,
-#                                       self.session.ip,
-#                                       config.BBS_HOST_FULLNAME,
-#                                       replyable=self.attrs['replyable'],
-#                                       signature=self.signtext)
-#         invs = find_all_invert(text)
-#         if len(invs) >= 10:
-#             self.message(u'你@太多人啦！')
-#             self.pause()
-#         else:
-#             userids = []
-#             for u in invs :
-#                 user = manager.userinfo.get_user(u)
-#                 if user :
-#                     userids.append(user['userid'])
-#             manager.notice.add_inve(self.userid, self.boardname,
-#                                     pid, userids)
-#             for u in userids:
-#                 manager.notify.add_notice_notify(u)
-#         index = manager.post.get_rank_num(self.boardname, pid)
-#         self.goto('board', board=self.board, default=index)
+    READ_ATTR_PROMPT = u"[25;1H[K[1;32m0[m~[1;32m%s[m/[1;32mx[m "\
+        u"选择/随机签名档 [1;32mt[m标题，[1;32mu[m回复，[1;32mq[m放弃:"
 
-# @mark('reply_post')
-# class ReplyPostFrame(BaseEditFrame):
+    def update_attr(self, attrs):
+        self.render('edit_head', **attrs)
 
-#     def check_perm(self, boardname, pid):
-#         _,w,_,_ = manager.query.get_board_ability(self.session.user.userid, board['boardname'])
-#         w = w and post.replyable
-#         return w or u'该版禁止发文或你没有相应的权限！'
+    def read_attrs(self, sign_num, boardname, replyable, title):
+        attrs = {
+            "boardname":boardname,
+            "replyable":replyable,
+            "usesign":0,
+            "title":title,
+            }
+        if sign_num :
+            attrs['usesign'] = random.randint(1, sign_num)
+        self.update_attr(attrs)
+        prompt = self.READ_ATTR_PROMPT % sign_num
+        while True:
+            op = self.safe_readline(buf_size=4, prompt=prompt)
+            if op == '':
+                break
+            elif op is False or op=='q':
+                return None
+            elif op == 't' :
+                attrs['title'] = self.safe_readline(prompt=u'\r\x1b[K请输入标题：',
+                                                    prefix=attrs['title'],buf_size=40)
+                if not attrs['title'] :
+                    return
+            elif op == 'u' :
+                attrs['replyable'] = not attrs['replyable']
+            elif op == 'x' and sign_num:
+                attrs['usesign'] = random.randint(1, sign_num)
+            elif op.isdigit() :
+                n = int(op)
+                if n <= sign_num :
+                    attrs['usesign'] = n
+            self.update_attr(attrs)
+        return attrs
 
-#     prompt = u'[1;32m0[m~[1;32m%s[m/[1;32mx[m 选择/随机签名档 [1;32mt[m标题，[1;32mu[m回复，[1;32mq[m放弃:'
-    
-#     def update_attr(self, attrs):
-#         self.write(''.join([ac.move2(21,1),
-#                             ac.clear1,
-#                             self.render_str('edit_head', **attrs)]))
+    def initialize(self, boardname, post):
+        self.cls()
+        title = post['title'] if post['title'].startswith('Re:')\
+            else u'Re: %s' % post['title']
+        attrs = self.read_attrs(manager.usersign.get_sign_num(self.userid),
+                                boardname, True, title)
+        if not attrs:
+            self.goto_back()
+        attrs['signtext'] = manager.usersign.get_sign(
+            self.userid, attrs['usesign'] -1) if attrs['usesign'] else ''
+        attrs['replyid'] = post['pid']
+        self._attrs = attrs
+        text = gen_quote(post)
+        self.setup(text=text)
 
-#     def read_attrs(self):
-#         sign_num = manager.usersign.get_sign_num(self.userid)
-#         attrs = {
-#             "boardname":self.boardname,
-#             "replyable":True,
-#             "usesign":0,
-#             "title":self.title,
-#             }
-#         if sign_num :
-#             attrs['usesign'] = random.randint(1, sign_num)
-#         self.update_attr(attrs)
-#         prompt = ''.join([ac.move2(25,1), ac.kill_line, self.prompt % sign_num])
-#         while True:
-#             op = self.readline_safe(buf_size=4, prompt=prompt)
-#             if op == '':
-#                 break
-#             elif op is False or op=='q':
-#                 return None
-#             elif op == 't' :
-#                 attrs['title'] = self.readline_safe(prompt=u'\r\x1b[K请输入标题：',
-#                                                     prefix=attrs['title'],buf_size=40)
-#                 if not attrs['title'] :
-#                     return
-#             elif op == 'u' :
-#                 attrs['replyable'] = not attrs['replyable']
-#             elif op == 'x' and sign_num:
-#                 attrs['usesign'] = random.randint(1, sign_num)
-#             elif op.isdigit() :
-#                 n = int(op)
-#                 if n <= sign_num :
-#                     attrs['usesign'] = n
-#             self.update_attr(attrs)
-#         return attrs
+    def finish(self):
+        self.cls()
+        self.push(u'文章处理：\r\n')
+        self.push(u'l) 发表文章 r)寄回信箱 t)修改标题 a)取消发文 e)再编辑？: ')
+        char = self.readchar(acceptable=lambda x:x in 'lrtae',
+                             cancel='a', default=u'l')
+        if char == 'l':
+            self.publish_and_goto_back(self._attrs, self._editor.fetch_all())
+        if char == 'r':
+            self.backup(self._editor.fetch_all())
+        if char == 't':
+            self.modify_title()
+        if char == 'a':
+            self.goto_back()
+        self.restore_screen()
 
-#     # @need_perm
-#     def initialize(self, boardname, post):
-#         self.cls()
-#         self.boardname = boardname
-#         self.replyid = post['pid']
-#         self.title = post['title'] if post['title'].startswith('Re:')\
-#             else 'Re: %s' % post['title']
-#         self.attrs = self.read_attrs()
-#         if not self.attrs :
-#             self.goto_back()
-#         self.title = self.attrs['title']
-#         self.signtext = manager.usersign.get_sign(self.userid, self.attrs['usesign']-1) \
-#             if self.attrs['usesign'] else ''
-#         text = gen_quote(post)
-#         super(ReplyPostFrame, self).initialize(text=style_to_etelnet(text))
-#         self.message(u'回复文章 -- %s' % self.title)
+    def publish_and_goto_back(self, attrs, text):
+        pid = manager.action.reply_post(attrs['boardname'],
+                                        self.userid,
+                                        attrs['title'],
+                                        text,
+                                        self.session.ip,
+                                        config.BBS_HOST_FULLNAME,
+                                        attrs['replyid'],
+                                        replyable=attrs['replyable'],
+                                        signature=attrs['signtext'])
+        self.session['board_flash'] = pid
+        self.goto_back()
 
-#     def finish(self):
-#         text = etelnet_to_style(self.fetch_all())
-#         pid = manager.action.reply_post(
-#             self.boardname,
-#             self.userid,
-#             self.title,
-#             text,
-#             self.session.ip,
-#             config.BBS_HOST_FULLNAME,
-#             self.replyid,
-#             replyable=True,
-#             signature=self.signtext)
-#         board = manager.board.get_board(self.boardname)
-#         index = manager.post.get_rank_num(self.boardname, pid)
-#         invs = find_all_invert(text)
-#         if len(invs) >= 10:
-#             self.message(u'你@太多人啦！')
-#             self.pause()
-#         else:
-#             userids = []
-#             for u in invs :
-#                 user = manager.userinfo.get_user(u)
-#                 if user :
-#                     userids.append(user['userid'])
-#             manager.notice.add_inve(self.userid, self.boardname,
-#                                     pid, userids)
-#             for u in userids:
-#                 manager.notify.add_notice_notify(u)
-#         self.goto('board', board=board, default=index)
+    def modify_title(self):
+        self.push(u'\r\n开始编辑标题，[32m^C[m取消\r\n')
+        self.push(u'现在的标题：%s\r\n' % self._attrs['title'])
+        self.push(u'修改为：')        
+        title = self.readline()
+        if title :
+            self._attrs['title'] = title
+            self.push(u'\r\n修改成功！')
+            self.pause()
+        self.restore_screen()
 
-# @mark('edit_post')
-# class EditPostFrame(BaseEditFrame):
+@mark('_edit_post_o')
+class EditPostFrame(BaseEditFrame):
 
-#     def check_perm(self, board, post):
-#         # _,w,_,_ = manager.query.get_board_ability(self.session.user.userid, board['boardname'])
-#         # return (w or u'该版禁止发文或你没有相应的权限！') and
-#         return (post.owner == self.userid) or u'你没有编辑此文章的权限！'
+    shortcuts = {
+        ac.k_ctrl_w:"finish",
+        }
+    shortcuts_ui = config.shortcuts['edit_ui']
 
-#     @need_perm
-#     def initialize(self, board, post):
-#         self.cls()
-#         self.boardname = board['boardname']
-#         self.pid = post['pid']
-#         super(EditPostFrame, self).initialize(text=post['content'])
-#         self.message(u'开始编辑文章')
-        
-#     def finish(self):
-#         manager.action.update_post(self.boardname,
-#                                    self.userid,
-#                                    self.pid,
-#                                    etelnet_to_style(self.fetch_all()))
-#         # self.message(u'编辑文章成功！')
-#         # self.pause()
-#         self.goto_back()
+    def initialize(self, board, post):
+        self.cls()
+        self.boardname = board['boardname']
+        self.pid = post['pid']
+        self.setup(text=post['content'])
 
-# @mark('edit_text')
-# class EditFileFrame(BaseEditFrame):
+    def finish(self):
+        self.cls()
+        self.push(u'修改文章：\r\n')
+        self.push(u'l) 确认修改 r)寄回信箱 a)取消发文 e)再编辑？： ')
+        char = self.readchar(acceptable=lambda x:x in 'lrae',
+                             cancel='a', default=u'l')
+        if char == 'l':
+            self.modify_and_goto_back(self._editor.fetch_all())
+        if char == 'r':
+            self.backup(self._editor.fetch_all())
+        if char == 'a':
+            self.goto_back()
+        self.restore_screen()
 
-#     def initialize(self, filename, callback, text='', l=0, split=False):
-#         self.cls()
-#         self.filename = filename
-#         self.split = split
-#         self.callback = callback
-#         super(EditFileFrame, self).initialize(text=text, spoint=l)
-#         self.message(u'开始编辑档案')
+    def modify_and_goto_back(self, text):
+        manager.action.update_post(self.boardname,
+                                   self.userid,
+                                   self.pid,
+                                   text)
+        self.goto_back()
 
-#     def finish(self):
-#         self.message(u'修改档案结束!')
-#         if self.split:
-#             self.callback(filename=self.filename, text=self.fetch_lines())
-#         else:
-#             self.callback(filename=self.filename, text=self.fetch_all())
-#         # self.pause()
-#         self.goto_back()
+@mark('edit_text')
+class EditFileFrame(BaseEditFrame):
 
-#     def quit_iter(self):
-#         self.message(u'放弃本次编辑操作？')
-#         d = self.readline()
-#         if not d :
-#             self.goto_back()
+    def initialize(self, filename, text='', l=0, split=False):
+        self.cls()
+        self._filename = filename
+        self._split = split
+        self.setup(text=text, spoint=l)
 
-# @mark('edit_clipboard')
-# class EditorClipboardFrame(BaseEditFrame):
+    def setup(self, text, spoint):
+        assert isinstance(text, unicode)
+        self._editor = self.load(RNEditor, text, spoint)
+        self.restore_screen()
 
-#     def initialize(self):
-#         super(EditorClipboardFrame, self).initialize(text=self.get_text())
+    def finish(self):
+        self.cls()
+        self.push(u'修改文章：\r\n')
+        self.push(u'l) 确认修改 r)寄回信箱 a)取消发文 e)再编辑？： ')
+        char = self.readchar(acceptable=lambda x:x in 'lrae',
+                             cancel='a', default=u'l')
+        if char == 'l':
+            self.modify_and_goto_back(self._editor.fetch_all())
+        if char == 'r':
+            self.backup(self._editor.fetch_all())
+        if char == 'a':
+            self.goto_back()
+        self.restore_screen()
 
-#     def finish(self):
-#         manager.clipboard.set_clipboard(self.userid, self.fetch_all())
-#         self.message(u'更新暂存档成功！')
-#         # self.pause()
-#         self.goto_back()
+    def modify_and_goto_back(self, text):
+        self.session['__edit__'] = (self._filenamem, text)
+        self.goto_back()
 
-#     def get_text(self):
-#         return self.u(manager.clipboard.get_clipboard(self.userid))
+def handler_edit(f):
+    @functools.wrapper(f)
+    def wrapper(self):
+        if self.session['__edit__']:
+            filename, text = self.session.popitem('__edit__')
+            getattr(self, 'handler_%s' % filename)(text)
+        return f()
+    return wrapper

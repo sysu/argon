@@ -6,6 +6,9 @@ from config import *
 from eventlet import db_pool
 import MySQLdb
 import redis
+import logging
+
+logger = logging.getLogger('globaldb')
 
 class DBConnectionPool:
 
@@ -15,6 +18,7 @@ class DBConnectionPool:
         self._db_pool = db_pool.ConnectionPool(dbapi, host=host, user=user, password=password, database=database)
 
     def query(self, query, *parameters):
+        logger.debug('SQL:%s $%s', query, parameters)
         conn = self._db_pool.get();
         try:
             return conn.cursor().query(query, *parameters)
@@ -22,6 +26,7 @@ class DBConnectionPool:
             self._db_pool.put(conn)
 
     def get(self, query, *parameters):
+        logger.debug('SQL:%s $%s', query, parameters)
         conn = self._db_pool.get()
         try:
             return conn.cursor().get(query, *parameters)
@@ -36,6 +41,7 @@ class DBConnectionPool:
             self._db_pool.put(conn)
 
     def execute(self, query, *parameters):
+        logger.debug('SQL:%s $%s', query, parameters)
         conn = self._db_pool.get()
         try:
             return conn.cursor().execute(query, *parameters)
@@ -43,6 +49,7 @@ class DBConnectionPool:
             self._db_pool.put(conn)
 
     def executemany(self, query, parameters):
+        logger.debug('SQL:%s $%s', query, parameters)
         conn = self._db_pool.get()
         try:
             return conn.cursor().executemany(query, parameters)
@@ -51,6 +58,7 @@ class DBConnectionPool:
 
     ############  Add to support execute from files  ###########################
     def execute_paragraph(self, para):
+        logger.debug('SQL:%s $%s', query, parameters)
         conn = self._db_pool.get()
         try:
             return conn.cursor().execute_paragraph(para)
@@ -72,6 +80,4 @@ class GlobalDB(object):
 
 global_conn = GlobalDB.conn
 global_cache = GlobalDB.cache
-
-
 

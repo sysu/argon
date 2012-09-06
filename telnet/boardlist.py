@@ -45,7 +45,7 @@ class BaseBoardListFrame(BaseAuthedFrame):
         self.suspend("get_mail")
 
     def fgo_finish(self):
-        self.goto("finish")
+        self.suspend("finish")
 
     _SORT_KEY_FUNC = (
         lambda x : -x['bid'],
@@ -191,7 +191,7 @@ class BaseBoardListFrame(BaseAuthedFrame):
         self.push(self.render_str('bottom'))
         self._table.restore_cursor_gently()
         return res
-    
+
 @mark('boardlist')
 class BoardListFrame(BaseBoardListFrame):
 

@@ -14,6 +14,9 @@ import config
 from template import env
 from model import manager
 from libformat import telnet2style
+import logging
+
+logger = logging.getLogger('libframe')
 
 class BaseFrame(Frame):
 
@@ -150,6 +153,15 @@ class BaseAuthedFrame(BaseFrame):
         Push current frame's status to history
         and goto a new frame.
         '''
+        if self.__mark__ in self.session._stack_history :
+            while self.session.stack:
+                mark = self.session.stack.pop().__mark__
+                self.session._stack_history.remove(mark)
+                if mark == self.__mark__ :
+                    break
+            logger.debug('Loop in suspend. Len after clear %s',
+                         len(self.session.stack))
+        self.session._stack_history.add(self.__mark__)
         self.session.stack.append(self)
         # self.session.history.append(self)
         self.goto(where,**kwargs)
@@ -161,7 +173,11 @@ class BaseAuthedFrame(BaseFrame):
         '''
         # self.session.history.append(self)
         if self.session.stack:
-            self.wakeup(self.session.stack.pop())
+            nextframe = self.session.stack.pop()
+            self.session._stack_history.remove(nextframe.__mark__)
+            logger.debug('Goto back <- %20s  ---> %s', self.__mark__,
+                         nextframe.__mark__)
+            self.wakeup(nextframe)
 
     def goto_back_nh(self):
         if self.stack:
@@ -205,6 +221,29 @@ class BaseAuthedFrame(BaseFrame):
     def do_command(self, command):
         if command :
             getattr(self, command)()
+
+    def readchar(self, default, acceptable=ac.isalnum, cancel='',
+                 prompt=u''):
+        if prompt:
+            self.push(prompt)
+        if default:
+            self.push(default)
+        while True:
+            char = self.read_secret()
+            if char == ac.k_ctrl_c:
+                return cancel
+            if char == ac.k_finish :
+                return default
+            if char in ac.ks_delete:
+                if default:
+                    self.write(ac.backspace)
+                    default = ''
+                continue
+            if acceptable(char):
+                if default :
+                    self.push(ac.k_left)
+                self.push(char)
+                default = char
 
     def safe_readline(self,acceptable=ac.is_safe_char,
                       finish=ac.ks_finish,buf_size=20, prompt=u'', prefix=u''):
@@ -314,6 +353,14 @@ class BaseAuthedFrame(BaseFrame):
 
     def goto_history(self):
         self.suspend('history')
+
+    def try_enter_board(self, boardname):
+        if self.session['last_boardname'] != boardname :
+            perm = manager.query.get_board_ability(self.userid, boardname)
+            if not perm[0] :
+                return False
+            self.session['last_boardname'] = boardname
+            self.session['last_board_perm'] =perm
 
     # def top_bar(self):
     #     self.render('top')
@@ -505,7 +552,8 @@ class BaseTableFrame(BaseAuthedFrame):
             self.finish()
         self.table.do_command(config.hotkeys['table_table'].get(data))
         self.do_command(config.hotkeys['table'].get(data))
-
+        self.plugin.do_action(self, data)
+        
 class BaseBoardListFrame(BaseTableFrame):
 
     boards = []
@@ -762,15 +810,6 @@ class BaseEditFrame(BaseAuthedFrame):
                                                       for line in text))
         self.e = self.load(Editor, text, spoint)
         self.restore_screen()
-
-class TextBox(SimpleTextBox):
-
-    def message(self, message):
-        self.frame.write(ac.move2(24,1))
-        self.frame.render(u'bottom_view', message=message, s=self.s, maxs=self.h)
-
-    def fix_bottom(self):
-        self.message(u'')
 
 class BaseTextBoxFrame(BaseAuthedFrame):
 

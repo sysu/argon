@@ -8,12 +8,13 @@ ALL_BASE_MODULE = sys.modules.keys()
 
 from chaofeng import Server, g, sleep, asynchronous, Frame
 from chaofeng.g import mark
-import login, menu,boardlist, postlist,edit#,view,mail,game,special_frame ,admin,user
+import login, menu, boardlist, postlist,edit,view,jumper#,mail,game,special_frame ,admin,user
 import config
 # from model import db_orm
 from model import dbapi, manager
 import datetime 
 import MySQLdb
+import logging
 
 @mark('debug')
 class LoginDebugFrame(login.WelcomeFrame):
@@ -42,5 +43,22 @@ ALL_MODULES = sys.modules.keys()
 
 if __name__ == '__main__' :
     manager.status.clear_all()  ####################  ugly but work
-    s = Server(mark[config.data['ROOT']])
+    args = []
+    kwargs = {}
+    for a in sys.argv:
+        if a.startswith('--') and '=' in a:
+            k,v = a[2:].split('=')
+            kwargs[k] = v
+        else:
+            args.append(a)
+    if 'log' in kwargs:
+        numeric_level = getattr(logging, kwargs['log'].upper(), None)
+        if not isinstance(numeric_level, int):
+            raise ValueError('Invalid log level: %s' % loglevel)
+        logging.basicConfig(level=numeric_level)
+    print mark
+    if mark.get('debug') :
+        s = Server(mark['debug'])
+    else:
+        s = Server(mark[config.data['ROOT']])
     s.run()
