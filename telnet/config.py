@@ -147,8 +147,8 @@ str = {
     "EDIT_LIST_QUICK_HELP":u"[m加入并生效[[1;32ma[m,[1;32m+[m], 准备移除[[1;32md[m,[1;32m-[m] 应用并刷新[[1;32m^L[m,[1;32mf[m] 离开[[1;32m.[m]",
     "EDIT_LIST_TEAM_THEAD":u"[44;1m    帐号                     帐号                     帐号                    	[m",
     "EDIT_LIST_USERTEAM_THEAD":u"[44;1m    组                       组                       组                      	[m",
-    "MAIL_QUICK_HELP":u"[0m离开[[1;32m←[0m,[1;32mq[0m] 选择[[1;32m↑[0m, [1;32m↓[0m] 阅读信件[[1;32m→[0m,[1;32mRtn[0m] 回 信[[1;32mR[0m] 砍信／清除旧信[[1;32md[0m,[1;32mD[0m] 求助[[1;32mh[0m][m",
-    "MAIL_THEAD":u"[0;1;44m 编号  发信者       日 期      标题                                                       [m",
+    "MAILLIST_QUICK_HELP":u"[0m离开[[1;32m←[0m,[1;32mq[0m] 选择[[1;32m↑[0m, [1;32m↓[0m] 阅读信件[[1;32m→[0m,[1;32mRtn[0m] 回 信[[1;32mR[0m] 砍信／清除旧信[[1;32md[0m,[1;32mD[0m] 求助[[1;32mh[0m][m",
+    "MAILLIST_THEAD":u"[0;1;44m 编号  发信者       日 期      标题                                                       [m",
     'MSG_BOARDLIST_MODE_0':u'按讨论区编号排序',
     'MSG_BOARDLIST_MODE_1':u'按在线人数排序',
     'MSG_BOARDLIST_MODE_2':u'按讨论区名称排序',
@@ -296,10 +296,6 @@ hotkeys = {
         "a":"add_to_fav",
         },
     "maillist":{
-        ac.k_ctrl_p:"send_mail",
-        "R":"reply",
-        "r":"reply",
-        ac.k_left:"goto_back", ac.k_right:"finish",
         },
     "maillist_table":{
         "k":"move_up",       "p":"move_up",      

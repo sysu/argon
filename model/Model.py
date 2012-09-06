@@ -125,6 +125,11 @@ class Model:
     def u(self, char):
         return char.decode('utf-8')        
 
+    def _wrapper_index(self, data, num):
+        for index in range(len(data)):
+            data[index]['index'] = num + index
+        return data
+
 class Section(Model):
 
     u'''
@@ -375,7 +380,7 @@ class Post(Model):
     def clear_personal_junk(self):
         return self.db.execute("TRUNCATE TABLE %s" % self._person_junk)
 
-    def _wrap_index(self, data, num):
+    def _wrapper_index(self, data, num):
         for index in range(len(data)):
             data[index]['index'] = num + index
         return data
@@ -412,7 +417,7 @@ class Post(Model):
     def get_posts(self, boardname, num, limit):
         res = self.db.query("SELECT * FROM `%s` ORDER BY pid LIMIT %%s,%%s" %\
                             self.__(boardname), num, limit)
-        return self._wrap_index(res, num)
+        return self._wrapper_index(res, num)
 
     def get_posts_loader(self, boardname, cond=''):
         if cond :
@@ -421,7 +426,7 @@ class Post(Model):
         else:
             sql = "SELECT * FROM `%s` ORDER BY pid LIMIT %%s,%%s" % \
                 self.__(boardname)
-        return lambda start, limit: self._wrap_index(
+        return lambda start, limit: self._wrapper_index(
             self.db.query(sql, start, limit), start,
             )
 
@@ -439,7 +444,7 @@ class Post(Model):
     def get_posts_g(self,boardname,num,limit):
         res = self.db.query("SELECT * FROM `%s` WHERE flag & 1 ORDER BY pid LIMIT %%s,%%s" %\
                                 self.__(boardname), num, limit)
-        return self._wrap_index(res, num)
+        return self._wrapper_index(res, num)
 
     def get_posts_g_total(self, boardname):
         return self.db.get("SELECT count(*) FROM %s WHERE flag & 1" % self.__(boardname))['count(*)']
@@ -447,7 +452,7 @@ class Post(Model):
     def get_posts_m(self,boardname,num,limit):
         res = self.db.query("SELECT * FROM `%s` WHERE flag & 2 ORDER BY pid LIMIT %%s,%%s" %\
                                        self.__(boardname), num, limit)
-        return self._wrap_index(res, num)
+        return self._wrapper_index(res, num)
 
     def get_posts_m_total(self, boardname):
         return self.db.get("SELECT count(*) FROM %s WHERE flag & 2" % self.__(boardname))['count(*)']
@@ -455,7 +460,7 @@ class Post(Model):
     def get_posts_topic(self,boardname,num,limit):
         res = self.db.query("SELECT * FROM `%s` WHERE replyid=0 ORDER BY pid LIMIT %%s,%%s" %\
                                 self.__(boardname), num, limit)
-        return self._wrap_index(res, num)
+        return self._wrapper_index(res, num)
 
     def get_posts_topic_total(self, boardname):
         return self.db.get("SELECT count(*) FROM %s WHERE replyid=0" % self.__(boardname))['count(*)']
@@ -463,7 +468,7 @@ class Post(Model):
     def get_posts_onetopic(self,tid,boardname,num,limit):
         res = self.db.query("SELECT * FROM `%s` WHERE tid=%%s ORDER BY pid LIMIT %%s,%%s" %\
                                 self.__(boardname), tid, num, limit)
-        return self._wrap_index(res, num)
+        return self._wrapper_index(res, num)
 
     def get_posts_onetopic_total(self, tid, boardname):
         return self.db.get("SELECT count(*) FROM %s WHERE tid=%%s" % self.__(boardname), tid)['count(*)']
@@ -471,7 +476,7 @@ class Post(Model):
     def get_posts_owner(self,author,boardname,num,limit):
         res = self.db.query("SELECT * FROM `%s` WHERE owner=%%s ORDER BY pid LIMIT %%s,%%s" %\
                                 self.__(boardname), author, num, limit)
-        return self._wrap_index(res, num)
+        return self._wrapper_index(res, num)
 
     def get_posts_owner_total(self, author, boardname):
         return self.db.get("SELECT count(*) FROM %s WHERE owner=%s" % self.__(boardname), author)['count(*)']
@@ -739,6 +744,19 @@ class Mail(Model):
                 self._create_table(self._tableid(touid))
                 self.send_mail(touid, **kwargs)
             raise e
+
+    def get_mail_loader(self, uid, userid):
+        sql = "SELECT * FROM `%s` WHERE touserid=%%s ORDER BY mid LIMIT %%s, %%s" % (
+            self.__(uid), self.escape_string(userid))
+        func = self.db.query
+        wrapper = self._wrapper_index
+        return lambda o,l : wrapper(func(sql, o, l), o)
+
+    def get_mail_counter(self, uid, userid):
+        sql = "SELECT count(*) FROM `%s` WHERE touserid=%%s" % (
+            self.__(uid), self.escape_string(userid))
+        func = self.db.get
+        return lambda : func(sql)['count(*)']
 
     def get_mail(self, touid, touserid, start, limit):
         try:
