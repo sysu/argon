@@ -58,7 +58,6 @@ class DBConnectionPool:
 
     ############  Add to support execute from files  ###########################
     def execute_paragraph(self, para):
-        logger.debug('SQL:%s $%s', query, parameters)
         conn = self._db_pool.get()
         try:
             return conn.cursor().execute_paragraph(para)

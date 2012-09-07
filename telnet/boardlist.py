@@ -169,7 +169,6 @@ class BaseBoardListFrame(BaseAuthedFrame):
         self._table.restore_cursor_gently()
 
     def _change_sort(self):
-        print self._sort_mode
         self._sort_mode += 1
         if 0 < self._sort_mode < self._SORT_MODE_COUNT :
             self._boards.sort(key=self._SORT_KEY_FUNC[self._sort_mode],

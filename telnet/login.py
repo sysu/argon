@@ -13,6 +13,9 @@ from model import manager, RegistedError, LoginError
 from datetime import datetime
 import config
 from collections import deque
+import logging
+
+logger = logging.getLogger('@login')
 
 @mark('welcome')
 class WelcomeFrame(BaseFrame):
@@ -20,7 +23,7 @@ class WelcomeFrame(BaseFrame):
     def initialize(self):
         self.write(ac.clear)
         self.session.charset = 'gbk'
-        print 'Connect :: %s : %s' % (self.session.ip, self.session.port)
+        logger.info('Connect :: %s : %s', self.session.ip, self.session.port)
         self.render('welcome')
         self.try_login_iter()
     
@@ -71,7 +74,7 @@ class WelcomeFrame(BaseFrame):
                     continue
                 else:
                     passwd = passwd_reader.readln(prompt=config.str['PROMPT_INPUT_PASSWD'])
-                print (userid, passwd)
+                logger.debug('XXX(%s)(%s)', userid, passwd)
                 self.try_login(userid, passwd)
 
     def auth(self,userid,passwd):

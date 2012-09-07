@@ -2,6 +2,7 @@
 # -*- coding: utf-8 -*-
 
 import random
+from chaofeng import PluginHolder
 from chaofeng.g import mark
 from chaofeng.ui import TextEditor, TextEditorAreaMixIn
 import chaofeng.ascii as ac
@@ -88,6 +89,10 @@ class Editor(RNEditor):
     ESCAPE_LINE = '\n'
 
 class BaseEditFrame(BaseAuthedFrame):
+
+    plugin = PluginHolder([
+            'after_publish_new_post',
+            ])
 
     shortcuts = {}
     shortcuts_ui = config.shortcuts['edit_ui']
@@ -204,6 +209,8 @@ class NewPostFrame(BaseEditFrame):
                                       replyable=attrs['replyable'],
                                       signature=attrs['signtext'])
         self.session['board_flash'] = pid
+        for func in self.plugin.get_all_hook('after_publish_new_post'):
+            func(self, pid, attrs, text)
         self.goto_back()
 
     def modify_title(self):
@@ -305,6 +312,8 @@ class ReplyPostFrame(BaseEditFrame):
                                         replyable=attrs['replyable'],
                                         signature=attrs['signtext'])
         self.session['board_flash'] = pid
+        for func in self.plugin.get_all_hook('after_publish_new_post'):
+            func(self, pid, attrs, text)
         self.goto_back()
 
     def modify_title(self):
@@ -356,7 +365,12 @@ class EditPostFrame(BaseEditFrame):
 @mark('edit_text')
 class EditFileFrame(BaseEditFrame):
 
-    def initialize(self, filename, text='', l=0, split=False):
+    shortcuts = {
+        ac.k_ctrl_w:"finish",
+        }
+    shortcuts_ui = config.shortcuts['edit_ui']
+
+    def initialize(self, filename, text=u'', l=0, split=False):
         self.cls()
         self._filename = filename
         self._split = split
@@ -364,7 +378,7 @@ class EditFileFrame(BaseEditFrame):
 
     def setup(self, text, spoint):
         assert isinstance(text, unicode)
-        self._editor = self.load(RNEditor, text, spoint)
+        self._editor = self.load(Editor, text, spoint)
         self.restore_screen()
 
     def finish(self):
@@ -382,14 +396,23 @@ class EditFileFrame(BaseEditFrame):
         self.restore_screen()
 
     def modify_and_goto_back(self, text):
-        self.session['__edit__'] = (self._filenamem, text)
+        self.session['__edit__'] = (self._filename, text)
         self.goto_back()
 
+@mark('edit_text_rn')
+class RNEditFileFrame(EditFileFrame):
+
+    def setup(self, text, spoint):
+        assert isinstance(text, unicode)
+        self._editor = self.load(RNEditor, text, spoint)
+        self.restore_screen()
+
 def handler_edit(f):
-    @functools.wrapper(f)
+    '''Wrapper for restore method.'''
+    @functools.wraps(f)
     def wrapper(self):
         if self.session['__edit__']:
-            filename, text = self.session.popitem('__edit__')
+            filename, text = self.session.pop('__edit__')
             getattr(self, 'handler_%s' % filename)(text)
-        return f()
+        return f(self)
     return wrapper

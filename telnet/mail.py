@@ -4,131 +4,266 @@
 import sys
 sys.path.append('../')
 
+import logging
+logger = logging.getLogger('@mail')
+
 from chaofeng import ascii as ac
 from chaofeng.g import mark
-from chaofeng.ui import TextEditor, ColMenu
+from edit import BaseEditFrame, handler_edit
+from chaofeng.ui import NullValueError, FinitePagedTable
+from libframe import BaseAuthedFrame
+from view import BaseTextBoxFrame
 from model import manager
-from datetime import datetime
-from libframe import BaseTableFrame, BaseTextBoxFrame, \
-    BaseEditFrame, gen_quote_mail, wrapper_index
-from menu import NormalMenuFrame
-from libformat import style_to_etelnet, etelnet_to_style
 import config
 import random
 
 @mark('mail_menu')
-class MailMenuFrame(NormalMenuFrame):
+class MailMenuFrame(BaseAuthedFrame):
 
     def initialize(self):
-        super(MailMenuFrame, self).initialize('mail')
+        self.goto('menu', 'mail')
 
-@mark('get_mail')
-class GetMailFrame(BaseTableFrame):
+class BaseMailListFrame(BaseAuthedFrame):
 
-    def quick_help(self):
-        self.writeln(config.str['MAIL_QUICK_HELP'])
+    _TABEL_START_LINE = 4
+    _TABEL_HEIGHT = 20
 
-    def print_thead(self):
-        self.writeln(config.str['MAIL_THEAD'])
+    def get(self, char):
+        if char == ac.k_finish:
+            self.fetch_mail('next_frame')
+        self.do_command(self.shortcuts.get(char))
+        self._table.do_command(self.shortcuts_table.get(char))
+        self.fetch_mail(self.shortcuts_fetch.get(char))
+        self.fetch_mail_update(self.shortcuts_update.get(char))
 
-    def get_default_index(self):
-        return self.default
-
-    def get_data(self, start, limit):
-        res = manager.action.get_mail(self.userid, start, limit,
-                                      touid=self.session.user['uid'])
-        return wrapper_index(res, start)
-
-    def get_total(self):
-        return manager.mail.get_mail_total(self.uid, self.userid)
-
-    def wrapper_li(self, d):
+    def _wrapper_li(self, d):
         return self.render_str('mail-li', **d)
 
-    def catch_nodata(self, e):
-        self.write(u'你没有信笺哟！')
-        self.pause()
-        self.goto_back()
+    def catch_nodata(self):
+        self.cls()
+        self.pause_back(u'你没有信笺哟！')
 
-    def initialize(self, default=None):
+    def _init_screen(self):
+        self.cls()
+        self.top_bar()
+        self.push('\r\n')
+        self.push(config.str['MAILLIST_QUICK_HELP'])
+        self.push('\r\n')
+        self.push(config.str['MAILLIST_THEAD'])
+        self.bottom_bar()
+        self._table.restore_screen()
+
+    def setup(self, dataloader, counter, default=0):
+        try:
+            self._table = self.load(FinitePagedTable, dataloader,
+                                    self._wrapper_li, counter, default,
+                                    start_line=self._TABEL_START_LINE,
+                                    height=self._TABEL_HEIGHT)
+        except NullValueError:
+            self.catch_nodata()
+            raise NullValueError
+        self._init_screen()
+
+    def fetch_mail(self, cmd):
+        if cmd is None:
+            return
+        mail = self._table.fetch()
+        getattr(self, cmd)(mail)
+
+    def fetch_mail_update(self, cmd):
+        if cmd is None:
+            return
+        mail = self._table.fetch()
+        mail = getattr(self, cmd)(mail)
+        if mail is not None:
+            self._table.set_hover_data(mail)
+
+    def reload(self):
+        self._table.reload()
+        self._table.restore_screen()
+
+    def restore(self):
+        self._init_screen()
+
+@mark('get_mail')
+class ReadMailFrame(BaseMailListFrame):
+
+    shortcuts = {
+        ac.k_ctrl_p:"send_mail",
+        ac.k_left:"goto_back",
+        'p':'same_topic_mode',
+        ac.k_ctrl_s:'same_topic_mode',
+        }
+    shortcuts_table = {
+        ac.k_up:"move_up",
+        ac.k_down:"move_down",
+        ac.k_page_up:"page_up",
+        ac.k_page_down:"page_down",
+        " ":"page_down",
+        "k":"move_up",       "p":"move_up",      
+        "j":"movewn",     "n":"movewn",
+        "P":"page_up",       "N":"pagewn",
+        "$":"goto_last",
+        ac.k_home:"goto_first",
+        ac.k_end:"goto_last",
+        }
+    shortcuts_fetch = {
+        ac.k_right : "next_frame",
+        'r':'reply',
+        'R':'reply',
+        'd':'remove_mail',
+        'D':'remove_mail_range',
+        ac.k_ctrl_c:'repost',
+        }
+    shortcuts_update = {
+        'm':'set_m_mark',
+        }
+
+    NORMAL_MODE = 0
+    TOPICE_MODE = 1
+
+    MODE_LOADER = [
+        manager.mail.get_mail_loader,
+        manager.mail.get_topic_mail_loader,
+        ]
+
+    MODE_COUNTER = [
+        manager.mail.get_mail_counter,
+        manager.mail.get_mail_counter,
+        ]
+
+    MODE_RANKER = [
+        manager.mail.get_mid_rank,
+        manager.mail.get_topic_mid_rank,
+        ]
+
+    def get_mid_rank(self, mid):
+        return self.MODE_RANKER[self.mode](self.session.user['uid'],
+                                           self.userid,
+                                           mid)
+
+    def initialize(self, mode=0):
         manager.notify.clear_mail_notify(self.userid)
         self.uid = self.session.user['uid']
-        if default is None:
-            default = self.get_total()
-        self.default = default
-        super(GetMailFrame, self).initialize()
-        self.restore()
+        self.mode = mode
+        dataloader, counter = self._get_loader(mode)
+        self.setup(dataloader, counter)
 
-    def get(self, data):
-        if data in ac.ks_finish:
-            self.finish()
-        self.table.do_command(config.hotkeys['g_table'].get(data))
-        self.table.do_command(config.hotkeys['maillist_table'].get(data))
-        self.do_command(config.hotkeys['maillist'].get(data))
+    def _get_loader(self, mode):
+        return (self.MODE_LOADER[mode](self.uid, self.userid),
+                self.MODE_COUNTER[mode](self.uid, self.userid))
 
-    def finish(self):
-        mail = self.table.fetch()
-        if mail:
-            self.goto('view_mail', mail=mail)
+    def reset_mode(self, mode):
+        dataloader, counter = self._get_loader(mode)
+        try:
+            self._table.reset_load(dataloader, counter, 0)
+        except NullValueError:
+            return
+        self.get_mid_rank = self.MODE_RANKER[mode]
+        self._init_screen()
+
+    def change_mode(self):
+        self.mode = 1 - self.mode
+        self.reset_mode(self.mode)
+
+    def next_frame(self, mail):
+        self.suspend('_view_mail_o', mail=mail)
 
     def send_mail(self):
-        self.suspend("send_mail")
+        self.suspend('send_mail')
 
-    def reply(self):
-        self.suspend("reply_mail", mail=self.table.fetch())
+    def reply(self, mail):
+        self.suspend('_reply_mail_o', mail=mail)
 
-class MailReadAttrsMixIn:
+    def set_m_mark(self, mail):
+        return manager.mail.set_m_mark(self.session.user.uid,
+                                       mail)
 
-    prompt = u'[1;32m0[m~[1;32m%s[m/[1;32mx[m  选择/随机签名档 [1;32mt[m标题，[1;32mq[m取消：'
+    def remove_mail(self, mail):
+        if self.bottom_do(self.confirm, prompt=u'删除你的文章？[y/n] ') :
+            manager.mail.remove_mail(self.session.user.uid,
+                                     mail['mid'])
+            self.reload()
+
+    def remove_mail_range(self):
+        start = self.readline(prompt=u'首篇文章编号： ')
+        if start.isdigit():
+            end = self.readline(prompt=u'末篇文章编号：')
+            if end.isdigit() :
+                start_mid = manager.mail.index2mid(self.session.user.uid,
+                                                   int(start) - 1)
+                end_mid = manager.mail.index2mid(self.session.user.uid,
+                                                 int(end) - 1)
+                if start_mid >= end_mid :
+                    return
+                manager.mail.remove_mail_range(self.session.user.uid,
+                                               self.userid,
+                                               start_mid, end_mid)
+                self.reload()
+
+    def restore(self):
+        default = self.get_mid_rank(self.session.pop('mail_flash',
+                                                     self._table.fetch_num()))
+        try:
+            try:
+                self._table.setup(default)
+            except NullValueError:
+                self._table.setup(0)
+        except NullValueError:
+            self.catch_nodata()
+            raise ValueError
+        self._init_screen()
+
+@mark('send_mail')
+class SendMailFrame(BaseAuthedFrame):
+
+    shortcuts = {
+        ac.k_ctrl_w : "finish",
+        }
+    shortcuts_ui = config.shortcuts['edit_ui']
+
+    PROMPT = u'[25;1H[K[1;32m0[m~[1;32m%s[m/[1;32mx[m  选择/随机签名档 [1;32mt[m标题，[1;32mq[m取消：'
     
     def update_attr(self, attrs):
-        self.write(''.join([ac.move2(21, 1),
-                            ac.clear1,
-                            self.render_str('edit_head_email', **attrs)]))
+        self.render('edit_head_email', **attrs)
 
-    def read_attrs(self):
-        sign_num = manager.usersign.get_sign_num(self.userid)
+    def read_attrs(self, touserid, sign_num):
         attrs = {
-            "touserid":self.touserid, 
+            "touserid":touserid, 
             "usesign":0,
             "title":u"[正在设定标题]",
             }
         if sign_num :
             attrs["usersign"] = random.randint(1, sign_num)
         self.update_attr(attrs)
-        attrs['title'] = self.readline_safe(prompt=u'标题：', buf_size=40)
+        attrs['title'] = self.safe_readline(prompt=u'标题：', buf_size=40)
         if not attrs['title']:
             return
-        prompt = ''.join([ac.move2(25, 1), ac.kill_line,
-                          self.prompt % sign_num])
+        prompt = self.PROMPT % sign_num
         while True:
-            op = self.readline_safe(buf_size=4, prompt=prompt)
+            self.update_attr(attrs)
+            op = self.safe_readline(buf_size=4, prompt=prompt)
             if op == '':
                 break
             elif op is False or op=='q':
                 return 
             elif op == 't':
-                attrs['title'] = self.readline_safe(prompt=u'\r\x1b[K标题：',
-                                                    prefix=attrs['title'],
+                attrs['title'] = self.safe_readline(prompt=u'\r\x1b[K标题：',
                                                     buf_size=40)
                 if not attrs['title']:
                     return
             elif op == 'x' and sign_num:
-                attrs['usersign'] = random.randint(1, sign_num)
+                attrs['usesign'] = random.randint(1, sign_num)
             elif op.isdigit():
                 n = int(op)
                 if n <= sign_num:
-                    attrs['usersign'] = n
-            self.update_attr[attrs]
+                    attrs['usesign'] = n
         return attrs
-
-@mark('send_mail')
-class SendMailFrame(BaseEditFrame, MailReadAttrsMixIn):
 
     def initialize(self, touserid=None):
         self.cls()
         if touserid is None:
-            touserid = self.readline_safe(prompt=u'收信人：')
+            touserid = self.safe_readline(prompt=u'收信人：')
         if touserid is False :
             self.writeln(u'取消写信！')
             self.pause()
@@ -138,12 +273,17 @@ class SendMailFrame(BaseEditFrame, MailReadAttrsMixIn):
             self.pause()
             self.goto_back()
         self.touserid = touserid
-        self.attrs = self.read_attrs()
+        sign_num = manager.usersign.get_sign_num(self.userid)
+        self.attrs = self.read_attrs(touserid, sign_num)
         if not self.attrs:
             self.goto_back()
-        super(SendMailFrame, self).initialize()
+        self.suspend('edit_text', filename='mail')
 
-    def finish(self):
+    @handler_edit
+    def restore(self):
+        pass
+
+    def handler_mail(self, text):
         if self.attrs['usesign'] :
             signtext = manager.usersign.get_sign(self.userid,
                                                  self.attrs['usesign']-1)
@@ -152,14 +292,49 @@ class SendMailFrame(BaseEditFrame, MailReadAttrsMixIn):
         mid = manager.action.send_mail(
             fromuserid=self.userid,
             touserid=self.touserid,
-            content=etelnet_to_style(self.e.fetch_all()),
+            content=text,
             title=self.attrs['title'],
             fromaddr=self.session.ip,
             signature=signtext)
         self.goto_back()
 
-@mark("reply_mail")
-class ReplyMailFrame(BaseEditFrame, MailReadAttrsMixIn):
+@mark("_reply_mail_o")
+class ReplyMailFrame(BaseEditFrame):
+
+    PROMPT = u'[25;1H[K[1;32m0[m~[1;32m%s[m/[1;32mx[m  选择/随机签名档 [1;32mt[m标题，[1;32mq[m取消：'
+    
+    def update_attr(self, attrs):
+        self.render('edit_head_email', **attrs)
+
+    def read_attrs(self, touserid, sign_num, title):
+        attrs = {
+            "touserid":touserid, 
+            "usesign":0,
+            "title":title
+            }
+        if sign_num :
+            attrs["usersign"] = random.randint(1, sign_num)
+        prompt = self.PROMPT % sign_num
+        while True:
+            self.update_attr(attrs)
+            op = self.safe_readline(buf_size=4, prompt=prompt)
+            if op == '':
+                break
+            elif op is False or op=='q':
+                return 
+            elif op == 't':
+                attrs['title'] = self.safe_readline(prompt=u'\r\x1b[K标题：',
+                                                    prefix=u'Re: ',
+                                                    buf_size=40)
+                if not attrs['title']:
+                    return
+            elif op == 'x' and sign_num:
+                attrs['usesign'] = random.randint(1, sign_num)
+            elif op.isdigit():
+                n = int(op)
+                if n <= sign_num:
+                    attrs['usesign'] = n
+        return attrs
 
     def initialize(self, mail):
         self.replymail = mail
@@ -169,13 +344,20 @@ class ReplyMailFrame(BaseEditFrame, MailReadAttrsMixIn):
             self.writeln(u'无法找到该收信人！')
             self.pause()
             self.goto_back()
-        self.attrs = self.read_attrs()
+        sign_num = manager.usersign.get_sign_num(self.userid)
+        title = mail['title'] if mail['title'].startswith('Re:')\
+            else u'Re: %s' % mail['title']
+        self.attrs = self.read_attrs(self.touserid, sign_num, title=title)
         if not self.attrs :
             self.goto_back()
         text = gen_quote_mail(mail)
-        super(ReplyMailFrame, self).initialize(text=style_to_etelnet(text))
+        self.suspend('edit_text', filename='mail', text=text)
 
-    def finish(self):
+    @handler_edit
+    def restore(self):
+        self.goto_back()
+
+    def handler_mail(self, text):
         if self.attrs['usesign'] :
             signtext = manager.usersign.get_sign(self.userid,
                                                  self.attrs['usesign']-1)
@@ -183,50 +365,73 @@ class ReplyMailFrame(BaseEditFrame, MailReadAttrsMixIn):
             signtext = ''
         manager.action.reply_mail(self.userid,
                                   self.replymail,
-                                  content=etelnet_to_style(self.e.fetch_all()),
+                                  content=text,
                                   title=self.attrs['title'],
                                   fromaddr=self.session.ip,
                                   signature=signtext)
-        self.goto_back()
 
-@mark('view_mail')
+@mark('_view_mail_o')
 class ReadMailFrame(BaseTextBoxFrame):
 
-    hotkeys = {
+    shortcuts = {
         "r":"reply",
         "R":"reply",
+        ac.k_ctrl_x:"change_mode",
+        ac.k_left:"back_to_maillist",
         }
+    MODE_LOADER = [
+        manager.mail.get_mail_loader_signle,
+        manager.mail.get_topic_loader_signle,
+        ]
+    MODE_BOTTOM = [
+        'bottom_view',
+        'bottom_view_topic',
+        ]
 
-    def get_text(self):
-        return self.render_str('mail-t', **self.mail)
+    def wrapper_mail(self, mail):
+        return self.render_str('mail-t', **mail)
 
-    def initialize(self, mail):
-        self.mail = mail
+    def initialize(self, mail, mode=0):
         manager.mail.set_read(self.session.user['uid'], mail['mid'])
-        super(ReadMailFrame, self).initialize()
+        self.mail = mail
+        self.mode = mode
+        self._set_mode(mode)
+        self.setup(self.wrapper_mail(mail))
 
-    def goto_back(self):
-        self.goto('get_mail', default=manager.mail.get_rank(
-                self.userid,
-                self.session.user['uid'],
-                self.mail['mid']))
+    def _set_mode(self, mode):
+        self.next_loader, self.prev_loader = self.MODE_LOADER[mode](
+            self.session.user.uid,
+            self.userid
+            )
+        self.bottom_tpl = self.MODE_BOTTOM[mode]
 
-    def finish(self,e):
+    def change_mode(self):
+        self.mode = 1 - self.mode
+        self._set_mode(self.mode)
+        self.restore_screen()
+
+    def bottom_bar(self, s, h, message=''):
+        self.push(ac.move2(24, 1))
+        self.render(self.bottom_tpl, s=s, h=h, message=message)
+
+    def finish(self, e=None):
+        logger.debug('finish [%s]', e)
+        if e is None:
+            self.session['mail_flash'] = self.mail['mid']
+            self.goto_back()
         if e is True:
-            mail = manager.mail.next_mail(
-                    self.userid,
-                    self.session.user['uid'],
-                    self.mail['mid'])
-            if mail :
-                self.goto('view_mail', mail=mail)
-        elif e is False:
-            mail = manager.mail.prev_mail(
-                    self.userid,
-                    self.session.user['uid'],
-                    self.mail['mid'])
-            if mail:
-                self.goto('view_mail', mail=mail)
-        self.goto_back()
+            mail = self.next_loader(self.mail['mid'])
+        else:
+            mail = self.prev_loader(self.mail['mid'])
+        if not mail:
+            self.session['mail_flash'] = self.mail['mid']
+            self.goto_back()
+        self.mail = mail
+        self.reset_text(self.wrapper_mail(self.mail), 0)
 
     def reply(self):
-        self.suspend('reply_mail', mail=self.mail)
+        self.suspend('_reply_mail_o', mail=self.mail)
+
+    def back_to_maillist(self):
+        self.session['mail_flash'] = self.mail['mid']
+        self.goto_back_history('get_mail')

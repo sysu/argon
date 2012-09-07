@@ -18,7 +18,7 @@ def display_mark(match):
     else:
         return u'前往 %s 的帮助？' % match[2]
     
-@BaseTextBoxFrame.plugins.add_action(ac.k_ctrl_l)
+@BaseTextBoxFrame.plugins.add_action(ac.k_ctrl_r)
 def jummp_from_screen(frame):
     text = frame.getscreen()
     options = re_post.findall(text)
@@ -29,9 +29,6 @@ def jummp_from_screen(frame):
     if op is False:
         frame.fix_bottom()
         return
-    print op
-    print options
-    print '---'
     op = options[op]
     if op[0] :
         perm = manager.query.get_board_ability(frame.userid, op[0])
@@ -58,3 +55,6 @@ class ViewPostFloatFrame(BaseTextBoxFrame):
             self.setup(self.wrapper_post(post))
         else:
             self.goto_back()
+
+    def finish(self, e=None):
+        self.goto_back()        

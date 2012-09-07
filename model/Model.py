@@ -745,16 +745,39 @@ class Mail(Model):
                 self.send_mail(touid, **kwargs)
             raise e
 
+    def set_m_mark(self, touid, mail):
+        mail['flag'] = mail['flag'] ^ self.FLAG_M_MARK
+        self.db.execute("UPDATE `%s` SET flag=%%s WHERE mid=%%s" % self.__(uid),
+                        mail['flag'], mail['mid'])
+        return mail
+
+    def remove_mail(self, uid, mid):
+        return self.db.execute("DELETE FROM `%s` WHERE mid=%%s" % self.__(uid),
+                               mid)
+
+    def remove_mail_range(self, uid, touserid, start, end):
+        return self.db.execute("DELETE FROM `%s` "
+                               "WHERE touserid=%%s "
+                               "AND mid>=%%s AND mid<=%%s AND flag=0" % self.__(uid),
+                               touserid, start, end)
+
     def get_mail_loader(self, uid, userid):
-        sql = "SELECT * FROM `%s` WHERE touserid=%%s ORDER BY mid LIMIT %%s, %%s" % (
-            self.__(uid), self.escape_string(userid))
+        sql = "SELECT * FROM `%s` WHERE touserid='%s' ORDER BY mid LIMIT %%s, %%s" % (
+            self.__(uid), self.db.escape_string(userid))
+        func = self.db.query
+        wrapper = self._wrapper_index
+        return lambda o,l : wrapper(func(sql, o, l), o)
+
+    def get_topic_mail_loader(self, uid, userid):
+        sql = "SELECT * FROM `%s` WHERE touserid='%s' ORDER BY tid, mid LIMIT %%s, %%s" % (
+            self.__(uid), self.db.escape_string(userid))
         func = self.db.query
         wrapper = self._wrapper_index
         return lambda o,l : wrapper(func(sql, o, l), o)
 
     def get_mail_counter(self, uid, userid):
-        sql = "SELECT count(*) FROM `%s` WHERE touserid=%%s" % (
-            self.__(uid), self.escape_string(userid))
+        sql = "SELECT count(*) FROM `%s` WHERE touserid='%s'" % (
+            self.__(uid), self.db.escape_string(userid))
         func = self.db.get
         return lambda : func(sql)['count(*)']
 
@@ -771,6 +794,34 @@ class Mail(Model):
                 return []
             else:
                 raise e
+
+    def get_mid_rank(self, uid, touserid, mid):
+        return self.db.get('SELECT count(*) '
+                           'FROM `%s` '
+                           'WHERE mid<%%s AND touserid=%%s '
+                           'ORDER BY mid' % self.__(uid),
+                           mid, touserid)['count(*)']
+
+    def get_topic_mid_rank(self, uid, touserid, mid):
+        return self.db.get('SELECT count(*) '
+                           'FROM `%s` '
+                           'WHERE mid<%%s AND touserid=%%s '
+                           'ORDER BY tid, mid' % self.__(uid),
+                           mid, touserid)['count(*)']
+
+    def get_mail_loader_signle(self, uid, touserid):
+        sql_next = "SELECT * FROM `%s` WHERE mid > %%s ORDER BY mid LIMIT 1" % self.__(uid)
+        sql_prev = "SELECT * FROm `%s` WHERE mid < %%s ORDER BY mid DESC LIMIT 1" % self.__(uid)
+        fun = self.db.get
+        return (lambda mid : fun(sql_next, mid),
+                lambda mid : fun(sql_prev, mid))
+
+    def get_topic_loader_signle(self, uid, touserid):
+        sql_next = "SELECT * FROM `%s` WHERE mid > %%s ORDER BY tid, mid LIMIT 1" % self.__(uid)
+        sql_prev = "SELECT * FROm `%s` WHERE mid < %%s ORDER BY tid, mid DESC LIMIT 1" % self.__(uid)
+        fun = self.db.get
+        return (lambda mid : fun(sql_next, mid),
+                lambda mid : fun(sql_prev, mid))
 
     def one_mail(self, touid, mid):
         return self.table_get_by_key(self.__(touid), 'mid', mid)

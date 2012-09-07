@@ -179,6 +179,14 @@ class BaseAuthedFrame(BaseFrame):
                          nextframe.__mark__)
             self.wakeup(nextframe)
 
+    def goto_back_history(self, where):
+        if where in self.session._stack_history :
+            while self.session.stack:
+                frame = self.session.stack.pop()
+                self.session._stack_history.remove(frame.__mark__)
+                if frame.__mark__ == where:
+                    self.wakeup(frame)
+
     def goto_back_nh(self):
         if self.stack:
             self.wakeup(self.stack.pop())
@@ -244,6 +252,18 @@ class BaseAuthedFrame(BaseFrame):
                     self.push(ac.k_left)
                 self.push(char)
                 default = char
+
+    def bottom_do(self, func, *args, **kwargs):
+        self.push(ac.move2(24,1))
+        self.push(ac.kill_line)
+        res = func(*args, **kwargs)
+        self.bottom_bar()
+        return res
+
+    def confirm(self, prompt, default=''):
+        return self.readchar(default, prompt=prompt,
+                             acceptable=lambda x:x == 'y' or x=='n',
+                             cancel='n') == 'y'
 
     def safe_readline(self,acceptable=ac.is_safe_char,
                       finish=ac.ks_finish,buf_size=20, prompt=u'', prefix=u''):
@@ -956,7 +976,3 @@ def wrapper_index(data, start):
     for index in range(len(data)):
         data[index]['index'] = index + start
     return data
-
-inv_re = re.compile(r'@(\w{3,20}) ')
-def find_all_invert(content):
-    return inv_re.findall(content)

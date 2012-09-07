@@ -59,7 +59,6 @@ class BaseMenuFrame(BaseAuthedFrame):
 
     def _right_or_finish(self):
         res =  self._menu.move_right()
-        print res
         if not res :
         # if not self._menu.move_right() :
             self._finish()
@@ -144,10 +143,10 @@ class ConfigMenuFrame(BaseMenuFrame):
             background = self.render_str('menu_%s' % menuname)
         else:
             background = ''
-        self.setup(title, background, menu, default=default)
+        self.setup(title, background, menu)
 
     def goto_next(self, hover):
-        self.goto_mark_or_args(self._menu.get_real(hover))
+        self.suspend_mark_or_args(self._menu.get_real(hover))
 
     def goto_prev(self):
         self.goto_back()

@@ -16,6 +16,7 @@ CREATE TABLE IF NOT EXISTS `argo_mailhead_${tableid}` (
     `fromaddr` varchar(64),
     
     `readmark` int(11) unsigned NOT NULL default 0,
+    `flag` int(11) unsigned NOT NULL default 0,
     `content` text,
     `quote` text,
     `signature` text,

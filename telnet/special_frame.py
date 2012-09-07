@@ -23,14 +23,11 @@ class BadEndingFrame(BaseAuthedFrame):
 @mark('history')
 class HistoryFrame(BaseTextBoxFrame):
 
-    def get_text(self):
-        return self.render_str('history',items=self.session.history)
+    def initialize(self):
+        self.setup(self.render_str('history', iterms=self.session.history))
 
-    def finish(self, e):
+    def finish(self, e=None):
         self.goto_back()
-
-    def show_help(self):
-        self.suspend('help',page='history')
     
 @mark('finish')
 class Finish(BaseAuthedFrame):
