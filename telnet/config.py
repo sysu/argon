@@ -1,6 +1,8 @@
 # -*- coding: utf-8 -*-
 
-print 'Loading config...'
+import logging
+
+logging.info('Loading config...')
 
 from chaofeng import ascii as ac
 import yaml
@@ -403,7 +405,7 @@ shortcuts = {
         ac.k_ctrl_t:"goto_filter_mode",
         ac.k_ctrl_g:"goto_filter_g",
         "=":"goto_filter_tid", "\\":"goto_filter_tid",
-        ac.k_ctrl_s :"goto_filter_tid", "p":"goto_tid",
+        ac.k_ctrl_s :"goto_filter_tid", "p":"goto_filter_tid",
         ac.k_ctrl_u:"goto_filter_author",
         ac.k_left:"goto_back",        
         },

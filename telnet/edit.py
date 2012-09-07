@@ -75,10 +75,6 @@ class RNEditor(TextEditor, TextEditorAreaMixIn):
         text = super(RNEditor, self).fetch_all()
         return text.replace(self.esc, ac.esc)
 
-    def fetch_lines(self):
-        text = self.fetch_all()
-        return text.split('\r\n')
-
     def backup(self, text):
         manager.action.send_mail('archive_', self.userid,
                                  content=text)
@@ -370,14 +366,13 @@ class EditFileFrame(BaseEditFrame):
         }
     shortcuts_ui = config.shortcuts['edit_ui']
 
-    def initialize(self, filename, text=u'', l=0, split=False):
+    def initialize(self, filename, text=u'', l=0):
         self.cls()
         self._filename = filename
-        self._split = split
         self.setup(text=text, spoint=l)
 
     def setup(self, text, spoint):
-        assert isinstance(text, unicode)
+        assert isinstance(text, unicode) or isinstance(text, list)
         self._editor = self.load(Editor, text, spoint)
         self.restore_screen()
 

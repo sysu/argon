@@ -96,3 +96,4 @@ class CF:
 CF.load()
 manager = Manager()
 Manager.configure(CF)
+manager.telnet = {}  # cache use for telnet

@@ -1,4 +1,7 @@
+[0;1;32;m{{ session.user['userid'] }}[m({{ session.user['nickname'] }}) 的签名档
 {% for sign in signs %}
+第 [0;32;1m{{ loop.index }}[m 号签名档
 {{ sign }}
+
 {% endfor %}
 {{ '^E'|wrapper(green, bold) }} for Edit

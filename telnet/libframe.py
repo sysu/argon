@@ -265,8 +265,8 @@ class BaseAuthedFrame(BaseFrame):
                              acceptable=lambda x:x == 'y' or x=='n',
                              cancel='n') == 'y'
 
-    def safe_readline(self,acceptable=ac.is_safe_char,
-                      finish=ac.ks_finish,buf_size=20, prompt=u'', prefix=u''):
+    def safe_readline(self, prompt=u'', acceptable=ac.is_safe_char,
+                      finish=ac.ks_finish,buf_size=20,  prefix=u''):
         '''
         Return the string when `finish` key recv, return False while recv a k_ctrl_c
         '''
@@ -311,25 +311,23 @@ class BaseAuthedFrame(BaseFrame):
     #                                       buf_size, prompt, prefix=prefix))
 
     def readnum(self, prompt=u''):
-        no = self.readline(acceptable=lambda x:x.isdigit(),
+        no = self.safe_readline(acceptable=lambda x:x.isdigit(),
                            buf_size=8,  prompt=prompt)
         if no :
             return int(no) - 1
         else :
             return False
 
-    def read_with_hook(self, hook, buf_size=20, prompt=u''):
-        self.write(u''.join((ac.move2(2,1),
-                            ac.kill_line)))
-        if prompt:
-            self.write(prompt)
+    def read_with_hook(self, hook, pos, buf_size=20):
         buf = []
         while len(buf) < buf_size:
+            self.push(ac.move2(pos[0], pos[1]))
             ds = self.read_secret()
             ds = ds or ds[0]
             if ds == ac.k_backspace:
                 if buf:
                     data = buf.pop()
+                    pos[1] -= 1
                     self.write(ac.backspace)
                 continue
             elif ds in ac.ks_finish:
@@ -338,13 +336,11 @@ class BaseAuthedFrame(BaseFrame):
                 buf = False
                 break
             else:
-                if ds.isalnum() :
+                if ds.isalnum() or ds == '_' :
                     buf.append(ds)
                     self.write(ds)
+                    pos[1] += 1
                     hook(u''.join(buf))
-        self.write(u'\r')
-        self.quick_help()
-        self.table.restore_cursor_gently()
         if buf is False :
             return buf
         else:
@@ -816,7 +812,7 @@ class BaseEditFrame(BaseAuthedFrame):
         
     def quit_iter(self):
         self.message(u'放弃本次编辑操作？')
-        d = self.readline()
+        d = self.safe_readline()
         if not d :
             self.goto_back()
 

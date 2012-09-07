@@ -69,16 +69,13 @@ class BaseBoardListFrame(BaseAuthedFrame):
         userid = self.userid
         for index,b in enumerate(boards):
             if manager.readmark.is_new_board(userid, b['boardname']):
-                default = index
-                break
-        else:
-            default = 0
+                return index
+        else :
+            return self._table.fetch_num()
 
     def setup(self, boards, mode=0, default=None):
         self._boards = boards
         self._total = len(boards)
-        if default is None:
-            default = self.get_default_index(boards)
         try:
             self._table = self.load(FinitePagedTable, self._get_board_range,
                                     self._wrapper_li, self._get_total,
@@ -94,6 +91,8 @@ class BaseBoardListFrame(BaseAuthedFrame):
             else :
                 mode = 0
         self._sort_mode = mode
+        if default is None:
+            default = self.get_default_index(boards)
         self._init_screen()
 
     def message(self, msg):
@@ -134,6 +133,8 @@ class BaseBoardListFrame(BaseAuthedFrame):
             self._init_screen()
 
     def _get_board_range(self, start, limit):
+        for index in range(len(self._boards[start:start+limit])):
+            self._boards[start+index]['index'] = start+index
         return self._boards[start:start+limit]
 
     def _get_total(self):
@@ -147,7 +148,10 @@ class BaseBoardListFrame(BaseAuthedFrame):
         self._table.goto(self._total - 1)
 
     def _goto_line(self):
+        self.push(u'[2;1H[K跳转到讨论区编号：')
         no = self.readnum()
+        self.push('\r[K')
+        self.push(config.str['BOARDLIST_QUICK_HELP'])
         if no is not False:
             self._table.goto(no)
         else:
@@ -164,8 +168,11 @@ class BaseBoardListFrame(BaseAuthedFrame):
         return False
 
     def _search(self):
-        self.read_with_hook(hook = lambda x : self.goto_with_prefix(x),
-                            prompt=u'搜寻讨论区：')
+        self.push(u'[2;1H[K搜寻讨论区：')
+        self.read_with_hook(hook = lambda x : self._goto_with_prefix(x),
+                            pos=[2,14])
+        self.push(u'\r[K')
+        self.push(config.str['BOARDLIST_QUICK_HELP'])
         self._table.restore_cursor_gently()
 
     def _change_sort(self):

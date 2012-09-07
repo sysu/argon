@@ -26,7 +26,8 @@ class BaseMenuFrame(BaseAuthedFrame):
         self._menu.setup(menu, hover=default, height=height)
         self._menu_background = background
         self._anim = self.load(Animation, self._get_anim(),
-                               start_line=self._ANIM_START_LINE)
+                               start_line=self._ANIM_START_LINE,
+                               fix_pos=self._menu.get_cursor_pos)
         self.restore()
 
     def get(self, char):

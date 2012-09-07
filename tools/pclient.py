@@ -38,11 +38,11 @@ class ProxyerFrame(Frame):
             self.refresh()
         self._tn.write(self.s(char))
         if self._will_print :
-            print '[34;1m>>>>[m%s' % arepr(char)
+            print repr(char)
         self.refresh()
 
     def ignore(self, data):
-        return data.startswith('\x1b[3;1H')
+        return True#False#data.startswith('\x1b[3;1H')
 
 class DefaultFrame(Frame):
 

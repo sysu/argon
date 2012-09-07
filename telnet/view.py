@@ -59,6 +59,8 @@ class BaseTextBoxFrame(BaseAuthedFrame):
             self._textbox.do_command(self.shortcuts_ui[char])
         else :
             self.plugins.do_action_ifex(char, self)
+            if self._textbox.is_last() :
+                self.finish(None)
 
     def restore(self):
         self._textbox.restore_screen()
@@ -104,6 +106,9 @@ class ViewPostFrame(BaseTextBoxFrame):
         assert post['bid'] == self.session['last_board_attr']['bid']
         self.next_loader, self.prev_loader = manager.post.get_post_loader(
             self.session['last_board_attr']['boardname'])
+        manager.readmark.set_read(self.userid,
+                                  self.session['last_board_attr']['boardname'],
+                                  post['pid'])
         self.setup(self.wrapper_post(post))
 
     def finish(self, e=None):
@@ -119,6 +124,9 @@ class ViewPostFrame(BaseTextBoxFrame):
             self.session['board_flash'] = self.post['pid']
             self.goto_back()
         self.post = post
+        manager.readmark.set_read(self.userid,
+                                  self.session['last_board_attr']['boardname'],
+                                  post['pid'])
         self.reset_text(self.wrapper_post(self.post), 0)
 
     def same_topic_view(self):
@@ -134,6 +142,9 @@ class ViewPostSameTopic(BaseTextBoxFrame):
         assert post['bid'] == board['bid']
         self.next_loader, self.prev_loader = manager.post.get_topic_post_loader(
             board['boardname'], post['tid'])
+        manager.readmark.set_read(self.userid,
+                                  self.session['last_board_attr']['boardname'],
+                                  post['pid'])
         self.setup(self.wrapper_post(post))
 
     def finish(self, e=None):
@@ -153,6 +164,9 @@ class ViewPostSameTopic(BaseTextBoxFrame):
                 return
         logger.debug('post %s', post)
         self.post = post
+        manager.readmark.set_read(self.userid,
+                                  self.session['last_board_attr']['boardname'],
+                                  post['pid'])
         self.reset_text(self.wrapper_post(post))
         
     def bottom_bar(self, s, h, message=''):

@@ -2,27 +2,23 @@
 import sys
 sys.path.append('../')
 
-from chaofeng import Frame,EndInterrupt,Timeout
 from chaofeng.g import mark
-from chaofeng.ui import EastAsiaTextInput,Password,DatePicker,ColMenu,VisableInput,\
-    DatePicker, Form
+from chaofeng.ui import Form, FinitePagedTable, Password, NullValueError
 from chaofeng import ascii as ac
 from model import manager
 from datetime import datetime
-from libframe import BaseAuthedFrame, BaseTableFrame, BaseTextBoxFrame
+from libframe import BaseAuthedFrame
+from view import BaseTextBoxFrame
+from edit import handler_edit
 from libframe import chunks
-from menu import BaseMenuFrame, NormalMenuFrame
-from MySQLdb import DataError
+from menu import BaseMenuFrame
 import config
 
 @mark('user_space')
-class UserSpaceFrame(NormalMenuFrame):
+class UserSpaceFrame(BaseAuthedFrame):
 
     def initialize(self):
-        super(UserSpaceFrame, self).initialize('user_space')
-
-    def show_help(self):
-        self.suspend('help', page='userspace')
+        self.goto('menu', 'user_space')
 
 @mark('user_editdata')
 class UserEditDataFrame(BaseAuthedFrame):
@@ -96,27 +92,33 @@ class NickDataFrame(BaseMenuFrame):
     real, text = zip(*nickdata.items())
     pos = [ (13+i, 10) for i in range(len(real))]
     shortcuts = dict((str(i), i) for i in range(len(real)))
-    
-    def load_all(self):
-        return ((self.real, self.pos, self.shortcuts, self.text), None, '')
+    MENU = (real, pos, shortcuts, text)
+    TITLE = u'编辑个人资料'
 
-    def finish(self):
-        a = self.menu.fetch()
-        text = self.user[a].replace('\n', '\r\n') or ''
-        self.suspend('edit_text', filename=a , callback=self.update_user_attr,
+    def initialize(self):
+        self.setup(self.TITLE, '', self.MENU)
+
+    def goto_next(self, hover):
+        self.real = real = self._menu.get_real(hover)
+        text = self.user[real]
+        self.suspend('edit_text', filename='nickdata',
                      text=text)
 
-    def update_user_attr(self, filename, text):
+    @handler_edit
+    def restore(self):
+        super(NickDataFrame, self).restore()
+
+    def handler_nickdata(self, text):
         self.cls()
         args = {
-            filename:text.replace('\r\n', '\n')
+            self.real:text,
             }
         try:
             manager.userinfo.update_user(self.userid, **args)
         except None:      ##############  Notice the max buffer len.
             self.write(u'\r\n编辑档案失败！')
         else:
-            self.session.user[filename] = text
+            self.session.user[self.real] = text
             self.write(u'\r\n编辑档案成功！')
 
 @mark('user_change_passwd')
@@ -155,121 +157,75 @@ def chunks(l, n):
 @mark('user_edit_sign')
 class EditSignFrame(BaseTextBoxFrame):
 
-    hotkeys = {
+    shortcuts = {
         ac.k_ctrl_e:"set_sign",
+        ac.k_left:"finish",
         }
 
-    def get_text(self):
+    def initialize(self):
         self.signs = manager.usersign.get_all_sign(self.userid)
-        return self.render_str('sign-t',
-                               signs=map(lambda x: x.replace('\n', '\r\n'),
-                                         self.signs))
-
-    def get_raw_text(self):
-        return u'\n'.join(self.signs)
+        text =  self.render_str('sign-t', signs=self.signs)
+        self.setup(text)
 
     def set_sign(self):
-        self.suspend('edit_text', filename=u'签名档', callback=self.save_sign,
-                     text=self.get_raw_text(), split=True)
+        text = '\n'.join(self.signs)
+        self.suspend('edit_text', filename=u'signature',
+                     text=text)
 
-    def save_sign(self, filename, text):
-        self.cls()
+    @handler_edit
+    def restore(self):
+        self._textbox.restore_screen()
+
+    def handler_signature(self, text):
         if text is None:
             self.write(u'取消设置签名档')
         else:
-            data = map(lambda x:u'\r\n'.join(x),
+            text = text.splitlines()
+            data = map(lambda x:u'\n'.join(x),
                        chunks(text, 6))
             manager.usersign.set_sign(self.userid, data)
             self.write(u'设置签名档成功！')
 
-    def finish(self, a):
+    def finish(self, e=None):
         self.goto_back()        
 
+@mark('_query_user_o')
+class InnerQueryUserFrame(BaseTextBoxFrame):
+
+    def initialize(self, user):
+        text = self.render_str('user-t', **user)
+        self.setup(text=text)
+
+    def finish(self, e=None):
+        self.goto_back()
+
 @mark('query_user')
-class QueryUserFrame(BaseTextBoxFrame):
+class QueryUserFrame(BaseAuthedFrame):
 
     def initialize(self, userid=None):
         user = manager.query.get_user(self.userid, userid)
         if user :
-            self.text = self.render_str('user-t',**user)
-            super(QueryUserFrame,self).initialize()
+            self.goto('_query_user_o', user=user)
         else:
-            self.write(u'\r\n无此id！')
-            self.pause()
-            self.goto_back()
-
-    def finish(self,a):
-        self.goto_back()
-
-    def get_text(self):
-        return self.text
+            self.pause_back(u'\r\n无此id！')
 
 @mark('query_user_self')
-class QueryUserSelfFrame(BaseTextBoxFrame):
+class QueryUserSelfFrame(BaseAuthedFrame):
 
     def initialize(self):
-        user = manager.query.get_user(self.userid, self.userid)
-        if user :
-            self.text = self.render_str('user_self-t', **user)
-            super(QueryUserSelfFrame, self).initialize()
-        else:
-            self.goto_back()
-
-    def finish(self,a):
-        self.goto_back()
-
-    def get_text(self):
-        return self.text
+        self.goto('_query_user_o', user=self.session.user)
 
 @mark('query_user_iter')
 class QueryUserIterFrame(QueryUserFrame):
 
     def initialize(self):
         self.write(ac.clear + u'要查询谁？')
-        userid = self.readline(acceptable=ac.isalnum)
+        userid = self.safe_readline(acceptable=ac.isalnum)
         if userid :
-            super(QueryUserIterFrame,self).initialize(userid)
+            user = manager.query.get_user(self.userid, userid)
+            self.goto('_query_user_o', user)
         else:
-            self.write(u'\r\n取消查询！')
-            self.pause()
-            self.goto_back()
-
-    def query_user_normal(self, userid):
-        user = manager.userinfo.get_user(userid)
-        if user is None :
-            self.write(u'没有该用户！')
-            self.pause()
-            self.goto_back()
-        else:
-            return user
-
-@mark('test_timeout')
-class TestTimeoutFrame(BaseAuthedFrame):
-
-    def initialize(self):
-        self.cls()
-        self.writeln(u'测试仅供参考，请在看到字符出现后继续按一个键')
-        buf = []
-        for i in range(11):
-            self.write('.')
-            self.read_secret()
-            buf.append(datetime.now())
-        self.writeln(u'\r\n\r\n请按 CTRL+a ')
-        while True:
-            if self.read_secret() == ac.k_ctrl_a:
-                break
-        self.goto('edit_text', filename='Test Timeout',
-                  callback=self.publish_as_post,
-                  text=self.render_str('timeouttest-t', data=buf))
-
-    def publish_as_post(self, filename, text):
-        manager.action.new_post('Test',
-                                self.userid,
-                                u'[反应测试] 来自 %s 的网络反应速度测试' % self.userid,
-                                text,
-                                self.session.ip,
-                                config.BBS_HOST_FULLNAME,
-                                replyable=True)
+            self.pause_back(u'\r\n取消查询！')
 
 @mark('post_bug')
 class PostBugFrame(BaseAuthedFrame):
@@ -277,23 +233,30 @@ class PostBugFrame(BaseAuthedFrame):
     def initialize(self):
         self.cls()
         self.render('post_bug_bg')
-        title = self.readline(prompt=u'请用几个字简洁地描述bug\r\n')
+        title = self.safe_readline(prompt=u'请用几个字简洁地描述bug\r\n')
         if title :
             self.title = title
-            self.important = important = self.readline(prompt=u'\r\n重要程度（尽量选择低的数字），不输入为 3,\r\n'
-                                                       u' 0：安全问题    1：建议性     2：不急着修复\r\n'
-                                                       u' 3：一般        4：危险       5：需立即修复\r\n') or '3'
-            self.goto('edit_text', filename='Post bug',
-                      callback=self.publish_as_post, l=12,
-                      text=self.render_str('bug-t', title=title, important=important))
-        self.writeln(u'放弃操作')
-        self.pause()
+            self.important = important = self.safe_readline(
+                prompt=u'\r\n重要程度（尽量选择低的数字），不输入为 3,\r\n'
+                u' 0：安全问题    1：建议性     2：不急着修复\r\n'
+                u' 3：一般        4：危险       5：需立即修复\r\n') or '3'
+            self.goto('edit_text', filename='bug', l=12,
+                      text=self.render_str('bug-t', title=title,
+                                           important=important))
+        self.pause_back(u'放弃操作')
+
+    @handler_edit
+    def restore(self):
         self.goto_back()
 
-    def publish_as_post(self, filename, text):
+    def handler_bug(self, text):
+        self.publish_as_post(text)
+
+    def publish_as_post(self, text):
         pid = manager.action.new_post('BugReport',
                                       self.userid,
-                                      u'[bug]/%s\ %s' % (self.important[0], self.title),
+                                      u'[bug]/%s\ %s' % (self.important[0],
+                                                         self.title),
                                       text,
                                       self.session.ip,
                                       config.BBS_HOST_FULLNAME,
@@ -316,11 +279,9 @@ class TestKeyBoardFrame(BaseAuthedFrame):
     def initialize(self):
         self.cls()
         self.render('hint/test_keyboard')
-        self.title = self.readline(prompt=u'请输入简要的按键方案说明：')
+        self.title = self.safe_readline(prompt=u'请输入简要的按键方案说明：')
         if not self.title :
-            self.write(u'放弃操作')
-            self.pause()
-            self.goto_back()
+            self.pause_back(u'放弃操作')
         self.test_all()
 
     def get_key(self):
@@ -340,11 +301,19 @@ class TestKeyBoardFrame(BaseAuthedFrame):
             self.write(u'开始测试... [%s] ' % key)
             res[key] = self.get_key()
             self.writeln(u'  结果 %r' % res[key])
-            buf.append(u'    测试 %-15s 的结果为 %r  \r\n' % (key, self.s(res[key])))
-        self.goto('edit_text', filename='Test KeyBoard', callback=self.publish_as_post,
+            buf.append(u'    测试 %-15s 的结果为 %r  \r\n' % \
+                           (key, self.s(res[key])))
+        self.goto('edit_text', filename='keycode', 
                   text=''.join(buf))
 
-    def publish_as_post(self, filename, text):
+    @handler_edit
+    def restore(self):
+        self.goto_back()
+
+    def handler_keycode(self, text):
+        self.publish_as_post(text)
+        
+    def publish_as_post(self, text):
         manager.action.new_post('Test',
                                 self.userid,
                                 u'[按键测试] %s ' % self.title,
@@ -354,49 +323,76 @@ class TestKeyBoardFrame(BaseAuthedFrame):
                                 replyable=False)
 
 @mark('user_online')
-class UserOnlineFrame(BaseTableFrame):
+class UserOnlineFrame(BaseAuthedFrame):
 
-    def quick_help(self):
+    shortcuts = {
+        ac.k_left:"goto_back",
+        }
+    shortcuts_table = {}
+    shortcuts_fetch = {
+        ac.k_right:"next_frame",
+        's':'send_mail',
+        }
+
+    _TABEL_START_LINE = 4
+    _TABEL_HEIGHT = 20
+
+    def get(self, char):
+        if char == ac.k_finish:
+            self.fetch_session_do('next_frame')
+        self.do_command(self.shortcuts.get(char))
+        self.fetch_session_do(self.shortcuts_fetch.get(char))
+        self._table.do_command(self.shortcuts_table.get(char))
+
+    def _init_screen(self):
+        self.cls()
+        self.top_bar()
+        self.push('\r\n')
         self.push(config.str['USERONLINE_QUICK_HELP'])
         self.push('\r\n')
+        self.push(config.str['USERONLINE_THEAD'])
+        self.bottom_bar()
+        self._table.restore_screen()
 
-    def print_thead(self):
-        self.write(config.str['USERONLINE_THEAD'])
+    def setup(self, dataloader, counter, default=0):
+        try:
+            self._table = self.load(FinitePagedTable, dataloader,
+                                    self._wrapper_li, counter, default,
+                                    start_line=self._TABEL_START_LINE,
+                                    height=self._TABEL_HEIGHT)
+        except NullValueError:
+            self.catch_nodata()
+            raise NullValueError
+        self._init_screen()
 
-    def get_default_index(self):
-        return 0
+    def fetch_session_do(self, cmd):
+        if cmd is None:
+            return
+        session = self._table.fetch()
+        getattr(self, cmd)(session)
 
-    def get_data(self, start, limit):
-        sessions = manager.status.get_session_rank(start, limit)
-        return map(self.wrapper_data, sessions)
-
-    def wrapper_data(self, li):
-        li['nickname'] = manager.userinfo.select_attr(li['userid'], 'nickname')['nickname']
-        return li
-        
-    def get_total(self):
-        return manager.status.total_online()
-
-    def wrapper_li(self, li):
-        return self.render_str('useronline-li', **li)
-
-    def get(self, data):
-        if data in ac.ks_finish:
-            self.finish()
-        self.table.do_command(config.hotkeys['g_table'].get(data))
-        self.table.do_command(config.hotkeys['useronline_table'].get(data))
-        self.do_command(config.hotkeys['useronline'].get(data))
-
-    def catch_nodata(self, e):
-        raise ValueError(u'It is impossible no body online!')
-
-    def initialize(self):
-        super(UserOnlineFrame, self).initialize()
-
-    def finish(self):
-        session = self.table.fetch()
+    def next_frame(self, session):
         self.suspend('query_user', userid=session['userid'])
 
-    def send_mail(self):
-        session = self.table.fetch()
+    def reload(self):
+        self._table.reload()
+        self._table.restore_screen()
+
+    def restore(self):
+        self._init_screen()
+
+    def initialize(self):
+        self.setup(manager.status.get_session_rank,
+                   manager.status.total_online)
+
+    def _wrapper_li(self, li):
+        print ('li', li)
+        li['nickname'] = manager.userinfo.select_attr(li['userid'],
+                                                      'nickname')['nickname']
+        return self.render_str('useronline-li', **li)
+
+    def catch_nodata(self):
+        raise ValueError(u'It is impossible no body online!')
+
+    def send_mail(self, session):
         self.suspend('send_mail', touserid=session['userid'])

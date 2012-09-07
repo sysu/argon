@@ -406,10 +406,10 @@ class Post(Model):
     FILTER_O = 'replyid=0'
 
     def sql_filter_tid(self, tid):
-        return 'tid=%s' % self.db.escape_string(str(tid))
+        return 'tid="%s"' % self.db.escape_string(str(tid))
 
     def sql_filter_owner(self, owner):
-        return 'tid=%s' % self.db.escape_string(owner)
+        return 'owner="%s"' % self.db.escape_string(owner)
 
     def sql_and(self,buf):
         return ' AND '.join(buf)
@@ -739,7 +739,7 @@ class Mail(Model):
         try:
             return self.table_insert(self.__(touid), kwargs)
         except ProgrammingError as e:
-            print e
+            logging.warning(e)
             if e.args[0] == 1146 : # Table NOT EXIST
                 self._create_table(self._tableid(touid))
                 self.send_mail(touid, **kwargs)
@@ -1639,7 +1639,7 @@ class Query:
         for k in kwargs:
             setattr(self, k, kwargs[k])
 
-    def _wrap_perm(self, userid, boards):
+    def _wrap_boards(self, userid, boards):
         rboards = []
         for board in boards:
             board['perm'] = self.userperm.get_board_ability(userid, board['boardname'])
@@ -1655,16 +1655,15 @@ class Query:
             boards = self.board.get_all_boards()
         else:
             boards = self.board.get_by_sid(sid)
-        return self._wrap_perm(userid, boards)
+        return self._wrap_boards(userid, boards)
 
     def get_board_by_name(self, userid, boardname):
         board = self.board.get_board(boardname)
-        # return self._wrap_perm()    
 
     def get_all_favourite(self, userid):
         bids = self.favourite.get_all(userid)
         boards = map(lambda d: self.board.get_board_by_id(d), bids)
-        return self._wrap_perm(userid, boards)
+        return self._wrap_boards(userid, boards)
 
     def get_section(self, sid):
         return self.section.get_section_by_sid(sid)
@@ -1712,25 +1711,31 @@ class FreqControl(Model):
     per = 3
     mid = 15
     big = 120
+    large = 900
+
+    LOGIN = 15
+    POST = 2
+    SEND_MAIL = 3
     
-    def _filter_freq(self, userid, fre):
-        key = self.keyf % fre
-        if self.ch.sismember(key, userid):
-            raise TooFrequentException
+    def _filter_freq(self, actionname, sessionid, per):
+        key = self.keyf % actionname
+        if self.ch.sismenber(key, sessionid) :
+            return False
         if self.ch.exists(key):
             self.ch.sadd(key, userid)
         else:
             self.ch.sadd(key, userid)
-            self.ch.expire(key, fre)
+            self.ch.expire(key, per)
+        return True
 
-    def filter_freq_per(self, userid):
-        self._filter_freq(userid, self.per)
-
-    def filter_freq_mid(self, userid):
-        self._filter_freq(userid, self.mid)
-
-    def filter_freq_big(self, userid):
-        self._filter_freq(userid, self.big)
+    def filter_freq_login(self, sessionid):
+        return self._filter_freq('LOGIN', sessionid, self.LOGIN)
+    
+    def filter_freq_post(self, sessionid):
+        return self._filter_freq('POST', sessionid, self.POST)
+    
+    def filter_freq_send_mail(self, sessionid):
+        return self._filter_freq('SEND_MAIL', sessionid, self.SEND_MAIL)
 
 class Manager:
 
@@ -1786,4 +1791,3 @@ def foreach_board(f):
     d.bind(global_conn)
     for board in d.get_all_boards():
         f(board)
-

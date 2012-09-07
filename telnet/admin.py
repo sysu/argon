@@ -9,30 +9,33 @@ sys.path.append('../')
 import codecs
 import datetime
 from model import manager
-from libframe import BaseEditFrame, BaseAuthedFrame, BaseBoardListFrame,\
-    list_split
+from libframe import BaseAuthedFrame, list_split
+from boardlist import BaseBoardListFrame
+from edit import BaseEditFrame, handler_edit
 from chaofeng.g import mark
-from chaofeng.ui import Form, ListBox, PagedTable, NullValueError, TableLoadNoDataError
+from chaofeng.ui import Form, ListBox
 import config
 import chaofeng.ascii as ac
 import traceback
 
 @mark('sys_edit_system_file')
-class EditSystemFileFrame(BaseEditFrame):
+class EditSystemFileFrame(BaseAuthedFrame):
 
     def initialize(self, filename):
         self.filename = filename
         with codecs.open('static/%s' % filename, encoding="utf8") as f:
-            text = f.read().replace('\n', '\r\n')
-        super(EditSystemFileFrame, self).initialize(text=text)
+            text = f.read()
+        self.suspend('edit_text', filename='file', text=text)
 
-    def finish(self):
-        text = self.e.fetch_all().replace('\r\n', '\n')
-        with codecs.open('static/%s' % self.filename, "w", encoding="utf8") as f:
-            f.write(text)
-        self.message(u'修改系统档案成功！')
-        self.pause()
+    @handler_edit
+    def restore(self):
         self.goto_back()
+
+    def handler_file(self, text):
+        with codecs.open('static/%s' % self.filename, "w",
+                         encoding="utf8") as f:
+            f.write(text)
+        self.pause_back(u'修改系统档案成功！')
 
 @mark('sys_new_section')
 class NewSectionsFrame(BaseAuthedFrame):
@@ -54,8 +57,7 @@ class NewSectionsFrame(BaseAuthedFrame):
             self.goto_back()
         self.cls()
         self.render('sys_section_preview', **data)
-        confirm = self.readline(prompt=u'输入资料完成，确定新建分区？YES确定 >>')
-        if confirm == 'YES' :
+        if self.confirm(u'输入资料完成，确定新建分区？[y/n]: ', default='n'):
             manager.section.add_section(sid=data['sid'],
                                         sectionname=data['sectionname'],
                                         description=data['description'],
@@ -104,7 +106,7 @@ class EditSectionFrame(BaseAuthedFrame):
             raise ValueError(u'\r\n没有该讨论区！')        
 
     def initialize(self):
-        sid = self.readline(prompt=u'请输入欲修改的讨论区号：')
+        sid = self.safe_readline(prompt=u'请输入欲修改的讨论区号：')
         try:
             self.sid, default = self.handler_sid(sid)
         except ValueError as e:
@@ -169,8 +171,7 @@ class NewBoardFrame(BaseAuthedFrame):
             self.goto_back()
         self.cls()
         self.render('sys_board_preview', **data)
-        confirm = self.readline(prompt=u'输入资料完成，确认新建版块？YES确认')
-        if confirm == 'YES' :
+        if self.confirm(u'输入资料完成，确认新建版块？[y/n]:', default='n'):
             manager.admin.add_board(self.userid, **data)
             self.writeln(u'\r\n增加版块成功！')
         else:
@@ -278,26 +279,15 @@ class EditBoardAttrIterFrame(EditBoardAttrFrame):
 
     def initialize(self):
         self.cls()
-        boardname = self.readline(prompt=u'请输入版块的名称：')
+        boardname = self.safe_readline(prompt=u'请输入版块的名称：')
         super(EditBoardAttrIterFrame, self).initialize(boardname)
 
 @mark('sys_all_boards')
 class AdminAllBoards(BaseBoardListFrame):
 
-    def get_default_index(self):
-        return 0
-
-    def get_data(self, start, limit):
-        return self.boards[start:start+limit]
-
     def initialize(self):
-        self.sort_mode = 0
-        self.boards = manager.board.get_all_boards()
-        self.board_total = len(self.boards)
-        super(AdminAllBoards, self).initialize()
-    
-    def change_board_attr(self):
-        self.suspend('sys_set_boardattr', boardname=self.table.fetch()['boardname'])
+        boards = manager.board.get_all_boards()
+        self.setup(boards)
 
 @mark('sys_add_bm')
 class AddBoardManager(BaseAuthedFrame):
@@ -305,21 +295,21 @@ class AddBoardManager(BaseAuthedFrame):
     def initialize(self):
         self.cls()
         try:
-            userid = self.readline(prompt=u'请输入欲任命的使用者帐号：')
+            userid = self.safe_readline(prompt=u'请输入欲任命的使用者帐号：')
             self.writeln('\r\n')
             user = manager.query.get_user(self.userid, userid)
             if not user :
                 raise ValueError(u'没有该用户！')
             userid = user['userid']
             self.writeln(u'  任命 %s ' % userid)
-            boardname = self.readline(prompt=u'请输入该使用者将管理的讨论区名称：')
+            boardname = self.safe_readline(prompt=u'请输入该使用者将管理的讨论区名称：')
             self.writeln('\r\n')
             board = manager.query.get_board(self.userid, boardname)
             if not board :
                 raise ValueError(u'没有该讨论区!')
             boardname = board['boardname']
-            if self.readline(prompt=u'\r\n任命 %s 为 %s 的版主，确定？[Y/N]' % (userid, boardname),
-                             buf_size=1) :
+            if self.confirm(prompt=u'\r\n任命 %s 为 %s 的版主，确定？[y/n]' % \
+                                (userid, boardname), default=u'n') :
                 manager.admin.join_bm(self.userid, userid, boardname)
                 self.writeln('\r\n')
                 self.writeln(u'设置成功！')
@@ -336,20 +326,20 @@ class RemoveBoardManager(BaseAuthedFrame):
     def initialize(self):
         self.cls()
         try:
-            userid = self.readline(prompt=u'请输入欲离职的使用者帐号：')
+            userid = self.safe_readline(prompt=u'请输入欲离职的使用者帐号：')
             self.writeln('\r\n')
             user = manager.query.get_user(self.userid, userid)
             if not user :
                 raise ValueError(u'没有该用户！')
             userid = user['userid']
             self.writeln(u'  %s 要离职 ' % userid)
-            boardname = self.readline(prompt=u'请输入要辞去的版名：')
+            boardname = self.safe_readline(prompt=u'请输入要辞去的版名：')
             self.writeln('\r\n')
             board = manager.query.get_board(self.userid, boardname)
             if not board :
                 raise ValueError(u'没有该讨论区!')
             boardname = board['boardname']
-            if self.readline(prompt=u'\r\n%s 从 %s 离职，确定？[Y/N]' % (userid, boardname),
+            if self.safe_readline(prompt=u'\r\n%s 从 %s 离职，确定？[Y/N]' % (userid, boardname),
                              buf_size=1) :
                 self.writeln('\r\n')
                 manager.admin.remove_bm(self.userid, userid, boardname)
@@ -366,7 +356,7 @@ class GetUserIdFrame(BaseAuthedFrame):
 
     def initialize(self, callback, **kwargs):
         self.cls()
-        userid = self.readline(prompt=u'请输入要管理的帐号：')
+        userid = self.safe_readline(prompt=u'请输入要管理的帐号：')
         user = manager.userinfo.get_user(userid)
         if user :
             self.goto(callback, userid=user['userid'], **kwargs)
@@ -389,7 +379,7 @@ class SetAuthedUserByPassword(BaseAuthedFrame):
 
     def initialize(self):
         self.write(ac.clear)
-        passwd = self.readline(prompt=u'请输入暗号：')
+        passwd = self.safe_readline(prompt=u'请输入暗号：')
         if passwd == config.dark.password :
             manager.team.join_team(self.userid, 'SYS_USER')
             self.writeln(u'验证成功！')
@@ -403,7 +393,7 @@ class GetTeamnameFrame(BaseAuthedFrame):
 
     def initialize(self, callback, **kwargs):
         self.cls()
-        teamname = self.readline(prompt=u'请输入要管理的组名：')
+        teamname = self.safe_readline(prompt=u'请输入要管理的组名：')
         if manager.team.exists(teamname) :
             self.goto(callback, teamname=teamname, **kwargs)
         else:
@@ -471,7 +461,7 @@ class EditTeamMmembersFrame(BaseAuthedFrame):
         self.pause()
 
     def readline(self, prompt):
-        return self.readline_safe(prompt='%s%s\r\n' % (ac.move2(21,1), prompt))
+        return self.safe_readline(prompt='%s%s\r\n' % (ac.move2(21,1), prompt))
 
 @mark('sys_edit_user_team')
 class EditTeamMmembersFrame(BaseAuthedFrame):
@@ -543,7 +533,7 @@ class EditTeamMmembersFrame(BaseAuthedFrame):
         self.pause()
 
     def readline(self, prompt):
-        return self.readline_safe(prompt='%s%s\r\n' % (ac.move2(21,1), prompt))
+        return self.safe_readline(prompt='%s%s\r\n' % (ac.move2(21,1), prompt))
 
 @mark('sys_join_teams')
 class JoinTeamsFrame(BaseAuthedFrame):
@@ -594,7 +584,7 @@ class SetBoardDenyFrame(BaseAuthedFrame):
         return self.render_str('deny-li', **record)
 
     def _add_deny(self):
-        userid = self.readline(prompt=u'[22;1H[K请输入欲封禁的id：')
+        userid = self.safe_readline(prompt=u'[22;1H[K请输入欲封禁的id：')
         if not userid :
             raise ValueError(u'放弃操作')
         user = manager.userinfo.get_user(userid)
@@ -603,10 +593,10 @@ class SetBoardDenyFrame(BaseAuthedFrame):
         userid = user['userid']
         if manager.deny.get_deny(userid, self.boardname):
             raise ValueError(u'该id已经被封！')
-        why = self.readline(prompt=u'\r[K请输入封禁的原因：')
+        why = self.safe_readline(prompt=u'\r[K请输入封禁的原因：')
         if not why or len(why) >= 128 :
             raise ValueError(u'不合法的输入或中止输入！')
-        day = self.readline(prompt=u'\r[K请输入封禁天数：')
+        day = self.safe_readline(prompt=u'\r[K请输入封禁天数：')
         if not day.isdigit() :
             raise ValueError(u'不合法的输入或中止输入！')
         day = int(day)
@@ -627,7 +617,7 @@ class SetBoardDenyFrame(BaseAuthedFrame):
 
     def remove_deny(self):
         record = self.table.fetch()
-        confirm = self.readline(prompt=u'[22;1H[K确认解除封禁？ YES/else >> ')
+        confirm = self.safe_readline(prompt=u'[22;1H[K确认解除封禁？ YES/else >> ')
         if confirm == 'YES':
             manager.admin.undeny_user(record['userid'], self.boardname)
             self.reload()
@@ -669,7 +659,7 @@ class SuperSystemFrame(BaseAuthedFrame):
 
     def loop(self):
         while True:
-            cmd = filter(lambda x:x, self.readline(prompt='argo$ ', buf_size=70).split())
+            cmd = filter(lambda x:x, self.safe_readline(prompt='argo$ ', buf_size=70).split())
             self.write('\r\n')
             if not cmd : continue
             action = 'action_%s' % cmd[0]

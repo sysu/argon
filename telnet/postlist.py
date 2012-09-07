@@ -2,7 +2,7 @@
 # -*- coding: utf-8 -*-
 
 from chaofeng.g import mark
-from chaofeng.ui import FinitePagedTable, NullValueError
+from chaofeng.ui import FinitePagedTable, NullValueError, TableLoadNoDataError
 import chaofeng.ascii as ac
 from libframe import BaseAuthedFrame
 from model import manager
@@ -36,7 +36,8 @@ class BasePostListFrame(BaseAuthedFrame):
         self.bottom_bar()
         self._table.restore_screen()
 
-    def setup(self, thead, dataloader, counter, default=0):
+    def setup(self, thead, dataloader, counter):
+        default = self.get_default_index()
         try:
             self._table = self.load(FinitePagedTable, dataloader,
                                     self._wrapper_li, counter, default,
@@ -63,7 +64,10 @@ class BasePostListFrame(BaseAuthedFrame):
             self._table.set_hover_data(post)
 
     def reload(self):
-        self._table.reload()
+        try:
+            self._table.reload()
+        except TableLoadNoDataError:
+            self.goto_back()
         self._table.restore_screen()
 
     def restore(self):
@@ -98,18 +102,27 @@ class BaseBoardFrame(BasePostListFrame):
         self.boardname = board['boardname']
         super(BaseBoardFrame, self).setup(
             thead=thead, dataloader=dataloader, 
-            counter=counter, default=default
+            counter=counter, 
             )
             
     def finish(self, post):
         self.suspend('post', boardname=self.boardname, pid=post['pid'])
 
+    def get_default_index(self):
+        return manager.telnet['default_board_index'].get('%s:%s' % (
+                self.boardname, self.userid)) or 0
+
+    def leave(self):
+        if hasattr(self, '_table'):
+            manager.telnet['default_board_index']['%s:%s' % (
+                    self.boardname, self.userid)] = self._table.fetch_num()
+
     def restore(self):
         if self.session['board_flash'] :
-            default = self.get_pid_rank(self.session['board_flash'])
-            self.session.pop('board_flash')
-        else:
-            default = self._table.fetch_num()
+            manager.telnet['default_board_index']['%s:%s' % (
+                   self.boardname, self.userid)] = self.get_pid_rank(
+                self.session['board_flash'])
+        default = self.get_default_index()
         try:
             try:
                 self._table.setup(default)
@@ -251,12 +264,12 @@ class BoardFrame(BaseBoardFrame):
     
     def catch_nodata(self):
         self.cls()
-        if self.safe_readline(u'没有文章！是否发表新文章？：') in ac.ks_yes:
-            self.goto('new_post', board=self.board)
+        if self.confirm(u'没有文章！是否发表新文章？[y/n]：', default='y') :
+            self.goto('new_post', boardname=self.board['boardname'])
         else:
             self.pause_back(u'放弃操作')
 
-    def change_board(self, boardname):
+    def change_board(self):
         boardname = self.readline(prompt=u'请输入要切换的版块：')
         board = manager.board.get_board(boardname)
         if board :
@@ -314,6 +327,7 @@ class BoardFilterPostFrame(BaseBoardFrame):
 
     def initialize(self, board, mode, default=0, **kwargs):
         self.cond = self.ALL_MODE[mode](**kwargs)
+        print self.cond
         dataloader = manager.post.get_posts_loader(board['boardname'],
                                                    self.cond)
         counter = manager.post.get_posts_counter(board['boardname'],
@@ -327,3 +341,4 @@ class BoardFrame(BaseAuthedFrame):
     def initialize(self, boardname, prev, default=0):
         board = manager.query.get_board_by_name(boardname)
         self.goto('_board_o', board, prev, default)
+

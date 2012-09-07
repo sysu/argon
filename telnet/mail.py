@@ -11,7 +11,7 @@ from chaofeng import ascii as ac
 from chaofeng.g import mark
 from edit import BaseEditFrame, handler_edit
 from chaofeng.ui import NullValueError, FinitePagedTable
-from libframe import BaseAuthedFrame
+from libframe import BaseAuthedFrame, gen_quote_mail
 from view import BaseTextBoxFrame
 from model import manager
 import config
