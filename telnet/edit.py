@@ -332,6 +332,9 @@ class ReplyPostFrame(BaseEditFrame):
             self.goto_back()
         self.restore_screen()
 
+    def publish_(self):
+        self.publish_and_goto_back(self._attrs, self._editor.fetch_all())
+
     def publish_and_goto_back(self, attrs, text):
         pid = manager.action.reply_post(attrs['boardname'],
                                         self.userid,
@@ -429,6 +432,9 @@ class EditFileFrame(BaseEditFrame):
         if char == 'a':
             self.goto_back()
         self.restore_screen()
+
+    def publish(self):
+        self.modify_and_goto_back(self._editor.fetch_all())
 
     def modify_and_goto_back(self, text):
         self.session['__edit__'] = (self._filename, text)
