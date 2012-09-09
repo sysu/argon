@@ -40,7 +40,7 @@ def jummp_from_screen(frame):
         frame.suspend('plugin_jumpper:view_post_float',
                       boardname=op[0],
                       pid=op[1])
-    elif 'help/%s' % op[2] in config.all_help_file :
+    elif ('help/%s' % op[2]) in config.all_help_file :
         frame.suspend('help', pagename=op[2])
 
 @mark('plugin_jumpper:view_post_float')

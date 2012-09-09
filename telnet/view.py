@@ -15,7 +15,7 @@ logger = logging.getLogger('@view')
 class TextBox(SimpleTextBox):
 
     def message(self, message):
-        self.frame.bottom_bar(message=message, s=self.s, h=self.h)
+        self.frame.bottom_bar(message=message, s=self.s, l=self.max)
 
     def fix_bottom(self):
         self.message(u'')
@@ -77,9 +77,9 @@ class BaseTextBoxFrame(BaseAuthedFrame):
     def getscreen(self):
         return self._textbox.getscreen()
 
-    def bottom_bar(self, s, h, message=''):
+    def bottom_bar(self, s, l, message=''):
         self.write(ac.move2(24,1))
-        self.render(u'bottom_view', s=s, h=h, message=message)
+        self.render(u'bottom_view', s=s, l=l, message=message)
 
     def message(self, msg):
         self.push(ac.move2(24, 1))
@@ -204,3 +204,13 @@ class TutorialFrame(BaseTextBoxFrame):
 
     def show_help(self):
         self.suspend('help', pagename='help')
+
+@mark('_query_board_o')
+class QueryBoardFrame(BaseTextBoxFrame):
+
+    def initialize(self, board):
+        text = self.render_str('board-t', **board)
+        self.setup(text=text)
+
+    def finish(self, e=None):
+        self.goto_back()

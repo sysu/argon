@@ -15,14 +15,14 @@ class RNEditor(TextEditor, TextEditorAreaMixIn):
 
     ESCAPE_LINE = '\n'
 
-    fground_string = dict((str(x), (u'[#3%s]', u'[%#]')) for x in range(0,8))
-    bground_string = dict((str(x), (u'[#4%s]', u'[%#]')) for x in range(0,8))
+    fground_string = dict((str(x), (u'[%%3%s#]' % x, u'[#%]')) for x in range(0,8))
+    bground_string = dict((str(x), (u'[%%4%s#]' % x, u'[#%]')) for x in range(0,8))
     special_style = {
-        u'i':(u'[#3%]', u'[%#]'),
-        u'u':(u'[#4%]', u'[%#]'),
-        u'b':(u'[#1%]', u'[%#]'),
-        u'l':(u'[#5%]', u'[%#]'),
-        u'n':(u'[#7%]', u'[%#]'),
+        u'i':(u'[%3#]', u'[#%]'),
+        u'u':(u'[%4#]', u'[#%]'),
+        u'b':(u'[%1#]', u'[#%]'),
+        u'l':(u'[%5#]', u'[#%]'),
+        u'n':(u'[%7#]', u'[#%]'),
         }
 
     def _insert_style(self):
@@ -116,6 +116,9 @@ class BaseEditFrame(BaseAuthedFrame):
 
     def show_help(self):
         self.suspend('help', pagename='edit')
+    
+    def restore(self):
+        self.restore_screen()
 
 @mark('new_post')
 class NewPostFrame(BaseEditFrame):
@@ -174,6 +177,10 @@ class NewPostFrame(BaseEditFrame):
         return attrs
 
     def initialize(self, boardname):
+        perm = manager.query.get_board_ability(self.userid,
+                                               boardname)
+        if not perm[0]:
+            self.goto_back()
         manager.status.set_status(self.seid,
                                   manager.status.POSTING)
         self.cls()
@@ -202,6 +209,7 @@ class NewPostFrame(BaseEditFrame):
             self.modify_title()
         if char == 'a':
             self.goto_back()
+        self.restore_screen()
 
     def publish(self):
         self.publish_and_goto_back(self._attrs, self._editor.fetch_all())
@@ -280,6 +288,11 @@ class ReplyPostFrame(BaseEditFrame):
         return attrs
 
     def initialize(self, boardname, post):
+        perm = manager.query.get_board_ability(self.userid, self.boardname)
+        if not perm[0] :
+            self.goto_back()
+        if not (perm[1] and post['replyable']):
+            self.pause(u'你没有发文权力或本文禁止回复！')
         manager.status.set_status(self.seid,
                                   manager.status.POSTING)
         self.cls()
@@ -423,7 +436,9 @@ class RepostPostFrame(BaseAuthedFrame):
         self.render('repost_notice')
         where = self.safe_readline(prompt=u'要转贴到：')
         board = manager.board.get_board(where)
-        if board :
+        perm = manager.query.get_board_ability(self.userid,
+                                               board['boardname'])
+        if board and perm[1]:
             where = board['boardname']
             if self.confirm(u'\r\n转载 `%s` 到 %s 版？[y/n]：' % \
                                 (post['title'] ,where) , default='n') :

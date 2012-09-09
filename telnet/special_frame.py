@@ -19,10 +19,10 @@ class HistoryFrame(BaseTextBoxFrame):
         self.goto_back()
     
 @mark('finish')
-class Finish(BaseAuthedFrame):
+class FinishFrame(BaseAuthedFrame):
 
     def initialize(self):
-        self.finish(None)
+        self.finish()
         self.render('undone')
         self.pause()
         if self.session['lastboardname'] :
@@ -30,7 +30,7 @@ class Finish(BaseAuthedFrame):
             self.session['lastboardname'] = ''
         self.close()
 
-    def finish(self,e):
+    def finish(self,e=None):
         try:
             manager.auth.safe_logout(self.seid)
         except AttributeError:
@@ -44,6 +44,4 @@ class Finish(BaseAuthedFrame):
         self.write(ac.clear +
                    u'崩溃啦~ T.T 麻烦Bug Report~\r\n' +
                    ac.reset)
-        self.pause()
-        self.suspend('post_bug')
 

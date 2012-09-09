@@ -146,14 +146,21 @@ class BaseBoardFrame(BasePostListFrame):
         self._init_screen()
 
     def new_post(self):
-        self.suspend('new_post', boardname=self.boardname)
+        perm = manager.query.get_board_ability(self.userid,
+                                               self.boardname)
+        if perm[1] :
+            self.suspend('new_post', boardname=self.boardname)
 
     def repost(self, post):
         self.suspend('_repost_post_o', boardname=self.boardname, post=post)
 
     def reply_post(self, post):
-        self.suspend('_reply_post_o', boardname=self.boardname,
-                     post=post)
+        perm = manager.query.get_board_ability(self.userid,
+                                               self.boardname)
+        if perm[1] and post['replyable'] :
+            self.suspend('_reply_post_o',
+                         boardname=self.boardname,
+                         post=post)
 
     def reply_to_author(self, post):
         self.suspend('send_mail', touserid=post['owner'])
@@ -166,7 +173,8 @@ class BaseBoardFrame(BasePostListFrame):
             return post
 
     def edit_post(self, post):
-        self.suspend('_edit_post_o', board=self.board, post=post)
+        if post['owner'] == self.userid:
+            self.suspend('_edit_post_o', board=self.board, post=post)
 
     def edit_title(self, post):
         if post.owner == self.userid :
@@ -198,16 +206,21 @@ class BaseBoardFrame(BasePostListFrame):
         return post
 
     def set_g_mark(self, post):
-        return manager.admin.set_g_mark(self.userid, self.board, post)        
+        perm = manager.query.get_board_ability(self.userid, self.boardname)
+        if perm[3] :
+            return manager.admin.set_g_mark(self.userid, self.board, post)
 
     def set_m_mark(self, post):
-        return manager.admin.set_m_mark(self.userid, self.board, post)
+        perm = manager.query.get_board_ability(self.userid, self.boardname)
+        if perm[3] :
+            return manager.admin.set_m_mark(self.userid, self.board, post)
 
     def goto_query_user(self, post):
         self.suspend('query_user', userid=post['owner'])
 
     def goto_set_deny(self):
-        if self.perm[3] :
+        perm = manager.query.get_board_ability(self.userid, self.boardname)
+        if perm[3] :
             self.suspend('sys_set_board_deny', boardname=self.boardname)
         
     def _wrapper_li(self, post):
@@ -295,10 +308,13 @@ class BoardFrame(BaseBoardFrame):
         self.setup(board, self.THEAD, dataloader, counter, default)
 
     def get_pid_rank(self, pid):
-        return manager.post.get_rank_num(self.boardname, pid)
+        return manager.post.get_rank_num(self.board['boardname'], pid)
     
     def catch_nodata(self):
         self.cls()
+        perm = manager.query.get_board_ability(self.board['boardname'])
+        if not perm[1] :
+            self.pause_back(u'没有文章！')
         if self.confirm(u'没有文章！是否发表新文章？[y/n]：', default='y') :
             self.goto('new_post', boardname=self.board['boardname'])
         else:
@@ -310,12 +326,16 @@ class BoardFrame(BaseBoardFrame):
         if board :
             board.perm = manager.query.get_board_ability(self.userid,
                                                          board['boardname'])
-            self.goto('_board_o', board=board)
+            if board.perm[1] :
+                self.goto('_board_o', board=board)
+            else:
+                self.message(u'没有该讨论区！')
         else:
             self.message(u'没有该讨论区！')
 
     def del_post_range(self):
-        if self.perm[3] :
+        perm = manager.query.get_board_ability(self.userid, self.boardname)
+        if perm[3] :
             start = self.readline(prompt=u'首篇文章编号: ')
             if start.isdigit() :
                 end = self.readline(prompt=u'末篇文章编号：')
@@ -369,23 +389,15 @@ class BoardFilterPostFrame(BaseBoardFrame):
                                               self.cond)
 
     def initialize(self, board, mode, default=0, **kwargs):
+        if not board.perm[0]:
+            self.goto_back()
         self.cond = self.ALL_MODE[mode](**kwargs)
-        print self.cond
         dataloader = manager.post.get_posts_loader(board['boardname'],
                                                    self.cond)
         counter = manager.post.get_posts_counter(board['boardname'],
                                                  self.cond)
         thead = config.str['BOARD_%s_MODE_THEAD' % mode]
-        print ('dd', board, thead, dataloader, counter, default)
         self.setup(board, thead, dataloader, counter, default)
 
     def next_frame(self, post):
         self.suspend('_view_post_o', post=post, cond=self.cond)
-
-# @mark('board')
-# class BoardFrame(BaseAuthedFrame):
-
-#     def initialize(self, boardname, prev, default=0):
-#         board = manager.query.get_board_by_name(boardname)
-#         self.goto('_board_o', board, prev, default)
-

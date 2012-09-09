@@ -6,6 +6,7 @@ from chaofeng.ui import FinitePagedTable, NullValueError
 import chaofeng.ascii as ac
 from libframe import BaseAuthedFrame
 from model import manager
+from model import perm
 import config
 
 class BaseBoardListFrame(BaseAuthedFrame):
@@ -23,8 +24,9 @@ class BaseBoardListFrame(BaseAuthedFrame):
         self.suspend('query_user', userid=board['userid'])
 
     def change_board_attr(self, board):
-        #####################   CHECK PERM HERE 
-        self.suspend('sys_set_boardattr', boardname=board['boardname'])
+        #####################   CHECK PERM HERE
+        if manager.perm.check_perm(self.userid, perm.PERM_MASTER) :
+            self.suspend('sys_set_boardattr', boardname=board['boardname'])
 
     def catch_nodata(self):
         self.cls()

@@ -1,20 +1,25 @@
 __main__:
         - ['' ,             (E)Group       分类讨论区,   sections,   e, [13, 5]]
         - ['$USER' ,        (F)avourite    个人收藏夹,   favourite,  f]
-        - ['$USER',         (I)nfoEdit   个人资料设定,   user_space, i]
-        - ['',              (P)layFilm     电影放映室,   movie,      p]
-        - ['$AUTHED_USER',  (M)ail           处理信笺,   mail_menu,  m]
-        - ['',              (T)est       测试键盘按键,   test_keyboard, t]
+        - ['$AUTHED_USER',  (M)ail         处理信笺区,   mail_menu,  m]
         - ['',              (U)serOnline 查看在线用户,   user_online, u]
-        - ['',              (S)ysInfo    查看系统属性,   [help, {pagename : about }], s] 
-        - ['$AUTHED_USER',  (B)ugReport      错误报告,   post_bug, b]
-        - ['$BASE_ADMIN',   (A)dmin      系统管理功能,   [menu, {menuname: sys_admin}],  a]
+        - ['$USER',         (I)nfoEdit   个人资料设定,   user_space, i]
+        - ['',              (S)ysinfo      系统功能区,   [menu, {menuname: sysinfo}],  s]
+        - ['',              (R)eadHelp       帮助中心,   [help, {pagename: index }], r]
         - ['',              (G)oodbye    离开逸仙时空,   finish,    g]
+        - ['$BASE_ADMIN',   (A)dmin      系统管理功能,   [menu, {menuname: sys_admin}],  a]
+
+sysinfo :
+        - ['',              (A)bout         查看系统属性,   [help, {pagename: about }], a, [13,25]]
+        - ['',              (T)est          测试键盘按键,   test_keyboard, t]
+        - ['$AUTHED_USER',  (B)ugReport         错误报告,   post_bug,      b]
+        - ['',              (P)layFilm        电影放映室,   movie,         p]
+        - ['',              (E)xit            回到主选单,   main,      e]
 
 mail:
         - ['',  (R)ead          览阅全部信笺, get_mail,  r, [16, 41]]
         - ['',  (S)end          发送站内信件, send_mail, s]
-        - ['',  (N)otice            查看通知, notice_box, n]
+        - ['',  (N)otice           查看通知, notice_box, n]
         - ['',  (E)xit            回到主选单,   main,      e]
                 
 user_space:

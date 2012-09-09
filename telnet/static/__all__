@@ -62,3 +62,10 @@ board  boardlist  edit  help  index  view
 hint/*
 ------
 edit_board  edit_section  edit_userattr  new_board  new_section  test_keyboard
+
+危险！！
+-------
+
+../menu.yaml
+../filelist_help.yaml
+../filelist.yaml
