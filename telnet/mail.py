@@ -423,9 +423,9 @@ class ReadMailFrame(BaseTextBoxFrame):
         self._set_mode(self.mode)
         self.restore_screen()
 
-    def bottom_bar(self, s, h, message=''):
+    def bottom_bar(self, s, l, message=''):
         self.push(ac.move2(24, 1))
-        self.render(self.bottom_tpl, s=s, h=h, message=message)
+        self.render(self.bottom_tpl, s=s, l=l, message=message)
 
     def finish(self, e=None):
         logger.debug('finish [%s]', e)

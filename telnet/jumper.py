@@ -65,9 +65,9 @@ class ViewPostFloatFrame(BaseTextBoxFrame):
     def finish(self, e=None):
         self.goto_back()        
 
-    def bottom_bar(self, s, h, message=''):
+    def bottom_bar(self, s, l, message=''):
         self.write(ac.move2(24, 1))
-        self.render(u'bottom_view_float', s=s, h=h, message=message)
+        self.render(u'bottom_view_float', s=s, l=l, message=message)
 
     def goto_board(self):
         board = manager.board.get_board(self.boardname)
