@@ -1,4 +1,8 @@
-版块id  {{ boardname }}
+{#
+        修改版块属性后的预览
+        --------------------
+        
+#}版块id  {{ boardname }}
 描述    {{ description }}
 分区    {{ sid }}
 允许进入 {{ allowteam }}

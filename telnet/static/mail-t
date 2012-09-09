@@ -1,4 +1,8 @@
-发信人: {{ fromuserid }}
+{#
+        显示邮件的模板
+        --------------
+        
+#}发信人: {{ fromuserid }}
 标  题: {{ title }} 
 发信时间：{{ sendtime.ctime() }}
 

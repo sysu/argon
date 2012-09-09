@@ -1,4 +1,9 @@
-{{ userid|wrapper(bold) }}({{ nickname|wrapper(yellow,bold) }}) 共上站{{ numlogins|wrapper(green,bold) }},发表文章{{ numposts|wrapper(green,bold) }}篇
+{#
+        查询用户显示模板
+        ----------------
+
+
+#}{{ userid|wrapper(bold) }}({{ nickname|wrapper(yellow,bold) }}) 共上站{{ numlogins|wrapper(green,bold) }},发表文章{{ numposts|wrapper(green,bold) }}篇
  上次在[{{ lastupdate.ctime()|wrapper(green,bold) }}]从[{{ lasthost|wrapper(green,bold) }}]到本站一游
 
 {{ about|default('没有个人说明档') }}

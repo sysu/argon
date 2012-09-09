@@ -1,1 +1,6 @@
-   {{ id|center(5) }} {{ denytime.strftime('%m-%d') }} {{ userid|center(20) }}  {{ why }}
+{# 封禁表项
+  id : 封禁流水号
+  denytime : 封禁时间
+  userid ： 封禁的id
+  why : 封禁原因
+#}{{ id|center(5) }} {{ denytime.strftime('%m-%d') }} {{ userid|center(20) }}  {{ why }}

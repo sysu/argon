@@ -1,1 +1,5 @@
-   {{ userid|center(20) }} {{ uwidth(nickname, -20) }} {{ ip|width(-18) }} {{ SCODE[status] }}
+{#
+        查询在线用户的列表项
+        --------------------
+
+#}{{ userid|center(20) }} {{ uwidth(nickname, -20) }} {{ ip|width(-18) }} {{ SCODE[status] }}

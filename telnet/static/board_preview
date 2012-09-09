@@ -1,8 +1,0 @@
-版块id  {{ boardname }}
-描述    {{ description }}
-分区    {{ sid }}
-允许进入 {{ allowteam }}
-允许发文 {{ postteam }}
-禁止发文 {{ denyteam }}
-管理组   {{ adminteam }}
-

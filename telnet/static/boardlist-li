@@ -1,1 +1,5 @@
- {{ (index+1)|string|width(3) }} {{ '◆' if manager.readmark.is_new_board(user.userid, boardname) else '◇' }} {{ boardname|width(-20) }} {{ uwidth(description,-18) }}{{ online|string|width(4) }}   {{ total|string|width(4) }}   {{ bm.replace(':', ', ') if bm else '诚征版主中'  }}
+{#
+        版块列表项的模板
+        ----------------
+
+#}{{ (index+1)|string|width(3) }} {{ '◆' if manager.readmark.is_new_board(user.userid, boardname) else '◇' }} {{ boardname|width(-20) }} {{ uwidth(description,-18) }}{{ online|string|width(4) }}   {{ total|string|width(4) }}   {{ bm.replace(':', ', ') if bm else '诚征版主中'  }}

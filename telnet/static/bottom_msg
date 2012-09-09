@@ -1,1 +1,4 @@
-{{ ac.move2(24,1) }}{{ o_o(bg_blue,yellow,bold) }}[{{ ac.cyan }}{{ current() }}{{ ac.yellow }}] [{{ ac.cyan }}{{ manager.status.total_online()|string|width(4) }}{{ ac.yellow }}/在线]                     帐号 [{{ ac.cyan }}{{ session.user.userid|width(10) }}{{ ac.yellow }}] {{ ac.move2(24,40) }}{{ ac.white }}{{ message }}{{ ac.reset }}
+{#
+        带message的底栏
+
+#}{{ ac.move2(24,1) }}{{ o_o(bg_blue,yellow,bold) }}[{{ ac.cyan }}{{ current() }}{{ ac.yellow }}] [{{ ac.cyan }}{{ manager.status.total_online()|string|width(4) }}{{ ac.yellow }}/在线]                     帐号 [{{ ac.cyan }}{{ session.user.userid|width(10) }}{{ ac.yellow }}] {{ ac.move2(24,40) }}{{ ac.white }}{{ message }}{{ ac.reset }}

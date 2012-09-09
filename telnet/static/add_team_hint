@@ -1,4 +1,9 @@
-  #0          SYS_GUEST          游客          
+{#
+
+        为用户增加组的提示
+        ------------------
+
+#}  #0          SYS_GUEST          游客          
   #1          SYS_WELCOME        未验证用户    
   #2          SYS_USER           验证用户
   #3          SYS_SYSOPS         站务组

@@ -1,1 +1,5 @@
- {{ (index+1)|string|width(3) }} {{ 'N rr'[readmark] }} {{ fromuserid|width(-12) }} {{ sendtime.strftime("%b %d") }}  {{ '★' if tid==mid }} {{ title }}
+{#
+        邮件列表项
+        ----------
+
+#}{{ (index+1)|string|width(3) }} {{ 'N rr'[readmark] }} {{ fromuserid|width(-12) }} {{ sendtime.strftime("%b %d") }}  {{ '★' if tid==mid }} {{ title }}

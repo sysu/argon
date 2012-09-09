@@ -1,4 +1,9 @@
-{{ boardname|wrapper(bold) }}({{ description|wrapper(yellow,bold) }}) 共有帖子 {{ total }} 篇 编号 {{ bid }}
+{#
+
+        查询版块的模板
+        --------------
+
+#}{{ boardname|wrapper(bold) }}({{ description|wrapper(yellow,bold) }}) 共有帖子 {{ total }} 篇 编号 {{ bid }}
 属于 {{ manager.section.id2name(sid)|wrapper(green,bold) }}( {{ sid|wrapper(bold) }} 区)，现任版主是 {{ bm }}
 
 {{ about }}

@@ -1,4 +1,8 @@
-{{ "历史记录"|center|wrapper(bg_blue,white) }}
+{#
+        历时记录的模板
+        --------------
+
+#}{{ "历史记录"|center|wrapper(bg_blue,white) }}
 
 {%- if items %}
 {% for item in items %}
