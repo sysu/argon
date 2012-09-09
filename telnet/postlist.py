@@ -416,4 +416,4 @@ class BoardFrame(BaseAuthedFrame):
             manager.telnet['default_board_index']['%s:%s' % (\
                     boardname, self.userid)] = \
                 manager.post.get_rank_num(boardname, pid)
-            self.suspend('_board_o', board=board)
+            self.goto('_board_o', board=board)

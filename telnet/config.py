@@ -181,6 +181,8 @@ shortcuts = {
         "d":"del_post",      ac.k_ctrl_a:"goto_query_user",
         ac.k_ctrl_r:"reply_post", ac.k_right:"next_frame",
         ac.k_ctrl_c:"repost",
+        'r':"reply_post",
+        "R":"reply_post",
         },
     'board_update':{
         "E":"edit_post",
