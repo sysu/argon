@@ -11,6 +11,7 @@ import random
 # import perm
 import logging
 import status
+import traceback
 
 logger = logging.getLogger('model')
 
@@ -1787,18 +1788,19 @@ def update_all(setsql, *tables):
 
 def sql_all_boards(sql):
     d = Board()
-    d.bind(global_conn)
+    d.bind(db=global_conn)
     for table in map(lambda x : 'argo_filehead_%s' % x['boardname'],
                      d.get_all_boards()):
         try:
             global_conn.execute(sql % table)
         except Exception as e:
+            traceback.print_exc()
             print '[FAIL] %s' % e.message
         else:
             print '[SUCC] %s' % (sql % table)
 
 def foreach_board(f):
     d = Board()
-    d.bind(global_conn)
+    d.bind(db=global_conn)
     for board in d.get_all_boards():
         f(board)

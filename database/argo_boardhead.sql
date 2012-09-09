@@ -15,11 +15,13 @@ CREATE TABLE IF NOT EXISTS `argo_boardhead` (
     `total` int(11) DEFAULT 0,
     `topic_total` int(11) DEFAULT 0,
     `lastpost` int(11) NOT NULL default 0,
-    `tp` varchar(20),
+    -- `tp` varchar(20),
 /*    `level` int(11) unsigned default 0, */
-    `r_prem` int(11) unsigned DEFAULT 1, /* read permissions */
-    `p_prem` int(11) unsigned DEFAULT 2, /* post permissions */
-    `s_perm` int(11) unsigned DEFAULT 2, /* visible permissions */
+    -- `r_prem` int(11) unsigned DEFAULT 1, /* read permissions */
+    -- `p_prem` int(11) unsigned DEFAULT 2, /* post permissions */
+    -- `s_perm` int(11) unsigned DEFAULT 2, /* visible permissions */
+    about text ,
+    welcome text ,
 
     PRIMARY KEY (`bid`),
     UNIQUE KEY `boardname` (`boardname`)

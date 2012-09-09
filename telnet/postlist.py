@@ -312,7 +312,8 @@ class BoardFrame(BaseBoardFrame):
     
     def catch_nodata(self):
         self.cls()
-        perm = manager.query.get_board_ability(self.board['boardname'])
+        perm = manager.query.get_board_ability(self.userid,
+                                               self.board['boardname'])
         if not perm[1] :
             self.pause_back(u'没有文章！')
         if self.confirm(u'没有文章！是否发表新文章？[y/n]：', default='y') :
