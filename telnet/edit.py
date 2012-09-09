@@ -332,7 +332,7 @@ class ReplyPostFrame(BaseEditFrame):
             self.goto_back()
         self.restore_screen()
 
-    def publish_(self):
+    def publish(self):
         self.publish_and_goto_back(self._attrs, self._editor.fetch_all())
 
     def publish_and_goto_back(self, attrs, text):
@@ -403,6 +403,9 @@ class EditPostFrame(BaseEditFrame):
                                    self.pid,
                                    text)
         self.goto_back()
+
+    def publish(self):
+        self.modify_and_goto_back(self._editor.fetch_all())
 
     def backup(self, text):
         manager.action.send_mail('archive_', self.userid,
