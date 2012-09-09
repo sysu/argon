@@ -291,6 +291,8 @@ class AdminAllBoards(BaseBoardListFrame):
 
     def initialize(self):
         boards = manager.board.get_all_boards()
+        for b in boards:
+            b.perm = (True,True,True,True)
         self.setup(boards)
 
 @mark('sys_add_bm')

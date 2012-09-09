@@ -203,9 +203,9 @@ class ViewPostSameTopic(BaseTextBoxFrame):
                                   post['pid'])
         self.reset_text(self.wrapper_post(post))
         
-    def bottom_bar(self, s, h, message=''):
+    def bottom_bar(self, s, l, message=''):
         self.write(ac.move2(24,1))
-        self.render(u'bottom_view_topic', s=s, h=h, message=message)
+        self.render(u'bottom_view_topic', s=s, l=l, message=message)
         
 @mark('help')
 class TutorialFrame(BaseTextBoxFrame):
