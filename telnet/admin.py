@@ -41,6 +41,41 @@ class EditSystemFileFrame(BaseAuthedFrame):
             f.write(text)
         self.pause_back(u'修改系统档案成功！')
 
+@mark('sys_edit_board_info')
+class EditBoardInfoFrame(BaseAuthedFrame):
+
+    def initialize(self, boardname):
+        self.cls()
+        self.writeln(u'要修改什么？ a)本版介绍   b)本版备忘录   q)取消操作')
+        char = self.readchar('q')
+        if char == 'a':
+            board = manager.board.get_board(boardname)
+            if not board :
+                self.pause('\r\n没有该讨论区！')
+            self.bid = board['bid']
+            text = board.get('about') or u''
+            self.suspend('edit_text', text=text, filename='about')
+        if char == 'b':
+            board = manager.board.get_board(boardname)
+            if not board :
+                self.pause('\r\n没有该讨论区！')
+            self.bid = board['bid']
+            text = board.get('welcome') or u''
+            self.suspend('edit_text', text=text, filename='welcome')
+        self.goto_back()
+
+    @handler_edit
+    def restore(self):
+        self.goto_back()
+
+    def handler_about(self, text):
+        manager.board.update_board(self.bid,
+                                   about=text)
+
+    def handler_welcome(self, text):
+        manager.board.update_board(self.bid,
+                                   welcome=text)
+
 @mark('sys_new_section')
 class NewSectionsFrame(BaseAuthedFrame):
 

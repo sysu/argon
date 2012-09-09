@@ -12,8 +12,8 @@ CREATE TABLE IF NOT EXISTS `argo_boardhead` (
     `description` varchar(50) NOT NULL,
     `bm` varchar(80),
     `flag` int(11) unsigned DEFAULT 0,
-    `total` int(11) DEFAULT 0,
-    `topic_total` int(11) DEFAULT 0,
+    -- `total` int(11) DEFAULT 0,
+    -- `topic_total` int(11) DEFAULT 0,
     `lastpost` int(11) NOT NULL default 0,
     -- `tp` varchar(20),
 /*    `level` int(11) unsigned default 0, */

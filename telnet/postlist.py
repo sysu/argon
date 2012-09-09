@@ -307,6 +307,13 @@ class BoardFrame(BaseBoardFrame):
         counter = manager.post.get_posts_counter(board['boardname'])
         self.setup(board, self.THEAD, dataloader, counter)
 
+    def set_board_info(self):
+        perm = manager.query.get_board_ability(self.userid,
+                                               self.board['boardname'])
+        if perm :
+            self.suspend('sys_edit_board_info',
+                         boardname=self.board['boardname'])
+
     def get_pid_rank(self, pid):
         return manager.post.get_rank_num(self.board['boardname'], pid)
     

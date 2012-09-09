@@ -162,6 +162,7 @@ shortcuts = {
         "#":"_goto_line",
         "l":"fgo_get_mail",    "!":"fgo_bye",
         'h':'show_help',
+        "W":"set_board_info",
         },
     'board_filter':{
         ac.k_ctrl_p:"new_post",

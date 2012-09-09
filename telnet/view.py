@@ -230,7 +230,8 @@ class TutorialFrame(BaseTextBoxFrame):
 class QueryBoardFrame(BaseTextBoxFrame):
 
     def initialize(self, board):
-        text = self.render_str('board-t', **board)
+        total = manager.post.get_posts_total(board['boardname'])
+        text = self.render_str('board-t', total=total, **board)
         self.setup(text=text)
 
     def finish(self, e=None):
