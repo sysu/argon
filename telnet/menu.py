@@ -99,6 +99,7 @@ class MainMenuFrame(BaseMenuFrame):
         self._menu.send_shortcuts(self._GOTO_BACK_CODE)
 
     def initialize(self):
+        manager.status.set_status(self.seid, manager.status.MMENU)
         title = self.DEFAULT_NAME
         background = self.render_str('menu_main')
         menu = self.tidy_perm_menu(config.menu['__main__'])
@@ -110,6 +111,7 @@ class SectionMenuFrame(BaseMenuFrame):
     _SECOND_COL = (11, 7)
 
     def initialize(self):
+        manager.status.set_status(self.seid, manager.status.SELECT)
         title = config.menu['__zhname__']['sections']
         sections = manager.query.get_all_section()
         if not sections :
@@ -136,7 +138,11 @@ class SectionMenuFrame(BaseMenuFrame):
 @mark('menu')
 class ConfigMenuFrame(BaseMenuFrame):
 
+    STATUS = None
+
     def initialize(self, menuname):
+        if self.STATUS :
+            manager.status.set_status(self.seid, self.STATUS)
         self.menuname = menuname
         title = config.menu['__zhname__'].get(menuname) or u'菜单'
         menu = self.tidy_perm_menu(config.menu[menuname])

@@ -10,6 +10,7 @@ import mode
 import random
 # import perm
 import logging
+import status
 
 logger = logging.getLogger('model')
 
@@ -496,6 +497,13 @@ class Post(Model):
         return (lambda pid : fun(sql_next, pid),
                 lambda pid : fun(sql_prev, pid))
 
+    def get_cond_post_loader(self, boardname, cond):
+        sql_next = "SELECT * FROM `%s` WHERE pid > %%s AND %s ORDER BY pid LIMIT 1" % (self.__(boardname), cond)
+        sql_prev = "SELECT * FROM `%s` WHERE pid < %%s AND %s ORDER BY pid DESC LIMIT 1" % (self.__(boardname), cond)
+        fun = self.db.get
+        return (lambda pid : fun(sql_next, pid),
+                lambda pid : fun(sql_prev, pid))
+
     def get_topic_post_loader(self, boardname, tid):
         assert isinstance(tid, long)
         sql_next = "SELECT * FROM `%s` WHERE pid > %%s AND tid=%s ORDER BY pid LIMIT 1" % (self.__(boardname), tid)
@@ -639,6 +647,9 @@ class Status(Model):
        {order map }
           argo:status_map[rank_score] ==> session id
     '''
+
+    for k in status.status_display:
+        locals()[k] = k
 
     max_login = 9999
 
@@ -1306,7 +1317,7 @@ class UserAuth(Model):
 
         if session:
             #set_state
-            seid = self.status.new_session(host, userid, 'NEW',
+            seid = self.status.new_session(host, userid, status.LOGIN,
                                            ord(userid[0]))
             if seid is False :
                 return LoginError(u'已达最大上线数！')
@@ -1658,7 +1669,7 @@ class Query:
         return self._wrap_boards(userid, boards)
 
     def get_board_by_name(self, userid, boardname):
-        board = self.board.get_board(boardname)
+        return self.board.get_board(boardname)
 
     def get_all_favourite(self, userid):
         bids = self.favourite.get_all(userid)

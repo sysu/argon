@@ -143,6 +143,8 @@ class ReadMailFrame(BaseMailListFrame):
                                            mid)
 
     def initialize(self, mode=0):
+        manager.status.set_status(self.seid,
+                                  manager.status.MAIL)
         manager.notify.clear_mail_notify(self.userid)
         self.uid = self.session.user['uid']
         self.mode = mode
@@ -202,8 +204,13 @@ class ReadMailFrame(BaseMailListFrame):
                 self.reload()
 
     def restore(self):
-        default = self.get_mid_rank(self.session.pop('mail_flash',
-                                                     self._table.fetch_num()))
+        if self.session['lastmid'] and\
+                self.session['lastmid'] != self._table.fetch()['mid']:
+            default = self.get_mid_rank(self.session['lastmid'])
+        elif not self.session:
+            default = 0
+        else:
+            default = self._table.fetch_num()
         try:
             try:
                 self._table.setup(default)
@@ -261,6 +268,8 @@ class SendMailFrame(BaseAuthedFrame):
         return attrs
 
     def initialize(self, touserid=None):
+        manager.status.set_status(self.seid,
+                                  manager.status.SMAIL)
         self.cls()
         if touserid is None:
             touserid = self.safe_readline(prompt=u'收信人：')
@@ -337,6 +346,8 @@ class ReplyMailFrame(BaseEditFrame):
         return attrs
 
     def initialize(self, mail):
+        manager.status.set_status(self.seid,
+                                  manager.status.RMAIL)
         self.replymail = mail
         self.cls()
         self.touserid = mail['fromuserid']
@@ -392,6 +403,8 @@ class ReadMailFrame(BaseTextBoxFrame):
         return self.render_str('mail-t', **mail)
 
     def initialize(self, mail, mode=0):
+        manager.status.set_status(self.seid,
+                                  manager.status.RMAIL)
         manager.mail.set_read(self.session.user['uid'], mail['mid'])
         self.mail = mail
         self.mode = mode
@@ -417,14 +430,14 @@ class ReadMailFrame(BaseTextBoxFrame):
     def finish(self, e=None):
         logger.debug('finish [%s]', e)
         if e is None:
-            self.session['mail_flash'] = self.mail['mid']
+            self.session['lastmid'] = self.mail['mid']
             self.goto_back()
         if e is True:
             mail = self.next_loader(self.mail['mid'])
         else:
             mail = self.prev_loader(self.mail['mid'])
         if not mail:
-            self.session['mail_flash'] = self.mail['mid']
+            self.session['lastmid'] = self.mail['mid']
             self.goto_back()
         self.mail = mail
         self.reset_text(self.wrapper_mail(self.mail), 0)
@@ -433,5 +446,5 @@ class ReadMailFrame(BaseTextBoxFrame):
         self.suspend('_reply_mail_o', mail=self.mail)
 
     def back_to_maillist(self):
-        self.session['mail_flash'] = self.mail['mid']
+        self.session['lastmid'] = self.mail['mid']
         self.goto_back_history('get_mail')

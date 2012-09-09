@@ -166,7 +166,7 @@ str = {
     'DENY_QUICK_HELP' : u'[m封禁[[32;1ma[m] 解除封禁[[32;1md[m] 返回[[32;1m.[m]',
     'DENY_THEAD' : u'[0;1;44m 流水号  封禁日期      被封者        被封原因                                 [m',
     'USERONLINE_QUICK_HELP' : u'查看用户[[32;1m→[m,[32;1mRtn[m] 返回[[32;1m←[m] 发站内信[[32;1ms[m]',
-    'USERONLINE_THEAD' : u'[0;1;44m     账号                   昵称               地址              状态                [m',
+    'USERONLINE_THEAD' : u'[0;1;44m          账号              昵称               地址              状态                [m',
    }
 
 hotkeys = {
@@ -377,7 +377,7 @@ shortcuts = {
         "/":"_search",        "s":"_change_sort",   
         "q":"goto_back",      "e":"goto_back",         ac.k_left:"goto_back",
         "#":"_goto_line",     ac.k_ctrl_y:"post_bug",
-        "u":"fgo_query_user_iter",    "l":"fgo_get_mail",    "!":"fgo_finish",
+        "u":"fgo_query_user_iter",    "l":"fgo_get_mail",    "!":"fgo_bye",
         },
     'boardlist_ui':{
         "k":"move_up",        ac.k_up:"move_up",
@@ -395,6 +395,7 @@ shortcuts = {
         ac.k_ctrl_e : "change_board_attr",
         "a":"add_to_fav",      "d":"remove_fav",
         ac.k_right:"enter_board",
+        "x":"set_readonly",
         },
     
     'board':{
@@ -404,14 +405,18 @@ shortcuts = {
         ac.k_ctrl_d:"goto_set_deny",
         ac.k_ctrl_t:"goto_filter_mode",
         ac.k_ctrl_g:"goto_filter_g",
+        ac.k_ctrl_y:"goto_filter_o",
         "=":"goto_filter_tid", "\\":"goto_filter_tid",
         ac.k_ctrl_s :"goto_filter_tid", "p":"goto_filter_tid",
         ac.k_ctrl_u:"goto_filter_author",
-        ac.k_left:"goto_back",        
+        ac.k_left:"goto_back",
+        "#":"_goto_line",
+        "l":"fgo_get_mail",    "!":"fgo_bye",
         },
     'board_filter':{
         ac.k_ctrl_p:"new_post",
         # ac.k_ctrl_r:"reply_to_authoer",  
+        "#":"_goto_line",
         ac.k_ctrl_d:"goto_set_deny",
         ac.k_left:"goto_back",        
         },
@@ -425,6 +430,7 @@ shortcuts = {
     'board_fetch':{
         "d":"del_post",      ac.k_ctrl_a:"goto_query_user",
         ac.k_ctrl_r:"reply_post", ac.k_right:"next_frame",
+        ac.k_ctrl_c:"repost",
         },
     'board_update':{
         "e":"edit_post",     "E":"edit_post",

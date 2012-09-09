@@ -15,6 +15,8 @@ def find_all_invert(content):
 class NoticeBoxFrame(BaseTextBoxFrame):
 
     def initialize(self):
+        manager.status.set_status(self.seid,
+                                  manager.status.POSTING)
         self.total = int(manager.notify.check_notice_notify(self.userid) or 0)
         manager.notify.clear_notice_notify(self.userid)
         notices = manager.notice.get_notice(self.userid,

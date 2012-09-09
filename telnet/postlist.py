@@ -15,8 +15,8 @@ class BasePostListFrame(BaseAuthedFrame):
     shortcuts_fetch_do = {}
     shortcuts_update = {}
 
-    _TABEL_START_LINE = 4
-    _TABEL_HEIGHT = 20
+    _TABLE_START_LINE = 4
+    _TABLE_HEIGHT = 20
 
     def get(self, char):
         if char == ac.k_finish :
@@ -39,10 +39,16 @@ class BasePostListFrame(BaseAuthedFrame):
     def setup(self, thead, dataloader, counter):
         default = self.get_default_index()
         try:
-            self._table = self.load(FinitePagedTable, dataloader,
-                                    self._wrapper_li, counter, default,
-                                    start_line=self._TABEL_START_LINE,
-                                    height=self._TABEL_HEIGHT)
+            try:
+                self._table = self.load(FinitePagedTable, dataloader,
+                                        self._wrapper_li, counter, default,
+                                        start_line=self._TABLE_START_LINE,
+                                        height=self._TABLE_HEIGHT)
+            except NullValueError:
+                self._table = self.load(FinitePagedTable, dataloader,
+                                        self._wrapper_li, counter, 0,
+                                        start_line=self._TABLE_START_LINE,
+                                        height=self._TABLE_HEIGHT)
         except NullValueError:
             self.catch_nodata()
             raise NullValueError
@@ -80,9 +86,8 @@ class BaseBoardFrame(BasePostListFrame):
         mid = u'○ %s' % self.boardname
         vis_len = ac.pice_width(mid)
         left = bm.replace(':', ',') if bm else u'诚征版主中'
-        if self.session['lastboard'] :
-            right = u'%s区 [%s]' % (self.session['lastsection'],
-                                    self.session['lastboard'])
+        if self.session['lastboardname'] :
+            right = u'[%s]' % self.session['lastboardname']
         else:
             right = u''
         if manager.notify.check_mail_notify(self.userid):
@@ -108,21 +113,25 @@ class BaseBoardFrame(BasePostListFrame):
     def finish(self, post):
         self.suspend('post', boardname=self.boardname, pid=post['pid'])
 
-    def get_default_index(self):
+    def get_default_index(self, default=0):
         return manager.telnet['default_board_index'].get('%s:%s' % (
-                self.boardname, self.userid)) or 0
+                self.boardname, self.userid)) or default
 
     def leave(self):
         if hasattr(self, '_table'):
+            self.session['lastpid'] = self._table.fetch()['pid']
             manager.telnet['default_board_index']['%s:%s' % (
                     self.boardname, self.userid)] = self._table.fetch_num()
 
     def restore(self):
-        if self.session['board_flash'] :
+        assert self.session['lastboardname'] == self.boardname
+        if not self.session['lastpid'] or \
+                self.session['lastpid'] != self._table.fetch()['pid']:
+            default = self.get_pid_rank(self.session['lastpid'])
             manager.telnet['default_board_index']['%s:%s' % (
-                   self.boardname, self.userid)] = self.get_pid_rank(
-                self.session['board_flash'])
-        default = self.get_default_index()
+                    self.boardname, self.userid)] = default
+        else :
+            default = self._table.fetch_num()
         try:
             try:
                 self._table.setup(default)
@@ -135,6 +144,9 @@ class BaseBoardFrame(BasePostListFrame):
 
     def new_post(self):
         self.suspend('new_post', boardname=self.boardname)
+
+    def repost(self, post):
+        self.suspend('_repost_post_o', boardname=self.boardname, post=post)
 
     def reply_post(self, post):
         self.suspend('_reply_post_o', boardname=self.boardname,
@@ -179,7 +191,7 @@ class BaseBoardFrame(BasePostListFrame):
                 self.message(u'删贴成功')
 
     def set_read(self, post):
-        manager.readmark.set_read(self.userid, self.boardname, p['pid'])
+        manager.readmark.set_read(self.userid, self.boardname, post['pid'])
         return post
 
     def set_g_mark(self, post):
@@ -203,7 +215,10 @@ class BaseBoardFrame(BasePostListFrame):
                                **post)
 
     def _goto_line(self):
-        no = self.readnum(prompt=u'跳转到哪篇文章？')
+        self.push(u'[2;1H[K跳转到哪篇文章？')
+        no = self.readnum()
+        self.push('\r\x1b[K')
+        self.push(config.str['BOARD_QUICK_HELP'])
         if no is not False:
             self._table.goto(no)
         else:
@@ -233,6 +248,9 @@ class BaseBoardFrame(BasePostListFrame):
     def goto_filter_g(self):
         self.suspend('_board_filter_o', board=self.board, mode='g')
 
+    def goto_filter_o(self):
+        self.suspend('_board_filter_o', board=self.board, mode='o')
+
     def goto_filter_tid(self):
         self.suspend('_board_filter_o', board=self.board, mode='t',
                      tid=self._table.fetch()['tid'])
@@ -240,6 +258,12 @@ class BaseBoardFrame(BasePostListFrame):
     def goto_filter_author(self):
         self.suspend('_board_filter_o', board=self.board, mode='u',
                      owner=self._table.fetch()['owner'])
+
+    def fgo_bye(self):
+        self.suspend('bye')
+
+    def fgo_get_mail(self):
+        self.suspend("get_mail")
 
 @mark('_board_o')
 class BoardFrame(BaseBoardFrame):
@@ -254,9 +278,17 @@ class BoardFrame(BaseBoardFrame):
         self.suspend('_view_post_o', post=post)
 
     def initialize(self, board, default=0):
+        manager.status.set_status(self.seid,
+                           manager.status.READING)
+        if not board.perm[0] :
+            self.pause_back(u'错误的讨论区')
+            return
+        if self.session['lastboardname'] :
+            manager.status.exit_board(self.session['lastboardname'])
+        self.session['lastboardname'] = board['boardname']
+        manager.status.enter_board(self.session['lastboardname'])
         dataloader = manager.post.get_posts_loader(board['boardname'])
         counter = manager.post.get_posts_counter(board['boardname'])
-        self.session['last_board_attr'] = board
         self.setup(board, self.THEAD, dataloader, counter, default)
 
     def get_pid_rank(self, pid):
@@ -273,6 +305,8 @@ class BoardFrame(BaseBoardFrame):
         boardname = self.readline(prompt=u'请输入要切换的版块：')
         board = manager.board.get_board(boardname)
         if board :
+            board.perm = manager.query.get_board_ability(self.userid,
+                                                         board['boardname'])
             self.goto('_board_o', board=board)
         else:
             self.message(u'没有该讨论区！')
@@ -320,6 +354,12 @@ class BoardFilterPostFrame(BaseBoardFrame):
         "u": lambda owner : manager.post.sql_filter_owner(owner),
         }
 
+    def get_default_index(self):
+        return self.get_pid_rank(self.session['lastpid'])
+
+    def leave(self):
+        pass
+
     def get_pid_rank(self, pid):
         return manager.post.get_rank_num_cond(self.boardname,
                                               pid,
@@ -333,12 +373,16 @@ class BoardFilterPostFrame(BaseBoardFrame):
         counter = manager.post.get_posts_counter(board['boardname'],
                                                  self.cond)
         thead = config.str['BOARD_%s_MODE_THEAD' % mode]
+        print ('dd', board, thead, dataloader, counter, default)
         self.setup(board, thead, dataloader, counter, default)
 
-@mark('board')
-class BoardFrame(BaseAuthedFrame):
+    def next_frame(self, post):
+        self.suspend('_view_post_o', post=post, cond=self.cond)
 
-    def initialize(self, boardname, prev, default=0):
-        board = manager.query.get_board_by_name(boardname)
-        self.goto('_board_o', board, prev, default)
+# @mark('board')
+# class BoardFrame(BaseAuthedFrame):
+
+#     def initialize(self, boardname, prev, default=0):
+#         board = manager.query.get_board_by_name(boardname)
+#         self.goto('_board_o', board, prev, default)
 

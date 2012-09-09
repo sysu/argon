@@ -1,1 +1,1 @@
-{{ o_o(bg_blue,yellow,bold) }} 帮助 {{ o_o(red) }}h{{ o_o(yellow) }} │ {{ o_o(green) }}{{ s|string|width(4) }}{{ o_o(yellow) }}/{{ maxs|string|width(4) }} │                               [{{ o_o(green) }}{{ current() }}{{ o_o(yellow) }}]{{ ac.move2(24,25) }}{{ o_o(bold,cyan) }}{{ message }}{{ ac.reset }}
+[44;31;1m [阅读文章][33m | [32m{{ s|string|center(4) }}[33m/[32m{{ h|string|center(4) }}[33m│ 移动 ↑/↓/PgUp/PgDn/Home/End m | 帮助 h | 同主题 ^X [m

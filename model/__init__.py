@@ -4,6 +4,7 @@ import config
 
 from Model import Manager
 from error import *
+import status
 
 def init_database():
     for table_name in config.BASE_TABLE :

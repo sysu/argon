@@ -46,7 +46,13 @@ def jummp_from_screen(frame):
 @mark('plugin_jumpper:view_post_float')
 class ViewPostFloatFrame(BaseTextBoxFrame):
 
+    shortcuts = BaseTextBoxFrame.shortcuts.copy()
+    shortcuts.update({
+            ac.k_ctrl_o:"goto_board",
+            })
+
     def initialize(self, boardname, pid):
+        self.boardname = boardname
         perm = manager.query.get_board_ability(self.userid, boardname)
         if not perm[0] :
             self.goto_back()
@@ -58,3 +64,12 @@ class ViewPostFloatFrame(BaseTextBoxFrame):
 
     def finish(self, e=None):
         self.goto_back()        
+
+    def bottom_bar(self, s, h, message=''):
+        self.write(ac.move2(24, 1))
+        self.render(u'bottom_view_float', s=s, h=h, message=message)
+
+    def goto_board(self):
+        board = manager.board.get_board(self.boardname)
+        board.perm = manager.query.get_board_ability(self.userid, self.boardname)
+        self.suspend('_board_o', board=board)

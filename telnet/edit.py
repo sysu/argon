@@ -118,6 +118,7 @@ class NewPostFrame(BaseEditFrame):
 
     shortcuts = {
         ac.k_ctrl_w:"finish",
+        ac.k_ctrl_x:"publish",
         }
 
     shortcuts_ui = config.shortcuts['edit_ui']
@@ -168,6 +169,8 @@ class NewPostFrame(BaseEditFrame):
         return attrs
 
     def initialize(self, boardname):
+        manager.status.set_status(self.seid,
+                                  manager.static.POSTING)
         self.cls()
         attrs = self.read_attrs(manager.usersign.get_sign_num(self.userid),
                                 boardname, True)
@@ -195,6 +198,9 @@ class NewPostFrame(BaseEditFrame):
         if char == 'a':
             self.goto_back()
 
+    def publish(self):
+        self.publish_and_goto_back(self._attrs, self._editor.fetch_all())
+
     def publish_and_goto_back(self, attrs, text):
         pid = manager.action.new_post(attrs['boardname'],
                                       self.userid,
@@ -204,7 +210,7 @@ class NewPostFrame(BaseEditFrame):
                                       config.BBS_HOST_FULLNAME,
                                       replyable=attrs['replyable'],
                                       signature=attrs['signtext'])
-        self.session['board_flash'] = pid
+        self.session['lastpid'] = pid
         for func in self.plugin.get_all_hook('after_publish_new_post'):
             func(self, pid, attrs, text)
         self.goto_back()
@@ -225,6 +231,7 @@ class ReplyPostFrame(BaseEditFrame):
 
     shortcuts = {
         ac.k_ctrl_w : "finish",
+        ac.k_ctrl_x: "publish",
         }
 
     READ_ATTR_PROMPT = u"[25;1H[K[1;32m0[m~[1;32m%s[m/[1;32mx[m "\
@@ -267,6 +274,8 @@ class ReplyPostFrame(BaseEditFrame):
         return attrs
 
     def initialize(self, boardname, post):
+        manager.status.set_status(self.seid,
+                                  manager.status.POSTING)
         self.cls()
         title = post['title'] if post['title'].startswith('Re:')\
             else u'Re: %s' % post['title']
@@ -307,7 +316,7 @@ class ReplyPostFrame(BaseEditFrame):
                                         attrs['replyid'],
                                         replyable=attrs['replyable'],
                                         signature=attrs['signtext'])
-        self.session['board_flash'] = pid
+        self.session['lastpid'] = pid
         for func in self.plugin.get_all_hook('after_publish_new_post'):
             func(self, pid, attrs, text)
         self.goto_back()
@@ -328,10 +337,13 @@ class EditPostFrame(BaseEditFrame):
 
     shortcuts = {
         ac.k_ctrl_w:"finish",
+        ac.k_ctrl_x:"publish",
         }
     shortcuts_ui = config.shortcuts['edit_ui']
 
     def initialize(self, board, post):
+        manager.status.set_status(self.seid,
+                                  manager.status.EDIT)
         self.cls()
         self.boardname = board['boardname']
         self.pid = post['pid']
@@ -363,6 +375,7 @@ class EditFileFrame(BaseEditFrame):
 
     shortcuts = {
         ac.k_ctrl_w:"finish",
+        ac.k_ctrl_x:"publish",
         }
     shortcuts_ui = config.shortcuts['edit_ui']
 
@@ -393,6 +406,33 @@ class EditFileFrame(BaseEditFrame):
     def modify_and_goto_back(self, text):
         self.session['__edit__'] = (self._filename, text)
         self.goto_back()
+
+@mark('_repost_post_o')
+class RepostPostFrame(BaseAuthedFrame):
+
+    def initialize(self, boardname, post):
+        self.cls()
+        self.render('repost_notice')
+        where = self.safe_readline(prompt=u'要转贴到：')
+        board = manager.board.get_board(where)
+        if board :
+            where = board['boardname']
+            if self.confirm(u'\r\n转载 `%s` 到 %s 版？[y/n]：' % \
+                                (post['title'] ,where) , default='n') :
+                text = self.render_str('repost-t', boardname=boardname, **post)
+                manager.action.new_post(board['boardname'],
+                                        self.userid,
+                                        post['title'],
+                                        text,
+                                        self.session.ip,
+                                        config.BBS_HOST_FULLNAME,
+                                        replyable=post['replyable'],
+                                        signature='')
+                self.pause_back(u'\r\n转载成功！')
+            else:
+                self.pause_back(u'\r\n取消操作')
+        else:
+            self.pause_back(u'\r\n无该讨论区！')
 
 @mark('edit_text_rn')
 class RNEditFileFrame(EditFileFrame):

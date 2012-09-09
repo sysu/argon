@@ -4,7 +4,7 @@ sys.path.append('../')
 
 from jinja2 import Environment,FileSystemLoader
 from chaofeng import ascii as ac
-from model import manager
+from model import manager, status
 from datetime import datetime
 from libformat import style2telnet
 # from chaofeng.g import static
@@ -71,6 +71,7 @@ RENDER_FILTERS = {
 RENDER_TESTS = {}
 
 RENDER_GLOBALS = {
+    "SCODE":status.status_display,
     "manager":manager,
     "ac":ac,
     "BBS_HOST_FULLNAME":u"逸仙时空 Yat-Sen Channel argo.sysu.edu.cn",

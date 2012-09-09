@@ -4,14 +4,14 @@ import re
 import chaofeng.ascii as ac
 
 t2s = re.compile(r'\[((\d+)(;\d+)*)m')
-s2t = re.compile(r'([^`])\[#((\d+)(;\d+)*)%\]')
-s2t_close = re.compile(r'\[%#\]([^`])')
+s2t = re.compile(r'([^`])\[%((\d+)(;\d+)*)#\]')
+s2t_close = re.compile(r'\[#%\]([^`])')
 
 quote = re.compile(r'^:.*$', flags=re.M)
 quote_author = re.compile(ur'^【 在 .* 中提到: 】$', flags=re.M)
     
 def telnet2style(text):
-    return t2s.sub(lambda x: u'[#%s%%]' % x.group(1), text).replace('[m', '[%#]').replace('\r\n', '\n')
+    return t2s.sub(lambda x: u'[%%s#]' % x.group(1), text).replace('[m', '[#%]').replace('\r\n', '\n')
 
 # s2t = re.compile(r'{%((\d+)(;\d+)*)% (.*) %}')
 def style2telnet(text):

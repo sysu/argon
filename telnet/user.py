@@ -18,12 +18,16 @@ import config
 class UserSpaceFrame(BaseAuthedFrame):
 
     def initialize(self):
+        manager.status.set_status(self.seid,
+                                  manager.status.GMENU)
         self.goto('menu', 'user_space')
 
 @mark('user_editdata')
 class UserEditDataFrame(BaseAuthedFrame):
 
     def initialize(self):
+        manager.status.set_status(self.seid,
+                                  manager.status.EDITUFILE)
         self.cls()
         text = self.render_str('hint/edit_userattr').split('\r\n----\r\n')
         self.form = self.load(Form, [
@@ -96,6 +100,8 @@ class NickDataFrame(BaseMenuFrame):
     TITLE = u'编辑个人资料'
 
     def initialize(self):
+        manager.status.set_status(self.seid,
+                                  manager.status.EDITUFILE)
         self.setup(self.TITLE, '', self.MENU)
 
     def goto_next(self, hover):
@@ -163,6 +169,8 @@ class EditSignFrame(BaseTextBoxFrame):
         }
 
     def initialize(self):
+        manager.status.set_status(self.seid,
+                                  manager.status.EDITUFILE)
         self.signs = manager.usersign.get_all_sign(self.userid)
         text =  self.render_str('sign-t', signs=self.signs)
         self.setup(text)
@@ -193,6 +201,8 @@ class EditSignFrame(BaseTextBoxFrame):
 class InnerQueryUserFrame(BaseTextBoxFrame):
 
     def initialize(self, user):
+        manager.status.set_status(self.seid,
+                                  manager.status.QUERY)
         text = self.render_str('user-t', **user)
         self.setup(text=text)
 
@@ -223,6 +233,8 @@ class QueryUserIterFrame(QueryUserFrame):
         userid = self.safe_readline(acceptable=ac.isalnum)
         if userid :
             user = manager.query.get_user(self.userid, userid)
+            if not user :
+                self.pause_back(u'\r\n无此id！')
             self.goto('_query_user_o', user)
         else:
             self.pause_back(u'\r\n取消查询！')
@@ -231,6 +243,8 @@ class QueryUserIterFrame(QueryUserFrame):
 class PostBugFrame(BaseAuthedFrame):
 
     def initialize(self):
+        manager.status.set_status(self.seid,
+                                  manager.status.BUGREPORT)
         self.cls()
         self.render('post_bug_bg')
         title = self.safe_readline(prompt=u'请用几个字简洁地描述bug\r\n')
@@ -240,9 +254,9 @@ class PostBugFrame(BaseAuthedFrame):
                 prompt=u'\r\n重要程度（尽量选择低的数字），不输入为 3,\r\n'
                 u' 0：安全问题    1：建议性     2：不急着修复\r\n'
                 u' 3：一般        4：危险       5：需立即修复\r\n') or '3'
-            self.goto('edit_text', filename='bug', l=12,
-                      text=self.render_str('bug-t', title=title,
-                                           important=important))
+            self.suspend('edit_text', filename='bug', l=12,
+                         text=self.render_str('bug-t', title=title,
+                                              important=important))
         self.pause_back(u'放弃操作')
 
     @handler_edit
@@ -382,6 +396,8 @@ class UserOnlineFrame(BaseAuthedFrame):
         self._init_screen()
 
     def initialize(self):
+        manager.status.set_status(self.seid,
+                                  manager.status.LUSERS)
         self.setup(manager.status.get_session_rank,
                    manager.status.total_online)
 
