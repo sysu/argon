@@ -75,11 +75,6 @@ class RNEditor(TextEditor, TextEditorAreaMixIn):
         text = super(RNEditor, self).fetch_all()
         return text.replace(self.esc, ac.esc)
 
-    def backup(self, text):
-        manager.action.send_mail('archive_', self.userid,
-                                 content=text)
-        self.restore_screen()
-
 class Editor(RNEditor):
 
     ESCAPE_LINE = '\n'
@@ -234,6 +229,11 @@ class NewPostFrame(BaseEditFrame):
             func(self, pid, attrs, text)
         self.goto_back()
 
+    def backup(self, text):
+        manager.action.send_mail('archive_', self.userid,
+                                 content=text)
+        self.restore_screen()
+
     def modify_title(self):
         self.push(u'\r\n开始编辑标题，[32m^C[m取消\r\n')
         self.push(u'现在的标题：%s\r\n' % self._attrs['title'])
@@ -360,6 +360,11 @@ class ReplyPostFrame(BaseEditFrame):
             self.pause()
         self.restore_screen()
 
+    def backup(self, text):
+        manager.action.send_mail('archive_', self.userid,
+                                 content=text)
+        self.restore_screen()
+
 @mark('_edit_post_o')
 class EditPostFrame(BaseEditFrame):
 
@@ -398,6 +403,11 @@ class EditPostFrame(BaseEditFrame):
                                    self.pid,
                                    text)
         self.goto_back()
+
+    def backup(self, text):
+        manager.action.send_mail('archive_', self.userid,
+                                 content=text)
+        self.restore_screen()
 
 @mark('edit_text')
 class EditFileFrame(BaseEditFrame):
@@ -439,6 +449,11 @@ class EditFileFrame(BaseEditFrame):
     def modify_and_goto_back(self, text):
         self.session['__edit__'] = (self._filename, text)
         self.goto_back()
+
+    def backup(self, text):
+        manager.action.send_mail('archive_', self.userid,
+                                 content=text)
+        self.restore_screen()
 
 @mark('_repost_post_o')
 class RepostPostFrame(BaseAuthedFrame):
