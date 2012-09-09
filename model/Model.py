@@ -548,10 +548,8 @@ class Post(Model):
         '''
         pass
 
-    def get_board_total(self,boardname):
-        res = self.db.get("SELECT count(pid) as total FROM `%s`" % self.__(boardname))
-        r = res.get('total')
-        return (r and int(r)) or 0
+    def get_posts_total(self, boardname):
+        return self.db.get("SELECT count(*) FROM %s" % self.__(boardname))['count(*)']
 
     def update_title(self,boardname,pid,new_title):
         return self.update_post(boardname,pid,title=new_title)
@@ -1433,8 +1431,8 @@ class Action(Model):
             signature=signature,
             )
         self.post.update_post(boardname,pid,tid=pid)
-        self.board.update_attr_plus1(bid,'total')
-        self.board.update_attr_plus1(bid,'topic_total')
+        # self.board.update_attr_plus1(bid,'total')
+        # self.board.update_attr_plus1(bid,'topic_total')
         self.readmark.set_read(userid, boardname, pid)
         return pid
 
@@ -1456,7 +1454,7 @@ class Action(Model):
             replyable=replyable,
             signature=signature,
             )
-        self.board.update_attr_plus1(bid,'total')
+        # self.board.update_attr_plus1(bid,'total')
         self.readmark.set_read(userid, boardname, pid)
         # if post['look_reply'] and self.userinfo.user_exist(post['owner']):
         #     self.notice.add_notice(post['owner'],
