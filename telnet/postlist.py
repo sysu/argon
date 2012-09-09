@@ -79,6 +79,9 @@ class BasePostListFrame(BaseAuthedFrame):
     def restore(self):
         self._init_screen()
 
+    def show_help(self):
+        self.suspend('help', pagename='board')
+
 class BaseBoardFrame(BasePostListFrame):
 
     def top_bar(self):

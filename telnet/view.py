@@ -27,6 +27,7 @@ class BaseTextBoxFrame(BaseAuthedFrame):
 
     shortcuts = {
         ac.k_left:"finish",
+        "h":"show_help",
         }
 
     shortcuts_ui = {
@@ -93,6 +94,9 @@ class BaseTextBoxFrame(BaseAuthedFrame):
 
     def get_help_page(self, pagename):
         return self.render_str('/help/%s' % pagename)
+
+    def show_help(self):
+        self.suspend('help', pagename='view')
 
 @mark('_view_post_o')
 class ViewPostFrame(BaseTextBoxFrame):
@@ -197,3 +201,6 @@ class TutorialFrame(BaseTextBoxFrame):
 
     def finish(self, e=None):
         self.goto_back()
+
+    def show_help(self):
+        self.suspend('help', pagename='help')

@@ -25,7 +25,7 @@ if __name__ == '__main__' :
 
 from chaofeng import Server, g, sleep, asynchronous, Frame
 from chaofeng.g import mark
-import login, menu, boardlist, postlist,edit,view,jumper,mail,notice_box,special_frame,admin,user
+import login, menu, boardlist, postlist, edit, view, jumper, mail, notice_box, special_frame, admin, user
 import config
 # from model import db_orm
 from model import dbapi, manager

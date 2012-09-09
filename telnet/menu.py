@@ -86,6 +86,9 @@ class BaseMenuFrame(BaseAuthedFrame):
         else:
             self.suspend(args[0], **args[1])
 
+    def show_help(self):
+        self.suspend('help', pagename='index')
+
 @mark('main')
 class MainMenuFrame(BaseMenuFrame):
 

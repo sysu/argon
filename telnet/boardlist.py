@@ -10,6 +10,9 @@ import config
 
 class BaseBoardListFrame(BaseAuthedFrame):
 
+    def place(self):
+        return config.mark2zhname['boardlist']
+
     def enter_board(self, board):
         self.suspend('_board_o', board=board)
 
@@ -193,6 +196,9 @@ class BaseBoardListFrame(BaseAuthedFrame):
         self.push(self.render_str('bottom'))
         self._table.restore_cursor_gently()
         return res
+
+    def show_help(self):
+        self.suspend('help', pagename='boardlist')
 
 @mark('boardlist')
 class BoardListFrame(BaseBoardListFrame):

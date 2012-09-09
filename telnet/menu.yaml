@@ -1,13 +1,12 @@
 __main__:
-        - ['',              (z)IndexHelp     进站必读,   help,       z, [13, 5]]
-        - ['' ,             (E)Group       分类讨论区,   sections,   e]
+        - ['' ,             (E)Group       分类讨论区,   sections,   e, [13, 5]]
         - ['$USER' ,        (F)avourite    个人收藏夹,   favourite,  f]
         - ['$USER',         (I)nfoEdit   个人资料设定,   user_space, i]
         - ['',              (P)layFilm     电影放映室,   movie,      p]
         - ['$AUTHED_USER',  (M)ail           处理信笺,   mail_menu,  m]
         - ['',              (T)est       测试键盘按键,   test_keyboard, t]
-#        - ['',             (O)Timeout   测试网络延时,   test_timeout, o]
         - ['',              (U)serOnline 查看在线用户,   user_online, u]
+        - ['',              (S)ysInfo    查看系统属性,   [help, {pagename : about }], s] 
         - ['$AUTHED_USER',  (B)ugReport      错误报告,   post_bug, b]
         - ['$BASE_ADMIN',   (A)dmin      系统管理功能,   [menu, {menuname: sys_admin}],  a]
         - ['',              (G)oodbye    离开逸仙时空,   finish,    g]
@@ -29,7 +28,7 @@ user_space:
 
 sys_admin:
         - ['$TELNET_ART'    ,  "(P)icture        修改系统画面", [menu, {menuname: sys_static}], p, [14,20]]
-        - ['$TELNET_ART'    ,  "(H)elpPage      修改帮助画面", [menu, {menuname: sys_static_help}], h]
+        - ['$TELNET_ART'    ,  "(H)elpPage       修改帮助画面", [menu, {menuname: sys_static_help}], h]
         - ['$MASTER'        ,  "(B)board           讨论区设定",  [menu, {menuname: sys_board}], b]
         - ['$ADMIN_ACCOUNT' ,   (U)serLevel          帐号管理,   [menu, {menuname: sys_level}], u]
         - ['$SYS_CONFIG'    ,   (D)efault      用户默认收藏夹,    edit_default_favourite, d]
@@ -48,15 +47,12 @@ sys_static:
         - ['', e. 返回管理菜单, [menu, {menuname: sys_admin}], 'e']
 
 sys_static_help :
-        - ['', 0. 帮助中心,       [sys_edit_system_file, {filename: 'help/index'}], '0', [12,20]]
-        - ['', 1. 主菜单说明,     [sys_edit_system_file, {filename: 'help/main_menu'}], '1']
-        - ['', 2. 分类讨论区说明, [sys_edit_system_file, {filename: 'help/sections'}], '2']
-        - ['', 3. 讨论区选单说明, [sys_edit_system_file, {filename: 'help/boardlists'}], '3']
-        - ['', 4. 阅读选单说明,   [sys_edit_system_file, {filename: 'help/board'}], '4']
-        - ['', 5. 编辑功能说明,   [sys_edit_system_file, {filename: 'help/edit'}], '5']
-        - ['', 6. 帮助页面说明,   [sys_edit_system_file, {filename: 'help/help'}], '6']
-        - ['', 7. 邮件选单说明,   [sys_edit_system_file, {filename: 'help/mail'}], '7']
-        - ['', 8. 阅读功能说明,   [sys_edit_system_file, {filename: 'help/view'}], '8']
+        - ['', 1. 帮助中心,       [sys_edit_system_file, {filename: 'help/index'}], '1', [12,20]]
+        - ['', 2. 讨论区选单说明, [sys_edit_system_file, {filename: 'help/boardlist'}], '2']
+        - ['', 3. 阅读选单说明,   [sys_edit_system_file, {filename: 'help/board'}], '3']
+        - ['', 4. 编辑功能说明,   [sys_edit_system_file, {filename: 'help/edit'}], '4']
+        - ['', 5. 帮助页面说明,   [sys_edit_system_file, {filename: 'help/help'}], '5']
+        - ['', 6. 阅读功能说明,   [sys_edit_system_file, {filename: 'help/view'}], '6']
         - ['', e. 返回管理菜单, [menu, {menuname: sys_admin}], 'e']
 
 sys_board:

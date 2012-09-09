@@ -108,10 +108,14 @@ class BaseEditFrame(BaseAuthedFrame):
             self._editor.do_command(self.shortcuts_ui[char])
         elif ac.is_safe_char(char):
             self._editor.insert_char(char)
+            self._editor.bottom_bar()
 
     def restore_screen(self):
         self._editor.restore_screen()
         self._editor.bottom_bar()
+
+    def show_help(self):
+        self.suspend('help', pagename='edit')
 
 @mark('new_post')
 class NewPostFrame(BaseEditFrame):
@@ -119,6 +123,7 @@ class NewPostFrame(BaseEditFrame):
     shortcuts = {
         ac.k_ctrl_w:"finish",
         ac.k_ctrl_x:"publish",
+        ac.k_ctrl_q:"show_help",
         }
 
     shortcuts_ui = config.shortcuts['edit_ui']
@@ -170,7 +175,7 @@ class NewPostFrame(BaseEditFrame):
 
     def initialize(self, boardname):
         manager.status.set_status(self.seid,
-                                  manager.static.POSTING)
+                                  manager.status.POSTING)
         self.cls()
         attrs = self.read_attrs(manager.usersign.get_sign_num(self.userid),
                                 boardname, True)
@@ -232,6 +237,7 @@ class ReplyPostFrame(BaseEditFrame):
     shortcuts = {
         ac.k_ctrl_w : "finish",
         ac.k_ctrl_x: "publish",
+        ac.k_ctrl_q:"show_help",
         }
 
     READ_ATTR_PROMPT = u"[25;1H[K[1;32m0[m~[1;32m%s[m/[1;32mx[m "\
@@ -338,6 +344,7 @@ class EditPostFrame(BaseEditFrame):
     shortcuts = {
         ac.k_ctrl_w:"finish",
         ac.k_ctrl_x:"publish",
+        ac.k_ctrl_q:"show_help",
         }
     shortcuts_ui = config.shortcuts['edit_ui']
 
@@ -376,6 +383,7 @@ class EditFileFrame(BaseEditFrame):
     shortcuts = {
         ac.k_ctrl_w:"finish",
         ac.k_ctrl_x:"publish",
+        ac.k_ctrl_q:"show_help",
         }
     shortcuts_ui = config.shortcuts['edit_ui']
 

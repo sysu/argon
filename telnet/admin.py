@@ -12,6 +12,7 @@ from model import manager
 from libframe import BaseAuthedFrame, list_split
 from boardlist import BaseBoardListFrame
 from edit import BaseEditFrame, handler_edit
+from chaofeng.bbs import GotoInterrupt
 from chaofeng.g import mark
 from chaofeng.ui import Form, ListBox
 import config
@@ -23,8 +24,11 @@ class EditSystemFileFrame(BaseAuthedFrame):
 
     def initialize(self, filename):
         self.filename = filename
-        with codecs.open('static/%s' % filename, encoding="utf8") as f:
-            text = f.read()
+        try:
+            with codecs.open('static/%s' % filename, encoding="utf8") as f:
+                text = f.read()
+        except IOError:
+            text = u'New File'
         self.suspend('edit_text', filename='file', text=text)
 
     @handler_edit
@@ -659,7 +663,9 @@ class SuperSystemFrame(BaseAuthedFrame):
 
     def loop(self):
         while True:
-            cmd = filter(lambda x:x, self.safe_readline(prompt='argo$ ', buf_size=70).split())
+            cmd = filter(lambda x:x,
+                         self.safe_readline(prompt='argo$ ',
+                                            buf_size=70).split())
             self.write('\r\n')
             if not cmd : continue
             action = 'action_%s' % cmd[0]
@@ -668,6 +674,8 @@ class SuperSystemFrame(BaseAuthedFrame):
             if hasattr(self, action) :
                 try:
                     getattr(self, action)(*cmd[1:])
+                except GotoInterrupt as e:
+                    raise e
                 except Exception as e:
                     traceback.print_exc()
                     self.writeln('[ERROR] %s' % e.message)
@@ -679,6 +687,7 @@ class SuperSystemFrame(BaseAuthedFrame):
             rt                                      // register_team
             dt                                      // drop_team
             qt                                      // query_all_team
+            eee                                     // 修改系统档案
         '''
         action = 'action_%s' % cmd
         if hasattr(self, action):
@@ -750,3 +759,10 @@ class SuperSystemFrame(BaseAuthedFrame):
         for d in list_split(mod, split):
             self.writeln(' ' .join(map(lambda x: formatc % x , d)))
             self.pause()
+
+    def action_eee(self, filename='__all__'):
+        self.suspend('sys_edit_system_file', filename=filename)
+
+    def restore(self):
+        self.cls()
+        self.loop()
