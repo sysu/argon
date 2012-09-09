@@ -92,6 +92,8 @@ class BaseEditFrame(BaseAuthedFrame):
 
     shortcuts = {}
     shortcuts_ui = config.shortcuts['edit_ui']
+    shortcuts_2nd_start = ac.k_ctrl_u
+    shortcuts_ui_2nd = config.shortcuts['edit_ui_2nd']
 
     def setup(self, text, spoint=0):
         assert isinstance(text, unicode)
@@ -106,6 +108,10 @@ class BaseEditFrame(BaseAuthedFrame):
             self.do_command(self.shortcuts[char])
         elif char in self.shortcuts_ui :
             self._editor.do_command(self.shortcuts_ui[char])
+        elif char == self.shortcuts_2nd_start :
+            char = self.read_secret()
+            if char in self.shortcuts_ui_2nd:
+                self._editor.do_command(self.shortcuts_ui_2nd[char])
         elif ac.is_safe_char(char):
             self._editor.insert_char(char)
             self._editor.bottom_bar()
@@ -288,9 +294,10 @@ class ReplyPostFrame(BaseEditFrame):
         return attrs
 
     def initialize(self, boardname, post):
-        perm = manager.query.get_board_ability(self.userid, self.boardname)
+        perm = manager.query.get_board_ability(self.userid, boardname)
         if not perm[0] :
             self.goto_back()
+        post = manager.post.get_post(boardname, post['pid'])  ## reload to get date in realtime
         if not (perm[1] and post['replyable']):
             self.pause(u'你没有发文权力或本文禁止回复！')
         manager.status.set_status(self.seid,
@@ -335,10 +342,9 @@ class ReplyPostFrame(BaseEditFrame):
                                         attrs['replyid'],
                                         replyable=attrs['replyable'],
                                         signature=attrs['signtext'])
-        self.session['lastpid'] = pid
         for func in self.plugin.get_all_hook('after_publish_new_post'):
             func(self, pid, attrs, text)
-        self.goto_back()
+        self.goto('board', boardname=attrs['boardname'], pid=pid)
 
     def modify_title(self):
         self.push(u'\r\n开始编辑标题，[32m^C[m取消\r\n')

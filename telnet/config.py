@@ -45,52 +45,6 @@ with open('menu.yaml') as f:
 #     'ROOT':'welcome',
 #     }
 
-# menu = {
-#     "main":[
-#         [ u'(E)Group       分类讨论区','sections','e',[13,5]],
-#         # ( u'(D)igest       本站精华区',"undone",'d' ),
-#         [ u'(F)avourite    个人收藏夹',"favourite",'f' ],
-#         # ( u'(R)ecommend    推荐版面区',"undone",'r' ),
-#         # ( u'(M)ail         处理信笺区',"undone",'m' ),
-#         # ( u'(T)alk         谈天说地区',"undone",'t' ),
-#         [ u'(I)nfoEdit   个人资料设定',"user_space",'i' ],
-#         [ u'(F)ilm         电影放映室',"movie",'f' ],
-#         [ u'(M)ail           处理信笺','mail_menu','m'],
-#         # ( u'(S)ervice      特别服务区',"undone",'s' ),
-#         # ( u'(C)onfig       系统信息区',"undone",'c' ),
-#         # ( u'(P)ersonal     个人文集区',"undone",'p' ),
-#         [ u'(H)elp           帮助中心',"help",'h'],
-#         [ u'(G)oodbye    离开逸仙时空',"finish",'g' ]
-#         ],
-#     "main_guest":[
-#         [ u'(E)Group       分类讨论区','sections','e',[12,5]],
-#         # ( u'(D)igest       本站精华区',"undone",'d' ),
-#         # ( u'(R)ecommend    推荐版面区',"undone",'r' ),
-#         # ( u'(T)alk         谈天说地区',"undone",'t' ),
-#         # ( u'(C)onfig       系统信息区',"undone",'c' ),
-#         # ( u'(P)ersonal     个人文集区',"undone",'p' ),
-#         [ u'(G)oodbye    离开逸仙时空 ',"finish",'g' ]
-#         ],
-#     "user_space":[
-#         [ u'I) 设定个人资料','user_editdata','i',[12,6]],
-#         [ u'P) 修改个人密码','user_change_passwd','p'],
-#         [ u'W) 编修个人档案','user_nickdata','w'],
-#         [ u'S) 修改签名档','user_edit_sign','s'],
-#         [ u'U) 查看我的资料','query_user','u'],
-#         [ u'E) 回到主选单','main','e'],],
-#     "section":[
-#         # dy + append
-#         [ u"[1;32mA[0m) 所有讨论区 -- [ALL]",["boardlist",dict(sid=None)],'a',[11,41]],
-#         [ u"[1;36mN[0m) 阅读新文章 -- [NEW]","undone",'n'],
-#         [ u"[1;36mE[0m) 回到主选单 -- [EXIT]","main",'e'],
-#         ],
-#     "mail":[
-#         [ u"(R)ead          览阅全部信笺", "get_mail", "r", [16,41]],
-#         [ u"(S)end          发送站内信件", "send_mail", "s"],
-#         [ u"(E)xit          回到主选单",   "main", "e"],
-#         ],        
-# }
-
 str = {
     "PROMPT_INPUT_PASSWD":u"请输入密码：",
     "PROMPT_INPUT_USERID":u"请输入帐号：",
@@ -186,7 +140,6 @@ shortcuts = {
         ac.k_end:"goto_last",
         },
     'boardlist_fetch_do':{
-        "u":"query_author",
         ac.k_ctrl_a : "query_board",
         ac.k_ctrl_e : "change_board_attr",
         "a":"add_to_fav",      "d":"remove_fav",
@@ -240,7 +193,7 @@ shortcuts = {
         ac.k_right:"move_right",                ac.k_ctrl_v:"move_right",
         ac.k_up:"move_up",                      ac.k_ctrl_p:"move_up",
         ac.k_down:"move_down",                  ac.k_ctrl_n:"move_down",
-        ac.k_delete:"delete",
+        ac.k_delete:"delete",                   ac.k_ctrl_d:"delete",
         ac.k_backspace:"backspace",             ac.k_ctrl_h:"backspace",
         ac.k_backspace2:"backspace",
         ac.k_ctrl_l:"restore_screen_iter",
@@ -257,4 +210,9 @@ shortcuts = {
         ac.k_ctrl_f:"page_down",    ac.k_page_down:"page_down",
         ac.k_ctrl_y:"kill_whole_line",
         },
+    "edit_ui_2nd":{
+        ac.k_ctrl_u: "exchange_pos",
+        ac.k_ctrl_d: "remove_area",
+        ac.k_ctrl_m: "set_mark",
+        }
     }

@@ -106,6 +106,8 @@ class ViewPostFrame(BaseTextBoxFrame):
     shortcuts = BaseTextBoxFrame.shortcuts.copy()
     shortcuts.update({
             ac.k_ctrl_x:"same_topic_view",
+            "r":"reply_post",
+            "R":"reply_post",
         })
 
     def initialize(self, post, cond=''):
@@ -148,6 +150,21 @@ class ViewPostFrame(BaseTextBoxFrame):
 
     def same_topic_view(self):
         self.goto('_view_topic_post_o', post=self.post)
+
+    def reply_post(self):
+        boardname = self.session['lastboardname']
+        # assert boardname == self.post['bid']
+        post = self.post
+        perm = manager.query.get_board_ability(self.userid,
+                                               boardname)
+        if perm[1] and post['replyable'] :
+            self.suspend('_reply_post_o',
+                         boardname=boardname,
+                         post=post)
+        else:
+            self.cls()
+            self.write(u'你没有发文权限或本文禁止回复！\r\n')
+            self.restore_screen()
 
 @mark('_view_topic_post_o')
 class ViewPostSameTopic(BaseTextBoxFrame):

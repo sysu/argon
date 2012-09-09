@@ -104,7 +104,7 @@ class BaseBoardFrame(BasePostListFrame):
     def get_pid_rank(self, pid):
         raise NotImplementedError
                 
-    def setup(self, board, thead, dataloader, counter, default=0):
+    def setup(self, board, thead, dataloader, counter):
         self.board = board
         self.perm = board.perm
         self.boardname = board['boardname']
@@ -293,7 +293,7 @@ class BoardFrame(BaseBoardFrame):
     def next_frame(self, post):
         self.suspend('_view_post_o', post=post)
 
-    def initialize(self, board, default=0):
+    def initialize(self, board):
         manager.status.set_status(self.seid,
                            manager.status.READING)
         if not board.perm[0] :
@@ -305,7 +305,7 @@ class BoardFrame(BaseBoardFrame):
         manager.status.enter_board(self.session['lastboardname'])
         dataloader = manager.post.get_posts_loader(board['boardname'])
         counter = manager.post.get_posts_counter(board['boardname'])
-        self.setup(board, self.THEAD, dataloader, counter, default)
+        self.setup(board, self.THEAD, dataloader, counter)
 
     def get_pid_rank(self, pid):
         return manager.post.get_rank_num(self.board['boardname'], pid)
@@ -388,7 +388,7 @@ class BoardFilterPostFrame(BaseBoardFrame):
                                               pid,
                                               self.cond)
 
-    def initialize(self, board, mode, default=0, **kwargs):
+    def initialize(self, board, mode, **kwargs):
         if not board.perm[0]:
             self.goto_back()
         self.cond = self.ALL_MODE[mode](**kwargs)
@@ -401,3 +401,19 @@ class BoardFilterPostFrame(BaseBoardFrame):
 
     def next_frame(self, post):
         self.suspend('_view_post_o', post=post, cond=self.cond)
+
+@mark('board')
+class BoardFrame(BaseAuthedFrame):
+
+    def initialize(self, boardname, pid):
+        board = manager.board.get_board(boardname)
+        board.perm = manager.query.get_board_ability(self.userid,
+                                                     boardname)
+        if not (board and board.perm[0]) :
+            self.pause(u'错误的讨论区！')
+        else:
+            self.session['lastpid'] = pid
+            manager.telnet['default_board_index']['%s:%s' % (\
+                    boardname, self.userid)] = \
+                manager.post.get_rank_num(boardname, pid)
+            self.suspend('_board_o', board=board)
