@@ -150,6 +150,8 @@ class BaseBoardFrame(BasePostListFrame):
                                                self.boardname)
         if perm[1] :
             self.suspend('new_post', boardname=self.boardname)
+        else:
+            self.message(u'对不起，你没有发文权力！')
 
     def repost(self, post):
         self.suspend('_repost_post_o', boardname=self.boardname, post=post)
@@ -405,7 +407,7 @@ class BoardFilterPostFrame(BaseBoardFrame):
         counter = manager.post.get_posts_counter(board['boardname'],
                                                  self.cond)
         thead = config.str['BOARD_%s_MODE_THEAD' % mode]
-        self.setup(board, thead, dataloader, counter, default)
+        self.setup(board, thead, dataloader, counter)
 
     def next_frame(self, post):
         self.suspend('_view_post_o', post=post, cond=self.cond)

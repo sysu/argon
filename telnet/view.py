@@ -97,10 +97,6 @@ class BaseTextBoxFrame(BaseAuthedFrame):
 
     def show_help(self):
         self.suspend('help', pagename='view')
-
-    def bottom_bar(self, s, l, message=''):
-        self.write(ac.move2(24,1))
-        self.render(u'bottom_view_float', s=s, l=l, message=message)
         
 @mark('_view_post_o')
 class ViewPostFrame(BaseTextBoxFrame):
