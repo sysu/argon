@@ -112,6 +112,180 @@ mark2zhname = {
 
 import _dark as dark
 
+hotkeys = {
+    "g":{
+        ac.k_ctrl_c:"goto_back",
+        "h":"show_help",
+        ac.k_ctrl_be:"goto_history",
+        },
+    "menu":{
+        ac.k_right:"right_or_finish",
+        ac.k_left:"left_or_finish",
+        },
+    "menu_menu":{
+        ac.k_down:"move_down",
+        ac.k_up:"move_up",
+        },
+    "table":{
+        },
+    "g_table":{
+        ac.k_up:"move_up",
+        ac.k_down:"move_down",
+        ac.k_page_up:"page_up",
+        ac.k_page_down:"page_down",
+        " ":"page_down",
+        },
+    "boardlist":{
+        ac.k_ctrl_be:"goto_history",
+        '/':'search',         ac.k_right:'finish',
+        'q':'goto_back',      'e':'goto_back',        ac.k_left:'goto_back',
+        's':'change_sort',           '#':'goto_line',
+        ac.k_end:"goto_last",           '$':'goto_last',
+        "a":"add_to_fav",  "d":"remove_fav",
+        # admin
+        ac.k_ctrl_a:'watch_board',
+        'X':'set_readonly',
+        ac.k_ctrl_e:'change_board_attr',
+        # jump
+        "h":"show_help",
+        ac.k_ctrl_y:"post_bug",
+        },
+    "boardlist_jump":{
+        "u":"query_user_iter",
+        "l":"get_mail",
+        "!":"goodbye",
+        },
+    "boardlist_table":{
+        "k":"move_up",        "j":"move_down",
+        'P':'page_up',          ac.k_ctrl_b:'page_up',        'b':'page_up',
+        'N':'page_down',        ac.k_ctrl_f:'page_down',      ' ':'page_down',
+        ac.k_home:'goto_first',   
+        },
+    "board":{
+        ac.k_ctrl_be:"goto_history",
+        "#":"goto_line",
+        ac.k_right:"finish", ac.k_left:"goto_back",
+        ac.k_ctrl_p:"new_post","E":"edit_post", ac.k_ctrl_r:"reply_to_author",
+        ac.k_ctrl_t:"change_mode",
+        'g':"set_g_mark",        'm':"set_m_mark",
+        ac.k_ctrl_l:"restore",
+        "=":"goto_tid", "\\":"goto_tid", ac.k_ctrl_s :"goto_tid", "p":"goto_tid",
+        ac.k_ctrl_u:"goto_author",
+        "c":"clear_readmark", "K":"set_read", ac.k_ctrl_a:"query_author",
+        ac.k_end:"goto_last", "$":"goto_last",
+        "T":"edit_title",
+        "h":"show_help",
+        "_":"set_replyable",
+        "d":"del_post",
+        "D":"del_post_range",
+        ac.k_ctrl_g:"set_g_mode", "-":"set_onetopic_mode",
+        "!":"goto_bye",
+        ac.k_ctrl_d:"set_deny",
+        "s":"change_board", "u":"query_user",
+
+        ac.k_ctrl_y:"post_bug",
+        "r":"finish",
+        },
+    "board_table":{
+        "k":"move_up", "j":"move_down", "P":"page_up", "N":"page_down",
+        ac.k_home:"goto_first", 
+        },
+    "form":{
+        ac.k_right:"submit",
+        ac.k_left:"goto_back",
+        },
+    "edit_2ndcmd_start": ac.k_ctrl_u,
+    "edit_editor":{
+        },
+    "edit":{
+        # ac.k_ctrl_o:"insert_superclip",
+        # ac.k_ctrl_i:"copy_to_superclip",
+        ac.k_ctrl_w:"finish",        #############
+        ac.k_ctrl_x:"finish",
+        ac.k_ctrl_q:"show_help",
+        ac.k_ctrl_c:"quit_iter",
+        },
+    "edit_2nd":{
+        ac.k_ctrl_u:"exchange_pos",
+        ac.k_ctrl_d:"remove_area",
+        ac.k_ctrl_m:"insert_style_area",
+        ac.k_ctrl_g:"set_mark",
+        },
+    "view":{
+        ac.k_ctrl_be:"goto_history",
+        "Q":"goto_board",
+        ac.k_left:"goto_back",
+        # ac.k_ctrl_u:"goto_link",
+        # "h":"jump_from_screen",
+        # ac.k_ctrl_a:"jump_man",
+        ac.k_ctrl_r:"jump_from_screen",
+        "h":"show_help",
+        },
+    "view_textbox":{
+        ac.k_up : "move_up",
+        "k":"move_up",
+        ac.k_down : "move_down",
+        " ":"move_down",
+        ac.k_right:"move_down",
+        "j":"move_down",
+        ac.k_ctrl_b:"page_up",
+        ac.k_page_up:"page_up",
+        ac.k_ctrl_f:"page_down",
+        ac.k_page_down:"page_down",
+        ac.k_right:"page_down",
+        ac.k_home:"goto_first",
+        ac.k_end:"goto_last",
+        "$":"goto_last",
+        },
+    "view-board":{
+        "a":"add_to_fav",
+        },
+    "maillist":{
+        ac.k_ctrl_p:"send_mail",
+        "R":"reply",
+        "r":"reply",
+        ac.k_left:"goto_back", ac.k_right:"finish",
+        },
+    "maillist_table":{
+        "k":"move_up",       "p":"move_up",      
+        "j":"move_down",     "n":"move_down",
+        "P":"page_up",       "N":"page_down",
+        "$":"goto_last",
+        ac.k_home:"goto_first",
+        ac.k_end:"goto_last",
+        },
+    "edit_list":{
+        "a":"add",
+        "d":"remove",
+        "+":"add",
+        "-":"remove",
+        ac.k_ctrl_l:"refresh_items",
+        "f":"refresh_items",
+        ".":"goto_back",
+        ac.k_ctrl_c:"goto_back",
+        },
+    "edit_list_ui":{
+        ac.k_up:"move_up",
+        ac.k_down:"move_down",
+        ac.k_left:"move_left",
+        ac.k_right:"move_right",
+        },
+    "set_board_deny":{
+        "a":"add_deny",
+        '.':"goto_back",
+        "d":"remove_deny",
+        ac.k_ctrl_c:"goto_back",
+        ac.k_ctrl_l:"reload",
+        },
+    "useronline_table":{
+        },
+    "useronline":{
+        ac.k_left:"goto_back",
+        ac.k_right:"finish",
+        "s":"send_mail",
+        },    
+    }
+
 shortcuts = {
     'menu':{
         ac.k_right:"_right_or_finish",

@@ -14,7 +14,7 @@ from boardlist import BaseBoardListFrame
 from edit import BaseEditFrame, handler_edit
 from chaofeng.bbs import GotoInterrupt
 from chaofeng.g import mark
-from chaofeng.ui import Form, ListBox
+from chaofeng.ui import Form, ListBox, NullValueError
 import config
 import chaofeng.ascii as ac
 import traceback
