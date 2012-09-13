@@ -14,7 +14,7 @@ from comm.urls import urls
 class Application(tornado.web.Application):
 
     def __init__(self):
-        handlers = urls 
+        handlers = urls
         settings = dict (
             template_path=os.path.join(os.path.dirname(__file__), "template"),
             static_path=os.path.join(os.path.dirname(__file__), "static"),
@@ -23,7 +23,7 @@ class Application(tornado.web.Application):
             autoescape='xhtml_escape',
         )
         tornado.web.Application.__init__(self, handlers, **settings)
-    
+
         # set db and cache here
         self.db = globaldb.global_conn
         self.ch = globaldb.global_cache
@@ -36,7 +36,7 @@ def main():
     tornado.ioloop.IOLoop.instance().start()
 
 if __name__ == '__main__':
-    
-    main() 
+
+    main()
 
 

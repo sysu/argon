@@ -1,5 +1,5 @@
 #!/usr/bin/env python 
-#*- encoding: utf8 -*-
+# -*- encoding: utf8 -*-
 
 import sys
 sys.path.append('..')
@@ -9,22 +9,22 @@ from tornado import escape
 from argo_conf import ConfigBase
 
 class BaseHandler(tornado.web.RequestHandler):
-    
+
     @property
     def db(self):
         return self.application.db
-    
+
     @property
     def ch(self):
         return self.application.ch
-    
+
     @property
     def headers(self):
-        return self.request.headers 
+        return self.request.headers
 
     def get_current_user(self):
         return self.get_secure_cookie('userid')
-    
+
     def prepare(self):
         try:
             self.ref = self.headers['Referer']
@@ -33,10 +33,10 @@ class BaseHandler(tornado.web.RequestHandler):
         self.remote_ip = self.request.remote_ip
         self.userid = self.current_user
         self.xhtml_escape = escape.xhtml_escape
-    
+
 
 class Proxy(dict):
-    
+
     def __call__(self, name):
         def inner_mark(obj):
             self[name] = obj
@@ -79,6 +79,4 @@ urls = [
            (r"/m/(\w{2,16})/thread/(\d{1,10})/?", _import("mobile.m_main","MobileThreadHandler")),
 
         ]
-
-
 

@@ -155,7 +155,7 @@ class CommAjaxCheckMailHandler(BaseHandler):
     
     def get(self):
 
-        if not self.userid: 
+        if not self.userid:
             self.write({'success': False, 'content': '0'})
         new_mail = mgr.action.get_new_mail(self.userid, 0, 1)
             
