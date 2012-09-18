@@ -54,6 +54,7 @@ urls = [
 
            (r"/", _import("pybbs.index","PIndexHandler")),
            (r"/post/", _import("pybbs.post","PPostHandler")),
+           (r"/board/", _import("pybbs.board","PBoardHandler")),
 
             # ajax
            (r"/a/checkmail/?", _import("comm.ajax","CommAjaxCheckMailHandler")),

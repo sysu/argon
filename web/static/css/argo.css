@@ -1,0 +1,20 @@
+
+
+/* post-list */
+
+.post-list-title {
+  padding: 15px 0 10px 5px;
+  border-bottom: 1px solid #EEE;
+}
+
+.post-list-img {
+  width: 45px;
+}
+
+.post-title-info {
+  line-height: 20px;
+  color: #888;
+  font-size: 75%;
+}
+
+
