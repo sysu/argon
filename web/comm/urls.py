@@ -6,7 +6,6 @@ sys.path.append('..')
 
 import tornado.web
 from tornado import escape
-from argo_conf import ConfigBase
 
 class BaseHandler(tornado.web.RequestHandler):
 

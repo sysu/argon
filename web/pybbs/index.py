@@ -15,9 +15,4 @@ class PIndexHandler(PBaseHandler):
     def get(self):
         self.mrender('index.html')
 
-@mark('PPostHandler')
-class PPostHandler(PBaseHandler):
-
-    def get(self):
-        self.mrender('post.html')
 

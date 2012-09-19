@@ -1,14 +1,19 @@
+/* global property */
 
+.argo-img {
+  border-raius: 4px;
+}
 
 /* post-list */
 
 .post-list-title {
-  padding: 15px 0 10px 5px;
+  padding: 15px 0 8px 5px;
   border-bottom: 1px solid #EEE;
 }
 
 .post-list-img {
   width: 45px;
+  border-radius: 4px;
 }
 
 .post-title-info {
