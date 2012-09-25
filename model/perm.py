@@ -68,9 +68,10 @@ DEFAULT_USER_TEAM = (
 
 class ArgoTeam(Model):
 
-    def __init__(self, team, perm):
-        self.team = team
-        self.perm = perm
+    def __init__(self, manager):
+        super(ArgoTeam, self).__init__(manager)
+        self.team = manager.get_module('team')
+        self.perm = manager.get_module('perm')
 
     def init_system(self):
         for teamid, teamname, publish in INIT_TEAM:

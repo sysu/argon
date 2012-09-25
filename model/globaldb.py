@@ -65,18 +65,13 @@ class DBConnectionPool:
             self._db_pool.put(conn)
 
 def connect_db():
-
-    return DBConnectionPool(host=HOST+':'+str(PORT), user=USER, password=PASSWD, database=DBNAME)
+    return DBConnectionPool(host=HOST+':'+str(PORT),
+                            user=USER, password=PASSWD,
+                            database=DBNAME)
     #return dbapi.Connection(host=HOST+':'+str(PORT), user=USER, password=PASSWD, database=DBNAME)
 
 def connect_ch():
     return redis.Redis(host=CHOST, port=CPORT)
 
-class GlobalDB(object):
-
-    conn = connect_db()
-    cache = connect_ch()
-
-global_conn = GlobalDB.conn
-global_cache = GlobalDB.cache
-
+global_conn = connect_db()
+global_cache = connect_ch()

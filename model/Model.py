@@ -3,23 +3,75 @@
 
 from globaldb import global_conn,global_cache
 from MySQLdb import ProgrammingError
-from error import *
 import bcrypt,time
 from datetime import datetime
-import mode
 import random
 # import perm
 import logging
 import status
 import traceback
+from error import *
 
 logger = logging.getLogger('model')
 
+class Manager(object):
+
+    def __init__(self, db, ch, modulescls, name=None):
+        u'''
+        Init the manager object. Simplely setup the database
+        connection and redis connection. And then, load the
+        modulescls use the name[classname] as bindname, or
+        use the lower of classname if name[classname] is None.
+        
+        `modulescls` should be a list of Model Class. 
+
+        DB is an object that has following methods(like tornado.database):
+
+          db.query(sql, *para)
+          db.get(sql, *para)
+          db.execute(sql, *para)
+          db.executemany(sql, paras)
+          db.execute_paragraph(sql)
+
+        CH is an object that like stand redis.ch .
+          
+        '''
+        self.db = db
+        self.ch = ch
+        for modclass in modulescls:
+            module = modclass(self)
+            modname = (name and name.get(modclass.__name__))\
+                or modclass.__name__.lower()
+            self.bind(modname, module)
+
+    def bind(self, bindname, module):
+        u'''Bind the module into the manager use the bindname.
+        So we can use manager.bindname to use the module.
+        '''
+        setattr(self, bindname, module)
+
+    def get_module(self, bindname):
+        u'''Get the module the bindname. Raise ValueError if
+        no such model with the bindname.'''
+        try:
+            return getattr(self, bindname)
+        except AttributeError:
+            raise ValueError(u'No such model with the bindname')
+             
 class MetaModel(type):
 
-    all_model = []
+    '''
+    A meta class that give the magic to record all submodel,
+    and some special action.
+    '''
+
+    all_model = []  ## use to record all model
 
     def __new__(cls,names,bases,attrs):
+        '''
+        Call the classmethod `__clsinit__` if defined, and
+        simplely append the new model into all_model.
+        '''
         old_cls = cls
         cls = super(MetaModel,cls).__new__(cls,names,bases,attrs)
         if attrs.get('__clsinit__') is not None:
@@ -28,54 +80,38 @@ class MetaModel(type):
         old_cls.all_model.append(cls)
         return cls
 
-class Cacher:
-
-    def __init__(self,name,ch = None):
-        self.__ = name
-        self.ch = ch
-
-    def hmset(self,dic):
-        return self.ch.hmset(self.__, dic)
-
-    def hlen(self):
-        return self.ch.hlen(self.__)
-
-    def hget(self,field):
-        return self.ch.hget(self.__, field)
-
-    def hincrby(self,field,amount=1):
-        return self.ch.hincrby(self.__, field, amount)
-
-    def hdel(self,field):
-        return self.ch.hdel(self.__, field)
-        
-def v__(s,*args):
-    # try:
-    print s % args
-    # except:
-    print '*' * 20
-    print s
-    print args
-    return (s,) + args
-
 class Model:
     
     u'''
     A base class for a model. It implemented some common methods as well.
     Basic useage read the Manage class.
     '''
-    
+
     __metaclass__ = MetaModel
 
-    def __init__(self):
-        self.dict = {}
-    
-    def bind(self,db=None,ch=None):
-        if db : self.db = db
-        if ch : self.ch = ch
+    def __init__(self, manager):
+        u'''
 
-    def configure(self):
-        pass
+        NEVER CALL INIT A NEW MODEL EXCEPT THAT YOU KNOW WHAT YOU DO
+        USE THE MANAGER
+
+        Load this model into manager, use __class__.__name__.lower()
+        as bindname is bindname is not set.
+        
+        An model fix other model, may rewite this metheds to set some
+        alise for other model, eg:
+        
+           def __init__(self, manager):
+               super(NewModel, self).__init__(manager)
+               self.model_1 = manager.model_1
+               self.model_2 = manager.model_2
+               
+        '''
+        self.db = manager.db  # Alias self.db as manager.db
+        self.ch = manager.ch
+
+    def assign(self, **modules):
+        self.__dict__.update(modules)
 
     def table_select_all(self,tablename):
         return self.db.query("SELECT * FROM `%s`" % tablename)
@@ -124,58 +160,64 @@ class Model:
                                    (tablename, what, key),
                                r, value)
 
-    def u(self, char):
-        return char.decode('utf-8')        
-
-    def _wrapper_index(self, data, num):
-        for index in range(len(data)):
-            data[index]['index'] = num + index
-        return data
-
 class Section(Model):
 
     u'''
-    The module of sections opeartor. It's almost all deal with the
-    `argo_sectionhead` table in SQL database.
-
+    Section stands the classification of a board.
+    
     db: argo_sectionhead
     '''
 
-    __ = 'argo_sectionhead'
+    table = 'argo_sectionhead'  ## The MySQL table name
 
     def get_all_section(self):
-        return self.table_select_all(self.__)
+        u'''Return all sections'''
+        return self.table_select_all(self.table)
 
     def get_all_section_with_rownum(self):
+        u'''Return all sections with rownum.'''
         d = self.get_all_section()
-        return with_index(d)
+        return with_index(d, 0)
 
     def get_section(self,name):
         u''' Get a section by sectionname.'''
-        return self.table_get_by_key(self.__, 'sectionname', name)
+        return self.table_get_by_key(self.table, 'sectionname', name)
 
     def get_section_by_sid(self, sid):
-        return self.table_get_by_key(self.__, 'sid', sid)
+        u'''Get a section by sid'''
+        return self.table_get_by_key(self.table, 'sid', sid)
 
     def add_section(self,**kwargs):
-        return self.table_insert(self.__, kwargs)
+        u'''Add a section. kwargs is the key/value the section will
+        has. It may by `sid`, `sectionaname`, `description`,
+        or `introduction`. '''
+        return self.table_insert(self.table, kwargs)
     
-    def update_section(self, sid, **attr):
-        return self.table_update_by_key(self.__, 'sid', sid, attr)
+    def update_section(self, sid, **kwargs):
+        u'''Update a secion's attr by sid. The attr is same as in
+        add_section. '''
+        return self.table_update_by_key(self.table, 'sid', sid, kwargs)
     
     def del_section(self,sid):
-        return self.table_delete_by_key(self.__, 'sid', sid)
+        u'''Delete a section by sid.'''
+        return self.table_delete_by_key(self.table, 'sid', sid)
     
     def name2id(self,sectionname):
-        d = self.table_select_by_key(self.__, 'sid', 'sectionname', sectionname)
+        u'''Covert the sectioname to sid, return None if no such
+        sectionname. '''
+        d = self.table_select_by_key(self.table, 'sid', 'sectionname',
+                                     sectionname)
         return d and d['sid']
 
     def id2name(self,sid):
-        n = self.table_select_by_key(self.__, 'sectionname', 'sid', sid)
+        u'''Covert the sid to sectioname, return None if no such
+        sid. '''
+        n = self.table_select_by_key(self.table, 'sectionname', 'sid', sid)
         return n and n['sectionname']
 
     def get_max_sid(self):
-        n = self.db.get("SELECT max(sid) FROM %s" % self.__)
+        u'''Return the max sid.'''
+        n = self.db.get("SELECT max(sid) FROM %s" % self.table)
         return n or 0
         
 class Board(Model):
@@ -1008,8 +1050,9 @@ class ReadMark(Model):
     def __(self,userid,boardname):
         return self.keyf%(userid,boardname)
 
-    def __init__(self, post):
-        self.post = post
+    def __init__(self, manager):
+        super(ReadMark, self).__init__(manager)
+        self.post = manager.get_module('post')
 
     def is_read(self,userid,boardname,pid):
         key = self.keyf % (userid, boardname)
@@ -1250,14 +1293,19 @@ class UserAuth(Model):
     ban_userid = ['guest','new']
     GUEST = AuthUser(userid='guest',is_first_login=None)
 
-    def __init__(self, **kwargs):
-        self.__dict__.update(kwargs)
+    def __init__(self, manager):
+        super(UserAuth, self).__init__(manager)
+        self.userinfo = manager.get_module('userinfo')
+        self.status = manager.get_module('status')
+        self.userperm = manager.get_module('userperm')
+        self.favourte = manager.get_module('favourite')
+        self.team = manager.get_module('team')
         
     def gen_passwd(self,passwd):
         return bcrypt.hashpw(passwd, bcrypt.gensalt(10))
 
     def set_passwd(self, userid, passwd):
-        self.table.update_user(userid, passwd=self.gen_passwd(passwd))
+        self.userinfo.update_user(userid, passwd=self.gen_passwd(passwd))
 
     def check_passwd_match(self,passwd,code):
         try:
@@ -1267,7 +1315,7 @@ class UserAuth(Model):
 
     def user_exists(self,userid):
         try:
-            return bool(self.table.name2id(userid))
+            return bool(self.userinfo.name2id(userid))
         except:
             return False        
 
@@ -1280,7 +1328,7 @@ class UserAuth(Model):
             raise RegistedError(u'此帐号已被使用')
 
     def register(self, userid, passwd, **kwargs):
-        self.table.add_user(
+        self.userinfo.add_user(
             userid=userid,
             passwd=self.gen_passwd(passwd),
             nickname=userid,
@@ -1298,7 +1346,7 @@ class UserAuth(Model):
             raise LoginError(LoginError.NO_SUCH_USER) # Not such user self.get_guest()
 
         # user_exist
-        code = self.table.select_attr(userid,"passwd")
+        code = self.userinfo.select_attr(userid,"passwd")
         if code is None :
             raise LoginError(u'没有该用户！')
         code = code['passwd']
@@ -1306,10 +1354,10 @@ class UserAuth(Model):
         #check_password
         if not self.check_passwd_match(passwd,code):
             raise LoginError(u'帐号和密码不匹配！')
-        self.table.update_user(userid,
+        self.userinfo.update_user(userid,
                                lasthost=host,
                                lastlogin=datetime.now())
-        res = self.table.get_user(userid)
+        res = self.userinfo.get_user(userid)
         res.is_first_login = res['firstlogin'] == 0
 
         userid = res['userid']
@@ -1400,14 +1448,15 @@ class Action(Model):
     using mod: board, status, post, mail, userinfo
     '''
 
-    def __init__(self,board,status,post,mail,userinfo,readmark, notify):
-        self.board = board
-        self.status = status
-        self.post = post
-        self.mail = mail
-        self.userinfo = userinfo
-        self.readmark = readmark
-        self.notify = notify
+    def __init__(self, manager):
+        super(Action, self).__init__(manager)
+        self.board = manager.get_module('board')
+        self.status = manager.get_module('status')
+        self.post = manager.get_module('post')
+        self.mail = manager.get_module('mail')
+        self.userinfo = manager.get_module('userinfo')
+        self.readmark = manager.get_module('readmark')
+        self.notify = manager.get_module('notify')
         
     def enter_board(self,sessionid,boardname):
         self.status.enter_board(boardname)
@@ -1525,14 +1574,15 @@ class Admin(Model):
     using mod: board, userperm, post, section
     '''
 
-    def __init__(self, board, userperm, post, section, deny, userinfo, mail):
-        self.board = board
-        self.userperm = userperm
-        self.post = post
-        self.section = section
-        self.deny = deny
-        self.userinfo = userinfo
-        self.mail = mail
+    def __init__(self, manager):
+        super(Admin, self).__init__(manager)
+        self.board = manager.get_module('board')
+        self.userperm = manager.get_module('userperm')
+        self.post = manager.get_module('post')
+        self.section = manager.get_module('section')
+        self.deny = manager.get_module('deny')
+        self.userinfo = manager.get_module('userinfo')
+        self.mail = manager.get_module('mail')
 
     def set_post_replyattr(self,userid, boardname, pid, replyable):
         self.post.update_post(boardname, pid, replyable=replyable)
@@ -1638,16 +1688,23 @@ class Deny(Model):
         self.table_insert(self._u, record)
         self.table_delete_by_key(self._d, 'id', record['id'])
 
-class Query:
+class Query(Model):
 
     u'''
     High level operation about query content.
     using mod: board, userperm, perm, favourite, section, post, userinfo
     '''
 
-    def __init__(self, **kwargs):
-        for k in kwargs:
-            setattr(self, k, kwargs[k])
+    def __init__(self, manager):
+        super(Query, self).__init__(manager)
+        self.board = manager.get_module('board')
+        self.userperm = manager.get_module('userperm')
+        self.perm = manager.get_module('perm')
+        self.favourte = manager.get_module('favourite')
+        self.section = manager.get_module('section')
+        self.post = manager.get_module('post')
+        self.userinfo = manager.get_module('userinfo')
+        self.team = manager.get_module('team')
 
     def _wrap_boards(self, userid, boards):
         rboards = []
@@ -1747,27 +1804,27 @@ class FreqControl(Model):
     def filter_freq_send_mail(self, sessionid):
         return self._filter_freq('SEND_MAIL', sessionid, self.SEND_MAIL)
 
-class Manager:
+# class Manager:
 
-    u'''
-    Mix all model together.
-    '''
+#     u'''
+#     Mix all model together.
+#     '''
 
-    @classmethod
-    def configure(cls,config):
-        cls.db = config.db
-        cls.ch = config.ch
-        for name in config.use :
-            model = config.use[name]
-            setattr(cls,name,model)
+#     @classmethod
+#     def configure(cls,config):
+#         cls.db = config.db
+#         cls.ch = config.ch
+#         for name in config.use :
+#             model = config.use[name]
+#             setattr(cls,name,model)
 
-    def bind(self,**kwargs):
-        for k in kwargs:
-            setattr(self,k,kwargs[k])
+#     def bind(self,**kwargs):
+#         for k in kwargs:
+#             setattr(self,k,kwargs[k])
 
-def with_index(d):
+def with_index(d, start_num):
     for index in range(len(d)):
-        d[index]['rownum'] = index
+        d[index]['rownum'] = start_num + index
     return d
 
 def add_column(coldef,after,*tables):
