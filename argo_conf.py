@@ -5,35 +5,33 @@
     argo 的全局配置文件
 '''
 
-class ConfigBase:
-    '''
-        Basic config
-    '''
-    import os
-    base_dir = os.path.dirname(os.path.abspath(__file__))
-    data_dir = os.path.join(base_dir, 'database/')
+import os
 
-class ConfigDB:
-    '''
-        Database config
-    '''
-    host = "localhost"
-    port= 3306
-    user= "bbs"
-    passwd= "forargo"
-    dbname = "argo"
+BASE_DIR = os.path.dirname(os.path.abspath(__file__))
+DATA_DIR = os.path.join(BASE_DIR, 'database/')
 
-class ConfigCache:
-    '''
-        Cache config
-    '''
-    host = "localhost"
-    port = 6379
+#######################
+# Database Configure ##
+#######################
 
+SQL_TPL_DIR = BASE_DIR
+
+DB_HOST = 'localhost'
+DB_PORT = 3306
+DB_USER = 'bbs'
+DB_PASSWD = 'forargo'
+DB_NAME = 'argo'
+BASE_TABLE = [ 'attachead','boardhead','sectionhead','user','userattr']
+
+###################
+# Redis Configure #
+###################
+
+REDIS_HOST = 'localhost'
+REDIS_PORT = 6379
 
 #class ConfigTelnetServer:
 #   pass
-
 
 #class ConfigWebServer:
 #   pass

@@ -110,9 +110,6 @@ class Model:
         self.db = manager.db  # Alias self.db as manager.db
         self.ch = manager.ch
 
-    def assign(self, **modules):
-        self.__dict__.update(modules)
-
     def table_select_all(self,tablename):
         return self.db.query("SELECT * FROM `%s`" % tablename)
 
@@ -1803,24 +1800,6 @@ class FreqControl(Model):
     
     def filter_freq_send_mail(self, sessionid):
         return self._filter_freq('SEND_MAIL', sessionid, self.SEND_MAIL)
-
-# class Manager:
-
-#     u'''
-#     Mix all model together.
-#     '''
-
-#     @classmethod
-#     def configure(cls,config):
-#         cls.db = config.db
-#         cls.ch = config.ch
-#         for name in config.use :
-#             model = config.use[name]
-#             setattr(cls,name,model)
-
-#     def bind(self,**kwargs):
-#         for k in kwargs:
-#             setattr(self,k,kwargs[k])
 
 def with_index(d, start_num):
     for index in range(len(d)):

@@ -1,4 +1,5 @@
 # -*- coding: utf-8 -*-
+from argo_conf import *
 
 import logging
 
@@ -8,6 +9,8 @@ from chaofeng import ascii as ac
 import yaml
 # from chaofeng.g import static
 # from template import load_jinjatxt,load_jinjatpl
+
+USE_EVENTLET_DB_POOL = True
 
 import os, sys
 

@@ -17,8 +17,9 @@ argon是全新的[argo](http://bbs.sysu.edu.cn)实现。使用python实现。
 Todo
 ----
 
-  * 完善数据库及model建设
-  * telnet建设
+  * telnet完善
+  * web的原型
+  * frgg搜索
   * 更多人的参与
   * ...
 
@@ -56,6 +57,7 @@ Dependencies
   * bcrypt
   * chaofeng
   * tornado
+  * yaml(python)
   * bootstrap
 
 其中jinja2目前被telnet端使用，可能会被web端使用。

@@ -1,7 +1,4 @@
-import MySQLdb
-import cPickle
 import config
-
 import status
 from error import *
 
@@ -29,11 +26,10 @@ MODULE_NAME = {
 
 def get_telnet_manager():
     from globaldb import global_conn, global_cache
-    from Model import Manager
     from Model import Section, Status, UserInfo, UserSign, Board,\
         Post, Mail, ReadMark, Permissions, Favourite, Clipboard,\
         Disgest, FreqControl, Notify, Notice, Team, \
-        UserAuth, Deny, Admin, Query
+        UserAuth, Deny, Admin, Query, Manager
     from perm import ArgoTeam
     return Manager(global_conn, global_cache, [
             Section, Status, UserInfo, UserSign, Board, Post, Mail,
@@ -44,79 +40,3 @@ def get_telnet_manager():
 
 manager = get_telnet_manager()
 manager.telnet = {}
-
-# class CF:
-
-#     from globaldb import global_conn,global_cache
-#     from Model import Section,Status,UserInfo,UserAuth,\
-#         Board,Post,Action,ReadMark,Mail,Permissions,UserSign,\
-#         Favourite, Clipboard, Disgest,FreqControl, Team, Admin,\
-#         Query, Deny, Notify, Notice
-#     from perm import ArgoTeam
-    
-#     db = global_conn
-#     ch = global_cache
-
-#     section   = Section()
-#     status    = Status()
-#     userinfo  = UserInfo()
-#     usersign  = UserSign()
-#     board     = Board()
-#     post      = Post()
-#     mail      = Mail()
-#     readmark  = ReadMark(post=post)
-#     perm      = Permissions()
-#     favourite = Favourite()
-#     clipboard = Clipboard()
-#     disgest   = Disgest()
-#     freq      = FreqControl()
-
-#     notify    = Notify()
-#     notice    = Notice()
-    
-#     team      = Team()
-#     userperm  = ArgoTeam(team, perm)
-#     auth      = UserAuth()
-#     action    = Action()
-#     deny      = Deny()
-#     admin     = Admin()
-#     query     = Query()
-    
-#     loads = [section,status,userinfo,auth,board,post,readmark,mail,usersign,
-#              favourite,clipboard,disgest,freq, perm, team, userperm, admin,
-#              deny, notify, notice]
-
-#     use = {
-#         "section":section,
-#         "status":status,
-#         "userinfo":userinfo,
-#         "auth":auth,
-#         "board":board,
-#         "post":post,
-#         "action":action,
-#         "readmark":readmark,
-#         "perm":perm,
-#         "usersign":usersign,
-#         "favourite":favourite,
-#         "mail":mail,
-#         "clipboard":clipboard,
-#         "disgest":disgest,
-#         "freq":freq,
-#         "userperm":userperm,
-#         "team":team,
-#         "admin":admin,
-#         "query":query,
-#         "deny":deny,
-#         "notify":notify,
-#         "notice":notice,
-#         }
-
-#     @classmethod
-#     def load(cls):
-#         for model in cls.loads :
-#             model.bind(db = cls.db, ch = cls.ch)
-
-# CF.load()
-# manager = Manager()
-# Manager.configure(CF)
-# manager.telnet = {}  # cache use for telnet
