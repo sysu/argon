@@ -7,7 +7,6 @@ from chaofeng.ui import SimpleTextBox
 import chaofeng.ascii as ac
 from model import manager
 from libframe import BaseAuthedFrame
-from libformat import style2telnet
 import logging
 
 logger = logging.getLogger('@view')
@@ -145,7 +144,6 @@ class ViewPostFrame(BaseTextBoxFrame):
                                   self.session['lastboardname'],
                                   post['pid'])
         text = self.wrapper_post(self.post)
-        text = style2telnet(text)
         self.reset_text(text, 0)
 
     def same_topic_view(self):
