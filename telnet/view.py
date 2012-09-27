@@ -35,7 +35,6 @@ class BaseTextBoxFrame(BaseAuthedFrame):
         "k":"move_up",
         ac.k_down : "move_down",
         " ":"move_down",
-        ac.k_right:"move_down",
         "j":"move_down",
         ac.k_ctrl_b:"page_up",
         ac.k_page_up:"page_up",
@@ -79,7 +78,8 @@ class BaseTextBoxFrame(BaseAuthedFrame):
 
     def bottom_bar(self, s, l, message=''):
         self.write(ac.move2(24,1))
-        self.render(u'bottom_view', s=s, l=l, message=message)
+        percent = (s+1)*100 // (l+1) ;
+        self.render(u'bottom_view', s=s, percent=percent, message=message)
 
     def message(self, msg):
         self.push(ac.move2(24, 1))
@@ -205,7 +205,9 @@ class ViewPostSameTopic(BaseTextBoxFrame):
         
     def bottom_bar(self, s, l, message=''):
         self.write(ac.move2(24,1))
-        self.render(u'bottom_view_topic', s=s, l=l, message=message)
+        percent = (s+1)*100 // (l+1) ;
+        self.render(u'bottom_view_topic', s=s, percent=percent,
+                    message=message)
         
 @mark('help')
 class TutorialFrame(BaseTextBoxFrame):

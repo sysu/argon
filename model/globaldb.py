@@ -26,6 +26,7 @@ class BaseDBConnection:
 
     def query(self, query, *parameters):
         """Returns a row list for the given query and parameters."""
+        logger.debug('QUERY{{%s}}[[%s]]', query, parameters)
         conn = self._conn()
         cursor = conn.cursor()
         try:
@@ -57,6 +58,7 @@ class BaseDBConnection:
 
     def execute_lastrowid(self, query, *parameters):
         """Executes the given query, returning the lastrowid from the query."""
+        logger.debug('EXECUTE{{%s}}[[%s]]', query, parameters)
         conn = self._conn()
         cursor = conn.cursor()
         try:
@@ -97,12 +99,14 @@ class BaseDBConnection:
 
         We return the lastrowid from the query.
         """
-        conn, cursor = self._conn()
+        conn = self._conn()
+        cursor = conn.cursor()
         try:
             cursor.executemany(query, parameters)
             return cursor.lastrowid
         finally:
-            self._close_conn(conn, cursor)
+            cursor.close()
+            self._finish_conn(conn)
 
     def executemany_rowcount(self, query, parameters):
         """Executes the given query against all the given param sequences.
@@ -227,7 +231,8 @@ class EventLetDBPool(BaseDBConnection):
 
     def __init__(self, host, database, user=None, password=None):
         args = dict(conv=CONVERSIONS, use_unicode=True, charset="utf8",
-                    db=database, init_command='SET time_zone = "+0:00"',
+                    db=database,
+                    init_command='SET time_zone = "+0:00"',
                     sql_mode="TRADITIONAL")
         if user is not None:
             args['user'] = user
@@ -248,7 +253,9 @@ class EventLetDBPool(BaseDBConnection):
         self._pool = db_pool.ConnectionPool(MySQLdb, **args)
 
     def _conn(self):
-        return self._pool.get()
+        conn = self._pool.get()
+        conn.autocommit(True)
+        return conn
 
     def _finish_conn(self, conn):
         self._pool.put(conn)

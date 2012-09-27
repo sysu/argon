@@ -29,13 +29,13 @@ def get_telnet_manager():
     from Model import Section, Status, UserInfo, UserSign, Board,\
         Post, Mail, ReadMark, Permissions, Favourite, Clipboard,\
         Disgest, FreqControl, Notify, Notice, Team, \
-        UserAuth, Deny, Admin, Query, Manager
+        UserAuth, Deny, Admin, Query, Manager, Action
     from perm import ArgoTeam
     return Manager(global_conn, global_cache, [
             Section, Status, UserInfo, UserSign, Board, Post, Mail,
             ReadMark, Permissions, Favourite, Clipboard, Disgest,
             FreqControl, Notify, Notice, Team, ArgoTeam, UserAuth,
-            Deny, Admin, Query
+            Deny, Admin, Query, Action
             ], MODULE_NAME)
 
 manager = get_telnet_manager()

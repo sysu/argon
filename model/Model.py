@@ -421,10 +421,10 @@ class Post(Model):
     def clear_personal_junk(self):
         return self.db.execute("TRUNCATE TABLE %s" % self._person_junk)
 
-    def _wrapper_index(self, data, num):
-        for index in range(len(data)):
-            data[index]['index'] = num + index
-        return data
+    # def _wrapper_index(self, data, num):
+    #     for index in range(len(data)):
+    #         data[index]['index'] = num + index
+    #     return data
 
     def get_rank_num(self, boardname, pid):
         return self.db.get('SELECT count(*) '
@@ -458,7 +458,7 @@ class Post(Model):
     def get_posts(self, boardname, num, limit):
         res = self.db.query("SELECT * FROM `%s` ORDER BY pid LIMIT %%s,%%s" %\
                             self.__(boardname), num, limit)
-        return self._wrapper_index(res, num)
+        return with_index(res, num)
 
     def get_posts_loader(self, boardname, cond=''):
         if cond :
@@ -467,7 +467,7 @@ class Post(Model):
         else:
             sql = "SELECT * FROM `%s` ORDER BY pid LIMIT %%s,%%s" % \
                 self.__(boardname)
-        return lambda start, limit: self._wrapper_index(
+        return lambda start, limit: with_index(
             self.db.query(sql, start, limit), start,
             )
 
@@ -485,7 +485,7 @@ class Post(Model):
     def get_posts_g(self,boardname,num,limit):
         res = self.db.query("SELECT * FROM `%s` WHERE flag & 1 ORDER BY pid LIMIT %%s,%%s" %\
                                 self.__(boardname), num, limit)
-        return self._wrapper_index(res, num)
+        return with_index(res, num)
 
     def get_posts_g_total(self, boardname):
         return self.db.get("SELECT count(*) FROM %s WHERE flag & 1" % self.__(boardname))['count(*)']
@@ -493,7 +493,7 @@ class Post(Model):
     def get_posts_m(self,boardname,num,limit):
         res = self.db.query("SELECT * FROM `%s` WHERE flag & 2 ORDER BY pid LIMIT %%s,%%s" %\
                                        self.__(boardname), num, limit)
-        return self._wrapper_index(res, num)
+        return with_index(res, num)
 
     def get_posts_m_total(self, boardname):
         return self.db.get("SELECT count(*) FROM %s WHERE flag & 2" % self.__(boardname))['count(*)']
@@ -501,7 +501,7 @@ class Post(Model):
     def get_posts_topic(self,boardname,num,limit):
         res = self.db.query("SELECT * FROM `%s` WHERE replyid=0 ORDER BY pid LIMIT %%s,%%s" %\
                                 self.__(boardname), num, limit)
-        return self._wrapper_index(res, num)
+        return with_index(res, num)
 
     def get_posts_topic_total(self, boardname):
         return self.db.get("SELECT count(*) FROM %s WHERE replyid=0" % self.__(boardname))['count(*)']
@@ -509,7 +509,7 @@ class Post(Model):
     def get_posts_onetopic(self,tid,boardname,num,limit):
         res = self.db.query("SELECT * FROM `%s` WHERE tid=%%s ORDER BY pid LIMIT %%s,%%s" %\
                                 self.__(boardname), tid, num, limit)
-        return self._wrapper_index(res, num)
+        return with_index(res, num)
 
     def get_posts_onetopic_total(self, tid, boardname):
         return self.db.get("SELECT count(*) FROM %s WHERE tid=%%s" % self.__(boardname), tid)['count(*)']
@@ -517,7 +517,7 @@ class Post(Model):
     def get_posts_owner(self,author,boardname,num,limit):
         res = self.db.query("SELECT * FROM `%s` WHERE owner=%%s ORDER BY pid LIMIT %%s,%%s" %\
                                 self.__(boardname), author, num, limit)
-        return self._wrapper_index(res, num)
+        return with_index(res, num)
 
     def get_posts_owner_total(self, author, boardname):
         return self.db.get("SELECT count(*) FROM %s WHERE owner=%s" % self.__(boardname), author)['count(*)']
@@ -814,14 +814,14 @@ class Mail(Model):
         sql = "SELECT * FROM `%s` WHERE touserid='%s' ORDER BY mid LIMIT %%s, %%s" % (
             self.__(uid), self.db.escape_string(userid))
         func = self.db.query
-        wrapper = self._wrapper_index
+        wrapper = with_index
         return lambda o,l : wrapper(func(sql, o, l), o)
 
     def get_topic_mail_loader(self, uid, userid):
         sql = "SELECT * FROM `%s` WHERE touserid='%s' ORDER BY tid, mid LIMIT %%s, %%s" % (
             self.__(uid), self.db.escape_string(userid))
         func = self.db.query
-        wrapper = self._wrapper_index
+        wrapper = with_index
         return lambda o,l : wrapper(func(sql, o, l), o)
 
     def get_mail_counter(self, uid, userid):
@@ -1110,13 +1110,13 @@ class UserSign(Model):
 
     def get_sign(self,userid,index):
         key = self.keyf % userid
-        return self.u(self.ch.lindex(key,index))
+        return utf8(self.ch.lindex(key,index))
 
     def get_random(self,userid):
         key = self.keyf % userid
         l = self.ch.llen(key)
         i = self.ch.lindex(key,random.randint(0,l-1))
-        return self.u(self.ch.lindex(key,i))
+        return utf8(self.ch.lindex(key,i))
 
     def get_sign_num(self,userid):
         key = self.keyf % userid
@@ -1188,7 +1188,7 @@ class Team(Model):
         return self.ch.smembers(self.key_ust%userid)
 
     def get_names(self, *teamid):
-        return map( lambda x : self.u(self.ch.hget(self.key_name, x)), teamid)
+        return map( lambda x : utf8(self.ch.hget(self.key_name, x)), teamid)
 
 class Permissions(Model):
 
@@ -1219,7 +1219,7 @@ class Permissions(Model):
         self.ch.delete(self.key_glb%perm)
 
     def get_teams_with_perm(self, perm):
-        return set(self.u(m) for m in self.ch.smembers(self.key_glb%perm))
+        return set(utf8(m) for m in self.ch.smembers(self.key_glb%perm))
 
     # Board Permissions
 
@@ -1245,7 +1245,7 @@ class Permissions(Model):
         return self.ch.sismember(self.key_brd%(boardname, perm), teamname)
 
     def get_teams_with_boardperm(self, boardname, perm):
-        return set( self.u(m) for m in self.ch.smembers(self.key_brd%(boardname, perm)))
+        return set( utf8(m) for m in self.ch.smembers(self.key_brd%(boardname, perm)))
 
 class Clipboard(Model):
 
@@ -1271,7 +1271,7 @@ class Clipboard(Model):
 
     def get_clipboard(self, userid):
         key = self.keyf % userid
-        return self.u(self.ch.get(key))
+        return utf8(self.ch.get(key))
 
 class AuthUser(dict):
     def __getattr__(self, name):
@@ -1476,6 +1476,7 @@ class Action(Model):
             replyable=replyable,
             signature=signature,
             )
+        print ('pid', pid)
         self.post.update_post(boardname,pid,tid=pid)
         # self.board.update_attr_plus1(bid,'total')
         # self.board.update_attr_plus1(bid,'topic_total')
@@ -1706,7 +1707,8 @@ class Query(Model):
     def _wrap_boards(self, userid, boards):
         rboards = []
         for board in boards:
-            board['perm'] = self.userperm.get_board_ability(userid, board['boardname'])
+            board['perm'] = self.userperm.get_board_ability(userid,
+                                                            board['boardname'])
             if board.perm[0] :
                 rboards.append(board)
         return rboards
@@ -1803,8 +1805,11 @@ class FreqControl(Model):
 
 def with_index(d, start_num):
     for index in range(len(d)):
-        d[index]['rownum'] = start_num + index
+        d[index]['index'] = start_num + index
     return d
+
+def utf8(source):
+    return source.decode('utf8')
 
 def add_column(coldef,after,*tables):
     for table in tables:
