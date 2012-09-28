@@ -1295,7 +1295,7 @@ class UserAuth(Model):
         self.userinfo = manager.get_module('userinfo')
         self.status = manager.get_module('status')
         self.userperm = manager.get_module('userperm')
-        self.favourte = manager.get_module('favourite')
+        self.favourite = manager.get_module('favourite')
         self.team = manager.get_module('team')
         
     def gen_passwd(self,passwd):
