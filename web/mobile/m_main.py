@@ -14,7 +14,7 @@ class MobileIndexHandler(MobileBaseHandler):
     
     def get(self):
         self._tpl['top'] = []
-        self.mrender('m_index.html')  
+        self.mrender('m_index.html')
    
 @mark('MobileLoginHandler')
 class MobileLoginHandler(MobileBaseHandler):

@@ -9,7 +9,7 @@ CREATE TABLE IF NOT EXISTS `argo_user` (
     `remail` varchar(80),
     `netid`  varchar(20),
     
-    `iconidx` varchar(20),
+    `iconidx` varchar(32),
 
     -- `register` datetime NOT NULL default CURRENT_TIMESTAMP,
     `registerhost` varchar(20),
@@ -33,11 +33,11 @@ CREATE TABLE IF NOT EXISTS `argo_user` (
     `gender`  int(11) unsigned default 1,
     `realname` varchar(20),
 
-    `contact` varchar(80) ,
-    `want` varchar(50) ,
-    `job` varchar(80) ,
-    `shai` varchar(140) ,
-    `marriage` varchar(10) ,
+    `contact` varchar(80),
+    `want` varchar(50),
+    `job` varchar(80),
+    `shai` varchar(140),
+    `marriage` varchar(10),
 
     `about` text ,
     
@@ -46,3 +46,4 @@ CREATE TABLE IF NOT EXISTS `argo_user` (
     PRIMARY KEY (`uid`),
     UNIQUE KEY `userid` (`userid`)
 ) ENGINE=InnoDB  DEFAULT CHARSET=UTF8;
+

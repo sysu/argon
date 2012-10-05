@@ -1,4 +1,4 @@
-import config
+#import config
 import status
 from error import *
 
@@ -40,3 +40,4 @@ def get_telnet_manager():
 
 manager = get_telnet_manager()
 manager.telnet = {}
+

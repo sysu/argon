@@ -30,13 +30,6 @@ BASE_TABLE = [ 'attachead','boardhead','sectionhead','user','userattr']
 REDIS_HOST = 'localhost'
 REDIS_PORT = 6379
 
-#class ConfigTelnetServer:
-#   pass
-
-#class ConfigWebServer:
-#   pass
-
-
 class ConfigTestDate:
     '''
     Setting of section.
@@ -86,3 +79,6 @@ class ConfigTestDate:
             "description":"for sys",
             },
         )
+
+
+

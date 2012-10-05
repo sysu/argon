@@ -1,5 +1,5 @@
-DROP TABLE IF EXISTS `argo_filehead`;
-CREATE TABLE IF NOT EXISTS `argo_filehead` (
+DROP TABLE IF EXISTS `argo_filehead_junk`;
+CREATE TABLE IF NOT EXISTS `argo_filehead_junk` (
        `pid` int(11) unsigned NOT NULL auto_increment,
        `bid` int(11) unsigned NOT NULL default 0,
        `owner` varchar(20) NOT NULL default '',

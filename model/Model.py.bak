@@ -43,7 +43,7 @@ class Manager(object):
             modname = (name and name.get(modclass.__name__))\
                 or modclass.__name__.lower()
             self.bind(modname, module)
-        
+
     def bind(self, bindname, module):
         u'''Bind the module into the manager use the bindname.
         So we can use manager.bindname to use the module.
@@ -96,7 +96,7 @@ class Model(object):
         USE THE MANAGER
 
         Load this model into manager, use __class__.__name__.lower()
-        as bindname if bindname is not set.
+        as bindname is bindname is not set.
         
         An model fix other model, may rewrite this metheds to set some
         alise for other model, i.e.:
@@ -327,68 +327,96 @@ class Post(Model):
     u'''
     Low level operation of post.
 
-    db: argo_filehead;
+    db: argo_filehead_$boardname
     ch: [hash] : argo_lastpost[boardname]
-
+    
     '''
 
-    #_prefix = 'argo_filehead_%s'
-    _index_table = 'argo_filehead'
-    _junk_table= 'argo_filehead_junk'
-
+    _prefix = 'argo_filehead_%s'
+    _table_junk = 'argo_filehead_%s_junk'
+    _person_junk = 'argo_filehead_JUNK'
+    
     lastp = 'argo:lastpost'
 
-    def __init__(self, manager):
-        super(Post, self).__init__(manager)
-        self.board = manager.get_module('board')
+    all_attrs = ['pid', 'bid' ,'owner' ,'realowner' ,'title' ,'flag' ,
+                 'tid' ,'replyid' ,'posttime' ,'attachidx' ,'fromaddr' ,
+                 'fromhost' ,'content' ,'quote' ,'signature' ,'agree' ,
+                 'disagree' ,'credit' ,'originalfilename' ,'replyable']
+
+    all_attrs_str = ','.join(all_attrs)
+    
+    def __(self,boardname):
+        return self._prefix % boardname
+
+    def _get_junk_table(self, boardname):
+        return self._table_junk % boardname        
+
+    def _create_table(self,boardname,**kwargs):
+        import config
+        from string import Template
+        with open(config.SQL_TPL_DIR + 'template/argo_filehead.sql') as f :
+            board_template = Template(f.read())
+            self.execute_paragraph(board_template.safe_substitute(
+                    boardname=boardname))
+
+    def _create_table_junk(self, boardname, **kwargs):
+        import config
+        from string import Template
+        with open(config.SQL_TPL_DIR + 'template/argo_filehead_junk.sql') as f :
+            board_template = Template(f.read())
+            self.execute_paragraph(board_template.safe_substitute(
+                    boardname=boardname))
 
     def _move_post(self, tablename, pid, new_tablename):
-        self.db.execute("INSERT INTO `%s` "
-                        "(SELECT * "
+        self.db.execute("INSERT INTO `%s` (%s) "
+                        "SELECT %s "
                         "FROM `%s` "
-                        "WHERE pid=%%s)" % (new_tablename, tablename), pid)
-
+                        "WHERE pid=%%s" % (new_tablename, self.all_attrs_str,
+                                           self.all_attrs_str, tablename),
+                        pid)
         return self.db.execute("DELETE FROM %s "
                                "WHERE pid=%%s" % tablename, pid)
 
     def _move_post_range(self, tablename, new_tablename, start, end):
-        self.db.execute("INSERT INTO `%s` "
-                        "(SELECT * "
+        self.db.execute("INSERT INTO `%s` (%s) "
+                        "SELECT %s "
                         "FROM `%s` "
-                        "WHERE pid>=%%s AND pid<%%s AND not flag)" % \
-                            (new_tablename, tablename),
+                        "WHERE pid>=%%s AND pid<%%s AND not flag" % \
+                            (new_tablename, self.all_attrs_str,
+                             self.all_attrs_str, tablename),
                         start, end)
         return self.db.execute("DELETE FROM %s "
                                "WHERE pid>=%%s AND pid<%%s AND not flag" % tablename, start, end)
 
     def _move_post_many(self, tablename, new_tablename, pids):
-        self.db.executemany("INSERT INTO `%s` "
-                            "(SELECT * "
+        self.db.executemany("INSERT INTO `%s` (%s) "
+                            "SELECT %s "
                             "FROM `%s` "
-                            "WHERE pid=%%s AND not flag)" % (new_tablename, tablename),
+                            "WHERE pid=%%s AND not flag" % (new_tablename, self.all_attrs_str,
+                                                            self.all_attrs_str, tablename),
                             pids)
         return self.db.executemany("DELETE FROM %s "
                                    "WHERE pid=%%s AND not flag" % tablename, pids)
 
     def remove_post_junk(self, boardname, pid):
-        return self._move_post(self._index_table, pid,
-                               self._junk_table)
+        return self._move_post(self.__(boardname), pid,
+                               self._get_junk_table(boardname))
 
     def remove_post_junk_range(self, boardname, start, end):
-        return self._move_post_range(self._index_table, self._junk_table,
+        return self._move_post_range(self.__(boardname), self._get_junk_table(boardname),
                                      start, end)
 
     def remove_post_personal(self, boardname, pid):
-        return self._move_post(self._index_table, pid,
+        return self._move_post(self.__(boardname), pid,
                                self._person_junk)
 
     def get_junk_posts(self, boardname, num, limit):
-        return self.db.query("SELECT * FROM `%s` ORDER BY pid LIMIT %%s,%%s" % \
-                                 self._junk_table, num, limit)
+        return self.db.query("SELECT * FROM `%s` ORDER BY jid LIMIT %%s,%%s" % \
+                                 self._get_junk_table(boardname), num, limit)
 
-    #def get_personal_junk(self, boardname, author):
-    #    return self.db.query("SELECT * FROM `%s` WHERE owner=%s" % \
-    #                             self._person_junk,  author)
+    def get_personal_junk(self, boardname, author):
+        return self.db.query("SELECT * FROM `%s` WHERE owner=%s" % \
+                                 self._person_junk,  author)
 
     def clear_personal_junk(self):
         return self.db.execute("TRUNCATE TABLE %s" % self._person_junk)
@@ -399,30 +427,24 @@ class Post(Model):
     #     return data
 
     def get_rank_num(self, boardname, pid):
-        bid = self.getbid(boardname)
-        return self.db.get('SELECT count(*) as sum'
+        return self.db.get('SELECT count(*) '
                            'FROM `%s` '
-                           'WHERE bid = %%s'
-                           'AND pid<%%s '
-                           'ORDER BY pid' % self._index_table, bid,
-                           pid)['sum']
+                           'WHERE pid<%%s '
+                           'ORDER BY pid' % self.__(boardname),
+                           pid)['count(*)']
 
     def get_rank_num_cond(self, boardname, pid, cond):
-        bid = self.getbid(boardname)
-        return self.db.get('SELECT count(*) as sum'
+        return self.db.get('SELECT count(*) '
                            'FROM `%s` '
-                           'WHERE bid = %%s AND pid<%%s AND %%s '
-                           'ORDER BY pid' % (self._index_table, bid, cond),
-                           pid)['sum']
+                           'WHERE pid<%%s AND %s '
+                           'ORDER BY pid' % (self.__(boardname), cond),
+                           pid)['count(*)']
 
     #####################
 
-    
-    def getbid(self, boardname):
-        '''
-        Conver boardname to bid.
-        '''
-        return self.board.name2id(boardname)
+    FILTER_G = 'flag & 1'
+    FILTER_M = 'flag & 2'
+    FILTER_O = 'replyid=0'
 
     def sql_filter_tid(self, tid):
         return 'tid="%s"' % self.db.escape_string(str(tid))
@@ -434,159 +456,130 @@ class Post(Model):
         return ' AND '.join(buf)
 
     def get_posts(self, boardname, num, limit):
-        bid = self.getbid(boardname)
-        res = self.db.query("SELECT * FROM `%s` WHERE bid = %%s ORDER BY pid LIMIT %%s,%%s" %\
-                            self._index_table, bid, num, limit)
+        res = self.db.query("SELECT * FROM `%s` ORDER BY pid LIMIT %%s,%%s" %\
+                            self.__(boardname), num, limit)
         return with_index(res, num)
 
     def get_posts_loader(self, boardname, cond=''):
-        bid = self.getbid(boardname)
         if cond :
-            sql = "SELECT * FROM `%s` WHERE %s AND bid = %s ORDER BY pid LIMIT %%s,%%s" % \
-                (self._index_table, bid, cond)
+            sql = "SELECT * FROM `%s` WHERE %s ORDER BY pid LIMIT %%s,%%s" % \
+                (self.__(boardname), cond)
         else:
-            sql = "SELECT * FROM `%s` WHERE bid = %s ORDER BY pid LIMIT %%s,%%s" % \
-                (self._index_table, bid)
+            sql = "SELECT * FROM `%s` ORDER BY pid LIMIT %%s,%%s" % \
+                self.__(boardname)
         return lambda start, limit: with_index(
             self.db.query(sql, start, limit), start,
             )
 
     def get_posts_counter(self, boardname, cond=''):
-        bid = self.getbid(boardname)
         if cond :
-            sql = "SELECT count(*) as sum FROM `%s` WHERE %s AND bid = %s" % \
-                (self._index_table, cond, bid)
+            sql = "SELECT count(*) FROM `%s` WHERE %s" % \
+                (self.__(boardname), cond)
         else:
-            sql = "SELECT count(*) as sum FROM `%s` WHERE bid = %s" %\
-            (self._index_table, bid)
-        return lambda : self.db.get(sql)['sum']
-
+            sql = "SELECT count(*) FROM `%s`" % self.__(boardname)
+        return lambda : self.db.get(sql)['count(*)']
+        
     def get_posts_total(self, boardname):
-        bid = self.getbid(boardname)
-        return self.db.get("SELECT count(*) as sum FROM %s WHERE bid = %%s" %\
-                self.__(boardname), bid)['sum']
+        return self.db.get("SELECT count(*) FROM %s" % self.__(boardname))['count(*)']
 
     def get_posts_g(self,boardname,num,limit):
-        bid = self.getbid(boardname)
-        res = self.db.query("SELECT * FROM `%s` WHERE bid = %%s AND mark_g = 1 ORDER BY pid LIMIT %%s,%%s" %\
-                                self._index_table, bid, num, limit)
+        res = self.db.query("SELECT * FROM `%s` WHERE flag & 1 ORDER BY pid LIMIT %%s,%%s" %\
+                                self.__(boardname), num, limit)
         return with_index(res, num)
 
     def get_posts_g_total(self, boardname):
-        bid = self.getbid(boardname)
-        return self.db.get("SELECT count(*) as sum FROM `%s` WHERE bid = %%s AND mark_g = 1" %\
-                self._index_table, bid)['sum']
+        return self.db.get("SELECT count(*) FROM %s WHERE flag & 1" % self.__(boardname))['count(*)']
 
     def get_posts_m(self,boardname,num,limit):
-        bid = self.getbid(boardname)
-        res = self.db.query("SELECT * FROM `%s` WHERE bid = %%s AND mark_m = 1 ORDER BY pid LIMIT %%s,%%s" %\
-                                       self._index_table, bid, num, limit)
+        res = self.db.query("SELECT * FROM `%s` WHERE flag & 2 ORDER BY pid LIMIT %%s,%%s" %\
+                                       self.__(boardname), num, limit)
         return with_index(res, num)
 
     def get_posts_m_total(self, boardname):
-        bid = self.getbid(boardname)
-        return self.db.get("SELECT count(*) as sum FROM `%s` WHERE bid = %%s AND mark_m = 1" %\
-                self._index_table, bid)['sum']
-
+        return self.db.get("SELECT count(*) FROM %s WHERE flag & 2" % self.__(boardname))['count(*)']
+    
     def get_posts_topic(self,boardname,num,limit):
-        bid = self.getbid(boardname)
-        res = self.db.query("SELECT * FROM `%s` WHERE bid = %%s AND replyid=0 ORDER BY pid LIMIT %%s,%%s" %\
-                                self._index_table, bid, num, limit)
+        res = self.db.query("SELECT * FROM `%s` WHERE replyid=0 ORDER BY pid LIMIT %%s,%%s" %\
+                                self.__(boardname), num, limit)
         return with_index(res, num)
 
     def get_posts_topic_total(self, boardname):
-        bid = self.getbid(boardname)
-        return self.db.get("SELECT count(*) as sum FROM %s WHERE bid = %%s AND replyid=0" %\
-                self._index_table, bid)['sum']
+        return self.db.get("SELECT count(*) FROM %s WHERE replyid=0" % self.__(boardname))['count(*)']
 
     def get_posts_onetopic(self,tid,boardname,num,limit):
-        bid = self.getbid(boardname)
-        res = self.db.query("SELECT * FROM `%s` WHERE bid = %%s AND tid=%%s ORDER BY pid LIMIT %%s,%%s" %\
-                                self._index_table, bid, tid, num, limit)
+        res = self.db.query("SELECT * FROM `%s` WHERE tid=%%s ORDER BY pid LIMIT %%s,%%s" %\
+                                self.__(boardname), tid, num, limit)
         return with_index(res, num)
 
     def get_posts_onetopic_total(self, tid, boardname):
-        bid = self.getbid(boardname)
-        return self.db.get("SELECT count(*) as sum FROM %s WHERE bid = %%s AND tid=%%s" %
-                self._index_table, bid, tid)['sum']
+        return self.db.get("SELECT count(*) FROM %s WHERE tid=%%s" % self.__(boardname), tid)['count(*)']
 
     def get_posts_owner(self,author,boardname,num,limit):
-        bid = self.getbid(boardname)
-        res = self.db.query("SELECT * FROM `%s` WHERE bid = %%s AND owner=%%s ORDER BY pid LIMIT %%s,%%s" %\
-                                self._index_table, bid, author, num, limit)
+        res = self.db.query("SELECT * FROM `%s` WHERE owner=%%s ORDER BY pid LIMIT %%s,%%s" %\
+                                self.__(boardname), author, num, limit)
         return with_index(res, num)
 
     def get_posts_owner_total(self, author, boardname):
-        bid = self.getbid(boardname)
-        return self.db.get("SELECT count(*) as sum FROM %s WHERE bid = %%s AND owner=%%s" %
-                self._index_table, bid, author)['sum']
+        return self.db.get("SELECT count(*) FROM %s WHERE owner=%s" % self.__(boardname), author)['count(*)']
 
     ####################
 
     def get_last_pid(self,boardname):
-        return self.ch.hget(self.lastp, boardname)
+        return self.ch.hget(self.lastp, boardname) 
         # res = self.db.get("SELECT pid FROM `%s` ORDER BY pid DESC LIMIT 1" % \
         #                       self.__(boardname))
         # return res and res['pid']
 
     def get_post_loader(self, boardname):
-        bid = self.getbid(boardname)
-        sql_next = "SELECT * FROM `%s` WHERE bid = %s AND pid > %%s ORDER BY pid LIMIT 1" % (self._index_table, bid)
-        sql_prev = "SELECT * FROM `%s` WHERE bid = %s AND pid < %%s ORDER BY pid DESC LIMIT 1" % (self._index_table,bid)
+        sql_next = "SELECT * FROM `%s` WHERE pid > %%s ORDER BY pid LIMIT 1" % self.__(boardname)
+        sql_prev = "SELECT * FROM `%s` WHERE pid < %%s ORDER BY pid DESC LIMIT 1" % self.__(boardname)
         fun = self.db.get
         return (lambda pid : fun(sql_next, pid),
                 lambda pid : fun(sql_prev, pid))
 
     def get_cond_post_loader(self, boardname, cond):
-        bid = self.getbid(boardname)
-        sql_next = "SELECT * FROM `%s` WHERE bid = %s AND pid > %%s AND %s ORDER BY pid LIMIT 1" %\
-                (self._index_table, bid, cond)
-        sql_prev = "SELECT * FROM `%s` WHERE bid = %s AND pid < %%s AND %s ORDER BY pid DESC LIMIT 1" %\
-                (self._index_table, bid, cond)
+        sql_next = "SELECT * FROM `%s` WHERE pid > %%s AND %s ORDER BY pid LIMIT 1" % (self.__(boardname), cond)
+        sql_prev = "SELECT * FROM `%s` WHERE pid < %%s AND %s ORDER BY pid DESC LIMIT 1" % (self.__(boardname), cond)
         fun = self.db.get
         return (lambda pid : fun(sql_next, pid),
                 lambda pid : fun(sql_prev, pid))
 
     def get_topic_post_loader(self, boardname, tid):
         assert isinstance(tid, long)
-        bid = self.getbid(boardname)
-        sql_next = "SELECT * FROM `%s` WHERE bid = %s AND pid > %%s AND tid=%s ORDER BY pid LIMIT 1" % (self._index_table, bid, tid)
-        sql_prev = "SELECT * FROM `%s` WHERE bid = %s AND pid < %%s AND tid=%s ORDER BY pid DESC LIMIT 1" % (self._index_table, bid, tid)
+        sql_next = "SELECT * FROM `%s` WHERE pid > %%s AND tid=%s ORDER BY pid LIMIT 1" % (self.__(boardname), tid)
+        sql_prev = "SELECT * FROM `%s` WHERE pid < %%s AND tid=%s ORDER BY pid DESC LIMIT 1" % (self.__(boardname), tid)
         fun = self.db.get
         return (lambda pid : fun(sql_next, pid),
                 lambda pid : fun(sql_prev, pid))
 
     def get_post(self,boardname,pid):
-        return self.table_get_by_key(self._index_table, 'pid', pid)
+        return self.table_get_by_key(self.__(boardname), 'pid', pid)
 
     def prev_post(self, boardname, pid):
-        bid = self.getbid(boardname)
-        return self.db.get("SELECT * FROM `%s` WHERE bid = %%s AND pid < %%s ORDER BY pid DESC LIMIT 1" % self._index_table, bid, pid)
+        return self.db.get("SELECT * FROM `%s` WHERE pid < %%s ORDER BY pid DESC LIMIT 1"%\
+                               self.__(boardname), pid)
 
     def next_post(self, boardname, pid):
-        bid = self.getbid(boardname)
-        return self.db.get("SELECT * FROM `%s` WHERE bid = %%s AND pid > %%s ORDER BY pid LIMIT 1" %\
-                               self._index_table, bid, pid)
+        return self.db.get("SELECT * FROM `%s` WHERE pid > %%s ORDER BY pid LIMIT 1" %\
+                               self.__(boardname), pid)
 
     def prev_post_pid(self,boardname,pid):
-        bid = self.getbid(boardname)
-        res = self.db.get("SELECT pid FROM `%s` WHERE bid = %%s AND pid < %%s ORDER BY pid DESC LIMIT 1" %\
-                              self._index_table, bid, pid)
+        res = self.db.get("SELECT pid FROM `%s` WHERE pid < %%s ORDER BY pid DESC LIMIT 1" %\
+                              self.__(boardname), pid)
         return res and res['pid']
 
     def next_post_pid(self,boardname,pid):
-        bid = self.getbid(boardname)
-        res = self.db.get("SELECT pid FROM `%s` WHERE bid = %%s AND pid > %%s ORDER BY pid LIMIT 1" %\
-                              (self._index_table, bid, pid))
+        res = self.db.get("SELECT pid FROM `%s` WHERE pid > %%s ORDER BY pid LIMIT 1" %\
+                              (self.__(boardname),pid))
         return res and res['pid']
 
     def add_post(self,boardname,**kwargs):
-        pid = self.table_insert(self._index_table, kwargs)
+        pid = self.table_insert(self.__(boardname), kwargs)
         self.ch.hset(self.lastp, boardname, pid)               ###############
         return pid
 
     def update_post(self,boardname,pid,**kwargs):
-        return self.table_update_by_key(self._index_table, 'pid', pid, kwargs)
+        return self.table_update_by_key(self.__(boardname), 'pid', pid, kwargs)
 
     def del_post(self,*args,**kwargs):
         u'''
@@ -594,27 +587,30 @@ class Post(Model):
         '''
         pass
 
+    def get_posts_total(self, boardname):
+        return self.db.get("SELECT count(*) FROM %s" % self.__(boardname))['count(*)']
+
     def update_title(self,boardname,pid,new_title):
         return self.update_post(boardname,pid,title=new_title)
 
     def pid2tid(self,boardname,pid):
-        res = self.table_select_by_key(self._index_table,
+        res = self.table_select_by_key(self.__(boardname),
                                        'tid','pid',pid)
         return res and res['tid']
 
     def pid2title(self,boardname,pid):
-        res = self.table_select_by_key(self._index_table,
+        res = self.table_select_by_key(self.__(boardname),
                                        'title','pid',pid)
         return res and res['title']
 
     def index2pid(self, boardname, index):
         if index <=0 : return 0
-        res = self.db.get("SELECT pid FROM `%s` ORDER BY pid LIMIT %%s,1" % self._index_table,
+        res = self.db.get("SELECT pid FROM `%s` ORDER BY pid LIMIT %%s,1" % self.__(boardname),
                           index)
         if res :
             return res['pid']
         else:
-            return self.get_last_pid(boardname) +1
+            return self.get_last_pid(boardname) +1 
 
 class UserInfo(Model):
 
@@ -760,60 +756,86 @@ class Status(Model):
         for s in all_sesions:
             self.logout(s)
         self.ch.delete(self._boardonline)
-
+            
 class Mail(Model):
 
     u'''
     low level operation of mail.
-    db: argo_mailhead
+    db: argo_mailhead_$groupid
 
+    :groupid :: uid//100
+    
     '''
 
-    FLAG_M_MARK = 1
+    _prefix = 'argo_mailhead_'
 
-    _index_table = 'argo_mailhead'
+    def __(self,uid):
+        return self._prefix + str((int(uid) // 100))
 
-    def send_mail(self, **kwargs):
-        return self.table_insert(self._index_table, kwargs)
+    def _tableid(self,uid):
+        return int(uid) / 100
+
+    def _create_table(self,tableid):
+        ###################################################################
+        import config
+        from string import Template
+        with open(config.SQL_TPL_DIR + 'template/argo_mailhead.sql') as f :
+            mail_template = Template(f.read())
+            gentxt = mail_template.safe_substitute(tableid=tableid)
+            self.execute_paragraph(gentxt)
+
+    def send_mail(self, touid, **kwargs):
+        try:
+            return self.table_insert(self.__(touid), kwargs)
+        except ProgrammingError as e:
+            logging.warning(e)
+            if e.args[0] == 1146 : # Table NOT EXIST
+                self._create_table(self._tableid(touid))
+                self.send_mail(touid, **kwargs)
+            raise e
 
     def set_m_mark(self, touid, mail):
         mail['flag'] = mail['flag'] ^ self.FLAG_M_MARK
-        self.db.execute("UPDATE `%s` SET flag=%%s WHERE mid=%%s" % self._index_table,
+        self.db.execute("UPDATE `%s` SET flag=%%s WHERE mid=%%s" % self.__(uid),
                         mail['flag'], mail['mid'])
         return mail
+
+    def remove_mail(self, uid, mid):
+        return self.db.execute("DELETE FROM `%s` WHERE mid=%%s" % self.__(uid),
+                               mid)
 
     def remove_mail_range(self, uid, touserid, start, end):
         return self.db.execute("DELETE FROM `%s` "
                                "WHERE touserid=%%s "
-                               "AND mid>=%%s AND mid<=%%s AND flag=0" % self._index_table,
+                               "AND mid>=%%s AND mid<=%%s AND flag=0" % self.__(uid),
                                touserid, start, end)
 
-    def get_mail_loader(self, userid):
+    def get_mail_loader(self, uid, userid):
         sql = "SELECT * FROM `%s` WHERE touserid='%s' ORDER BY mid LIMIT %%s, %%s" % (
-            self._index_table, self.db.escape_string(userid))
+            self.__(uid), self.db.escape_string(userid))
         func = self.db.query
         wrapper = with_index
         return lambda o,l : wrapper(func(sql, o, l), o)
 
-    def get_topic_mail_loader(self, userid):
+    def get_topic_mail_loader(self, uid, userid):
         sql = "SELECT * FROM `%s` WHERE touserid='%s' ORDER BY tid, mid LIMIT %%s, %%s" % (
-            self._index_table, self.db.escape_string(userid))
+            self.__(uid), self.db.escape_string(userid))
         func = self.db.query
         wrapper = with_index
         return lambda o,l : wrapper(func(sql, o, l), o)
 
-    def get_mail_counter(self, userid):
-        sql = "SELECT count(*) as sum FROM `%s` WHERE touserid='%s'" % (
-            self._index_table, self.db.escape_string(userid))
+    def get_mail_counter(self, uid, userid):
+        sql = "SELECT count(*) FROM `%s` WHERE touserid='%s'" % (
+            self.__(uid), self.db.escape_string(userid))
         func = self.db.get
-        return lambda : func(sql)['sum']
+        return lambda : func(sql)['count(*)']
 
-    def get_mail(self, userid, start, limit):
+    def get_mail(self, touid, touserid, start, limit):
         try:
             return self.db.query("SELECT * FROM `%s` "
                                  "WHERE touserid=%%s "
                                  "ORDER BY mid "
-                                 "LIMIT %%s,%%s" % (self._index_table), userid,
+                                 "LIMIT %%s,%%s" % (self.__(touid)), touserid,
                                  start, limit)
         except ProgrammingError as e:
             if e.args[0] == 1146 : # Table NOT EXIST
@@ -822,85 +844,78 @@ class Mail(Model):
             else:
                 raise e
 
-    def get_mid_rank(self, touserid, mid):
-        return self.db.get('SELECT count(*) as sum'
+    def get_mid_rank(self, uid, touserid, mid):
+        return self.db.get('SELECT count(*) '
                            'FROM `%s` '
                            'WHERE mid<%%s AND touserid=%%s '
-                           'ORDER BY mid' % self._index_table,
-                           mid, touserid)['sum']
+                           'ORDER BY mid' % self.__(uid),
+                           mid, touserid)['count(*)']
 
-    def get_topic_mid_rank(self, touserid, mid):
-        return self.db.get('SELECT count(*) as sum'
+    def get_topic_mid_rank(self, uid, touserid, mid):
+        return self.db.get('SELECT count(*) '
                            'FROM `%s` '
                            'WHERE mid<%%s AND touserid=%%s '
-                           'ORDER BY tid, mid' % self._index_table,
-                           mid, touserid)['sum']
+                           'ORDER BY tid, mid' % self.__(uid),
+                           mid, touserid)['count(*)']
 
-    def get_mail_loader_signle(self, touserid):
-        sql_next = "SELECT * FROM `%s` WHERE touserid = '%s' AND mid > %%s ORDER BY mid LIMIT 1" % \
-                    (self._index_table, self.escape_string(touserid))
-        sql_prev = "SELECT * FROm `%s` WHERE touserid = '%s' AND mid < %%s ORDER BY mid DESC LIMIT 1" %\
-                (self._index_table, self.escape_string(touserid))
+    def get_mail_loader_signle(self, uid, touserid):
+        sql_next = "SELECT * FROM `%s` WHERE mid > %%s ORDER BY mid LIMIT 1" % self.__(uid)
+        sql_prev = "SELECT * FROm `%s` WHERE mid < %%s ORDER BY mid DESC LIMIT 1" % self.__(uid)
         fun = self.db.get
         return (lambda mid : fun(sql_next, mid),
                 lambda mid : fun(sql_prev, mid))
 
-    def get_topic_loader_signle(self, touserid):
-        sql_next = "SELECT * FROM `%s` WHERE touserid = '%s' AND mid > %%s ORDER BY tid, mid LIMIT 1" %\
-                (self._index_table, self.escape_string(touserid))
-        sql_prev = "SELECT * FROm `%s` WHERE touserid = '%s' AND mid < %%s ORDER BY tid, mid DESC LIMIT 1" %\
-                (self._index_table, self.escape_string(touserid))
+    def get_topic_loader_signle(self, uid, touserid):
+        sql_next = "SELECT * FROM `%s` WHERE mid > %%s ORDER BY tid, mid LIMIT 1" % self.__(uid)
+        sql_prev = "SELECT * FROm `%s` WHERE mid < %%s ORDER BY tid, mid DESC LIMIT 1" % self.__(uid)
         fun = self.db.get
         return (lambda mid : fun(sql_next, mid),
                 lambda mid : fun(sql_prev, mid))
 
-    def one_mail(self, mid):
-        return self.table_get_by_key(self._index_table, 'mid', mid)
-
-    def get_mail_total(self, touserid):
-        res = self.db.get("SELECT count(mid) as total FROM `%s` WHERE touserid = %%s" %\
-                self._index_table, touserid)
-        r = res.get('total')
-        return int(r) if r else 0
-
-    def prev_mail(self, userid, mid):
-        return self.db.get("SELECT * FROM `%s` WHERE touserid = %%s AND mid < %%s ORDER BY mid DESC LIMIT 1" %\
-                               self._index_table, userid, mid)
-
-    def next_mail(self, userid, mid):
-        return self.db.get("SELECT * FROM `%s` WHERE touserid = %%s AND mid > %%s ORDER BY mid LIMIT 1" %\
-                               self._index_table, userid, mid)
-
-    def get_new_mail(self, touserid, num, limit):
-        return self.db.get("SELECT * FROM `%s` WHERE touserid = %%s AND readmark = 0" %
-                         self._index_table, touserid)
-
+    def one_mail(self, touid, mid):
+        return self.table_get_by_key(self.__(touid), 'mid', mid)
     
-    def get_last_mid(self, touserid):
-        res = self.db.get("SELECT max(mid) as maxid FROM `%s` WHERE touserid=%%s" % self._index_table, touserid)
+    def get_mail_total(self, touid, touserid):
+        res = self.db.get("SELECT count(mid) as total FROM `%s` WHERE touserid = %%s" % self.__(touid), touserid)
+        r = res.get('total')
+        return int(r) if r else 0 
+
+    def prev_mail(self, userid, touid, mid):
+        return self.db.get("SELECT * FROM `%s` WHERE mid < %s ORDER BY mid DESC LIMIT 1" %\
+                               (self.__(touid),mid))
+
+    def next_mail(self, userid, touid, mid):
+        return self.db.get("SELECT * FROM `%s` WHERE mid > %s ORDER BY mid LIMIT 1" %\
+                               (self.__(touid),mid))
+
+    # def get_new_mail(self, touid, touserid, num, limit):
+    #     return self._query_mail(touid, touserid, limit, 'AND mid>=%s AND readmark = 0'%num)
+    
+    def get_last_mid(self, touid, touserid):
+        res = self.db.get("SELECT max(mid) as maxid FROM `%s` WHERE touserid=%%s" % self.__(touid), touserid)
         r = res.get('maxid')
-        return int(r) if r else 0
+        return int(r) if r else 0 
 
-    def del_mail(self, mid):
-        return self.table_delete_by_key(self._index_table, 'mid',mid)
+    def del_mail(self,touid,mid):
+        return self.table_delete_by_key(self.__(touid), 'mid',mid)
 
-    def update_mail(self, mid, **kwargs):
-        return self.table_update_by_key(self._index_table, 'mid', mid, kwargs)
+    def update_mail(self, uid, mid, **kwargs):
+        return self.table_update_by_key(self.__(uid), 'mid', mid, kwargs)
 
     def set_read(self, uid, mid):
         sql = "UPDATE `%s` SET readmark = readmark | 1 WHERE mid = %%s" %\
-            self._index_table
+            self.__(uid)
         self.db.execute(sql, mid)
 
-    def set_reply(self, mid):
+    def set_reply(self, uid, mid):
         sql = "UPDATE `%s` SET readmark = readmark | 3 WHERE mid = %%s" %\
-            self._index_table
+            self.__(uid)
         self.db.execute(sql, mid)
 
     def get_rank(self, userid, uid, mid):
-        return self.db.get("SELECT count(*) as sum FROM `%s` "
-                           "WHERE mid<=%%s AND touserid=%%s" % self._index_table,
-                           mid, userid)['sum']
+        return self.db.get("SELECT count(*) FROM %s "
+                           "WHERE mid<=%%s AND touserid=%%s" % self.__(uid),
+                           mid, userid)['count(*)']
 
 class Disgest(Model):
 
@@ -1040,7 +1055,7 @@ class ReadMark(Model):
         key = self.keyf % (userid, boardname)
         # Empty record, not read
         # And play a trick here, add -1 into read mark
-        if self.ch.zcard(key) == 0:
+        if self.ch.zcard(key) == 0: 
             self.ch.zadd(key, -1, -1)
             return 0
         res = self.ch.zcount(key, pid, pid)
@@ -1461,7 +1476,7 @@ class Action(Model):
             replyable=replyable,
             signature=signature,
             )
-        #print ('pid', pid)
+        print ('pid', pid)
         self.post.update_post(boardname,pid,tid=pid)
         # self.board.update_attr_plus1(bid,'total')
         # self.board.update_attr_plus1(bid,'topic_total')
@@ -1503,45 +1518,52 @@ class Action(Model):
                               owner = userid,
                               content=content)
     
+    def send_mail(self, fromuserid, touserid, **kwargs):
+        touid = self.userinfo.name2id(touserid)
+        mid =  self.mail.send_mail(touid,
+                                   fromuserid=fromuserid,
+                                   touserid=touserid,
+                                   replyid=0,
+                                   **kwargs)
+        self.mail.update_mail(touid, mid, tid=mid)
+        self.notify.add_mail_notify(touserid)
+        return mid
+
+    def reply_mail(self, userid, old_mail, **kwargs):
+        touid = self.userinfo.name2id(old_mail['fromuserid'])
+        res = self.mail.send_mail(touid,
+                                   fromuserid=userid,
+                                   touserid=old_mail['fromuserid'],
+                                   tid=old_mail['tid'],
+                                   replyid=old_mail['mid'],
+                                   **kwargs)
+        myuid = self.userinfo.name2id(userid)
+        self.mail.set_reply(myuid, old_mail['mid'])
+        self.notify.add_mail_notify(old_mail['fromuserid'])
+        return res
+
+    def del_mail(self,touserid,mid):
+        touid = self.userinfo.name2id(touserid)
+        return self.mail.del_mail(touid, mid)
+
+    def get_mail(self, userid, num, limit, touid=None):
+        touid = touid or self.userinfo.name2id(userid)
+        return self.mail.get_mail(touid, userid, num, limit)
+
+    def get_new_mail(self, userid, num, limit):
+        touid = self.userinfo.name2id(userid)
+        return self.mail.get_new_mail(touid, userid, num, limit)
+
+    def one_mail(self, userid, mid):
+        touid = self.userinfo.name2id(userid)
+        return self.mail.one_mail(userid, mid)        
+
     def update_title(self, userid, boardname, pid, new_title):
         return self.post.update_title(boardname, pid, new_title)
 
     def has_edit_title_perm(self, userid, boardname, pid):
         post = self.post.get_post(boardname, pid)
-        return post['owner'] == userid
-
-
-    def send_mail(self, fromuserid, touserid, **kwargs):
-        mid =  self.mail.send_mail(fromuserid=fromuserid,
-                                   touserid=touserid,
-                                   replyid=0,
-                                   **kwargs)
-        self.mail.update_mail(mid, tid=mid)
-        self.notify.add_mail_notify(touserid)
-        return mid
-
-    def reply_mail(self, userid, old_mail, **kwargs):
-        res = self.mail.send_mail( fromuserid=userid,
-                                   touserid=old_mail['fromuserid'],
-                                   tid=old_mail['tid'],
-                                   replyid=old_mail['mid'],
-                                   **kwargs)
-        self.mail.set_reply(old_mail['mid'])
-        self.notify.add_mail_notify(old_mail['fromuserid'])
-        return res
-
-    def del_mail(self, mid):
-        return self.mail.del_mail(mid)
-
-    def get_mail(self, userid, num, limit, touid=None):
-        return self.mail.get_mail(userid, num, limit)
-
-    def get_new_mail(self, userid, num, limit):
-        return self.mail.get_new_mail(userid, num, limit)
-
-    def one_mail(self, mid):
-        return self.mail.one_mail(mid)
-
+        return post['owner'] == userid            
 
 class Admin(Model):
 
@@ -1570,8 +1592,8 @@ class Admin(Model):
         self.userperm.set_board_post(boardname, postteam)
         self.userperm.set_board_deny(boardname, denyteam)
         self.userperm.set_board_admin(boardname, adminteam)
-        #self.post._create_table(boardname)
-        #self.post._create_table_junk(boardname)
+        self.post._create_table(boardname)
+        self.post._create_table_junk(boardname)
 
     def update_board(self, userid, bid, boardname, sid, description, is_open, is_openw):
         self.board.update_board(bid, boardname=boardname,
@@ -1650,7 +1672,7 @@ class Deny(Model):
         return self.db.query("SELECT * FROM `%s` "
                              "WHERE boardname=%%s "
                              "ORDER BY id LIMIT %%s,%%s" % self._d,
-                             boardname, start, limit)
+                             boardname, start, limit)                             
 
     def deny_user_board(self, executor, userid, boardname, why, denytime, freetime):
         return self.table_insert(self._d, dict(executor=executor, userid=userid,
