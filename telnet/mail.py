@@ -10,7 +10,7 @@ logger = logging.getLogger('@mail')
 from chaofeng import ascii as ac
 from chaofeng.g import mark
 from edit import BaseEditFrame, handler_edit
-from chaofeng.ui import NullValueError, FinitePagedTable
+from chaofeng.ui import NullValueError, FinitePagedTable, TableLoadNoDataError
 from libframe import BaseAuthedFrame, gen_quote_mail
 from view import BaseTextBoxFrame
 from model import manager
@@ -79,7 +79,10 @@ class BaseMailListFrame(BaseAuthedFrame):
             self._table.set_hover_data(mail)
 
     def reload(self):
-        self._table.reload()
+        try:
+            self._table.reload()
+        except TableLoadNoDataError:
+            self.goto_back()
         self._table.restore_screen()
 
     def restore(self):

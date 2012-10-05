@@ -312,7 +312,7 @@ class Favourite(Model):
         self.ch.srem(key, boardname)
 
     def get_all(self, userid):
-        u'''Return a set holds all board's name in user's favourte.'''
+        u'''Return a set holds all board's name in user's favourite.'''
         key = self.keyf % userid
         return self.ch.smembers(key)
 
@@ -389,7 +389,7 @@ class Post(Model):
 
     def remove_post_personal(self, pid):
         return self.db.execute("DELETE FROM %s WHERE pid=%%s" % \
-                                   self._index_table.
+                                   self._index_table,
                                pid)
 
     def get_junk_posts(self, bid, num, limit):
@@ -398,18 +398,18 @@ class Post(Model):
                              bid, num, limit)
 
     def get_rank_num(self, bid, pid):
-        res = self.db.get('SELECT count(*) as sum'
+        res = self.db.get('SELECT count(*) as sum '
                           'FROM `%s` '
-                          'WHERE bid = %%s'
+                          'WHERE bid=%%s '
                           'AND pid<%%s '
                           'ORDER BY pid' % self._index_table, bid,
                           pid)
         return res and res['sum']
 
     def get_rank_num_cond(self, bid, pid, cond):
-        res = self.db.get('SELECT count(*) as sum'
+        res = self.db.get('SELECT count(*) as sum '
                           'FROM `%s` '
-                          'WHERE bid = %%s AND pid<%%s AND %%s '
+                          'WHERE bid=%%s AND pid<%%s AND %%s '
                           'ORDER BY pid' % (self._index_table, bid, cond),
                           pid)
         return res and res['sum']
@@ -549,7 +549,6 @@ class Post(Model):
 
     def add_post(self,boardname,**kwargs):
         pid = self.table_insert(self._index_table, kwargs)
-        self.ch.hset(self.lastp, boardname, pid)               ###############
         return pid
 
     def update_post(self, pid, **kwargs):
@@ -759,21 +758,21 @@ class Mail(Model):
 
     def get_mail_loader(self, userid):
         sql = "SELECT * FROM `%s` WHERE touserid='%s' ORDER BY mid LIMIT %%s, %%s" % (
-            self._index_table, self.db.escape_string(userid))
+            self._index_table, userid)
         func = self.db.query
         wrapper = with_index
         return lambda o,l : wrapper(func(sql, o, l), o)
 
     def get_topic_mail_loader(self, userid):
         sql = "SELECT * FROM `%s` WHERE touserid='%s' ORDER BY tid, mid LIMIT %%s, %%s" % (
-            self._index_table, self.db.escape_string(userid))
+            self._index_table, userid)
         func = self.db.query
         wrapper = with_index
         return lambda o,l : wrapper(func(sql, o, l), o)
 
     def get_mail_counter(self, userid):
         sql = "SELECT count(*) as sum FROM `%s` WHERE touserid='%s'" % (
-            self._index_table, self.db.escape_string(userid))
+            self._index_table, userid)
         func = self.db.get
         return lambda : func(sql)['sum']
 
@@ -792,7 +791,7 @@ class Mail(Model):
                 raise e
 
     def get_mid_rank(self, touserid, mid):
-        return self.db.get('SELECT count(*) as sum'
+        return self.db.get('SELECT count(*) as sum '
                            'FROM `%s` '
                            'WHERE mid<%%s AND touserid=%%s '
                            'ORDER BY mid' % self._index_table,
@@ -800,12 +799,12 @@ class Mail(Model):
 
     def rank2mid(self, touserid, rank):
         res = self.db.get("SELECT mid "
-                          "WHERE touser=%%s ORDER BY mid"
+                          "WHERE touser=%%s ORDER BY mid "
                           "LIMIT %s, 1" % self._index_table,
                           touserid, rank)
 
     def get_topic_mid_rank(self, touserid, mid):
-        return self.db.get('SELECT count(*) as sum'
+        return self.db.get('SELECT count(*) as sum '
                            'FROM `%s` '
                            'WHERE mid<%%s AND touserid=%%s '
                            'ORDER BY tid, mid' % self._index_table,
@@ -813,18 +812,18 @@ class Mail(Model):
 
     def get_mail_loader_signle(self, touserid):
         sql_next = "SELECT * FROM `%s` WHERE touserid = '%s' AND mid > %%s ORDER BY mid LIMIT 1" % \
-                    (self._index_table, self.escape_string(touserid))
+                    (self._index_table, touserid)
         sql_prev = "SELECT * FROm `%s` WHERE touserid = '%s' AND mid < %%s ORDER BY mid DESC LIMIT 1" %\
-                (self._index_table, self.escape_string(touserid))
+                (self._index_table, touserid)
         fun = self.db.get
         return (lambda mid : fun(sql_next, mid),
                 lambda mid : fun(sql_prev, mid))
 
     def get_topic_loader_signle(self, touserid):
         sql_next = "SELECT * FROM `%s` WHERE touserid = '%s' AND mid > %%s ORDER BY tid, mid LIMIT 1" %\
-                (self._index_table, self.escape_string(touserid))
+                (self._index_table, touserid)
         sql_prev = "SELECT * FROm `%s` WHERE touserid = '%s' AND mid < %%s ORDER BY tid, mid DESC LIMIT 1" %\
-                (self._index_table, self.escape_string(touserid))
+                (self._index_table, touserid)
         fun = self.db.get
         return (lambda mid : fun(sql_next, mid),
                 lambda mid : fun(sql_prev, mid))
@@ -1020,8 +1019,9 @@ class ReadMark(Model):
         first_pid = self.ch.zrange(key, 0, 0)[0]
         return pid < int(first_pid)
 
-    def is_new_board(self,userid,bid):
+    def is_new_board(self, userid, bid):
         lastpid = self.post.get_last_pid(bid)
+        boardname = self.board.id2name(bid)
         return lastpid is not None and not self.is_read(userid, boardname,
                                                         lastpid)
 
@@ -1642,7 +1642,7 @@ class Query(Model):
         self.board = manager.get_module('board')
         self.userperm = manager.get_module('userperm')
         self.perm = manager.get_module('perm')
-        self.favourte = manager.get_module('favourite')
+        self.favourite = manager.get_module('favourite')
         self.section = manager.get_module('section')
         self.post = manager.get_module('post')
         self.userinfo = manager.get_module('userinfo')

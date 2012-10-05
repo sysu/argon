@@ -196,8 +196,7 @@ class BaseBoardFrame(BasePostListFrame):
         if post['owner'] == self.userid :
             if self.readline(buf_size=1,prompt=u"删除你的文章?[y/n] ") in \
                     ac.ks_yes : 
-                manager.post.remove_post_personal(self.userid, self.bid,
-                                                  post['pid'])
+                manager.post.remove_post_personal(post['pid'])
                 self.reload()
                 self.message(u'自删成功')
         elif self.perm[3] :
@@ -321,7 +320,7 @@ class BoardFrame(BaseBoardFrame):
                          boardname=self.board['boardname'])
 
     def get_pid_rank(self, pid):
-        return manager.post.get_rank_num(self.board['boardname'], pid)
+        return manager.post.get_rank_num(self.board['bid'], pid)
     
     def catch_nodata(self):
         self.cls()

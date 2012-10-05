@@ -69,12 +69,12 @@ class BaseDBConnection:
             self._finish_conn(conn)
 
     def _execute(self, cursor, query, parameters):
-        try:
+        # try:
             return cursor.execute(query, parameters)
-        except OperationalError:
-            logging.error("Error connecting to MySQL on %s", self.host)
-            self.close()
-            raise
+        # except OperationalError:
+        #     logging.error("Error connecting to MySQL")
+        #     self.close()
+        #     raise
 
     def execute_rowcount(self, query, *parameters):
         """Executes the given query, returning the rowcount from the query."""

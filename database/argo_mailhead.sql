@@ -12,7 +12,7 @@ CREATE TABLE IF NOT EXISTS `argo_mailhead` (
     `sendtime` timestamp NOT NULL default CURRENT_TIMESTAMP ,
     `fromaddr` varchar(64),
     `content` text,
-    `quote` text,
+    `signature` text,
    
     `readmark` boolean NOT NULL default 0, 
     `flag` int(11) unsigned NOT NULL default 0,
