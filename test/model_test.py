@@ -20,62 +20,62 @@ class TestSuit(object):
             'addr-%s' % i, 'host-%s' % i, 1, 'signature-%s' % i )
             print i
 
-    def get_posts(self, boardname, start, limit):
+    def get_posts(self, bid, start, limit):
         start,limit = int(start), int(limit)
-        rows = mgr.post.get_posts(boardname, start, limit)
+        rows = mgr.post.get_posts(bid, start, limit)
         for r in rows:
             print r.pid
 
-    def get_posts_total(self, boardname):
-        print mgr.post.get_posts_total(boardname)
+    def get_posts_total(self, bid):
+        print mgr.post.get_posts_total(bid)
 
-    def get_posts_g(self, boardname, start, limit):
+    def get_posts_g(self, bid, start, limit):
         start,limit = int(start), int(limit)
-        rows = mgr.post.get_posts_g(boardname, start, limit)
+        rows = mgr.post.get_posts_g(bid, start, limit)
         for r in rows:
             print r.pid
 
-    def get_posts_g_total(self, boardname):
-        print mgr.post.get_posts_g_total(boardname)
+    def get_posts_g_total(self, bid):
+        print mgr.post.get_posts_g_total(bid)
 
-    def get_posts_m(self, boardname, start, limit):
+    def get_posts_m(self, bid, start, limit):
         start,limit = int(start), int(limit)
-        rows = mgr.post.get_posts_m(boardname, start, limit)
+        rows = mgr.post.get_posts_m(bid, start, limit)
         for r in rows:
             print r.pid
 
-    def get_posts_m_total(self, boardname):
-        print mgr.post.get_posts_m_total(boardname)
+    def get_posts_m_total(self, bid):
+        print mgr.post.get_posts_m_total(bid)
 
-    def get_posts_topic(self, boardname, start, limit):
+    def get_posts_topic(self, bid, start, limit):
         start,limit = int(start), int(limit)
-        rows = mgr.post.get_posts_topic(boardname, start, limit)
+        rows = mgr.post.get_posts_topic(bid, start, limit)
         for r in rows:
             print r.pid
 
-    def get_posts_onetopic(self, tid, boardname, start, limit):
+    def get_posts_onetopic(self, tid, bid, start, limit):
         start,limit = int(start), int(limit)
-        rows = mgr.post.get_posts_onetopic(tid, boardname, start, limit)
+        rows = mgr.post.get_posts_onetopic(tid, bid, start, limit)
         for r in rows:
             print r.pid
 
-    def get_posts_onetopic_total(self, tid, boardname):
-        print mgr.post.get_posts_onetopic_total(tid, boardname)
+    def get_posts_onetopic_total(self, tid, bid):
+        print mgr.post.get_posts_onetopic_total(tid, bid)
 
-    def get_post(self, boardname, pid):
-        row = mgr.post.get_post(boardname, pid)
+    def get_post(self, pid):
+        row = mgr.post.get_post( pid)
         print row.pid, row.content
 
-    def prev_post(self, boardname, pid):
-        row = mgr.post.prev_post(boardname, pid)
+    def prev_post(self, bid, pid):
+        row = mgr.post.prev_post(bid, pid)
         print row.pid,row.content
 
-    def next_post(self, boardname, pid):
-        row = mgr.post.next_post(boardname, pid)
+    def next_post(self, bid, pid):
+        row = mgr.post.next_post(bid, pid)
         print row.pid,row.content
 
-    def remove_post_junk(self, boardname, pid):
-        mgr.post.remove_post_junk(boardname, pid)
+    def remove_post_junk(self, bid, pid):
+        mgr.post.remove_post_junk(bid, pid)
     
     #######  mail ############# 
 

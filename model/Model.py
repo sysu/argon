@@ -338,10 +338,6 @@ class Post(Model):
 
     lastp = 'argo:lastpost'
 
-    def __init__(self, manager):
-        super(Post, self).__init__(manager)
-        self.board = manager.get_module('board')
-
     def _move_post(self, tablename, pid, new_tablename):
         self.db.execute("INSERT INTO `%s` "
                         "(SELECT * "
@@ -370,36 +366,17 @@ class Post(Model):
         return self.db.executemany("DELETE FROM %s "
                                    "WHERE pid=%%s AND not flag" % tablename, pids)
 
-    def remove_post_junk(self, boardname, pid):
-        return self._move_post(self._index_table, pid,
-                               self._junk_table)
+    def remove_post_junk(self, pid):
+        return self._move_post(self._index_table, pid, self._junk_table)
 
-    def remove_post_junk_range(self, boardname, start, end):
-        return self._move_post_range(self._index_table, self._junk_table,
-                                     start, end)
+    def remove_post_junk_range(self, start, end):
+        return self._move_post_range(self._index_table, self._junk_table, start, end)
 
-    def remove_post_personal(self, boardname, pid):
-        return self._move_post(self._index_table, pid,
-                               self._person_junk)
-
-    def get_junk_posts(self, boardname, num, limit):
+    def get_junk_posts(self, num, limit):
         return self.db.query("SELECT * FROM `%s` ORDER BY pid LIMIT %%s,%%s" % \
                                  self._junk_table, num, limit)
 
-    #def get_personal_junk(self, boardname, author):
-    #    return self.db.query("SELECT * FROM `%s` WHERE owner=%s" % \
-    #                             self._person_junk,  author)
-
-    def clear_personal_junk(self):
-        return self.db.execute("TRUNCATE TABLE %s" % self._person_junk)
-
-    # def _wrapper_index(self, data, num):
-    #     for index in range(len(data)):
-    #         data[index]['index'] = num + index
-    #     return data
-
-    def get_rank_num(self, boardname, pid):
-        bid = self.getbid(boardname)
+    def get_rank_num(self, bid, pid):
         return self.db.get('SELECT count(*) as sum'
                            'FROM `%s` '
                            'WHERE bid = %%s'
@@ -407,8 +384,7 @@ class Post(Model):
                            'ORDER BY pid' % self._index_table, bid,
                            pid)['sum']
 
-    def get_rank_num_cond(self, boardname, pid, cond):
-        bid = self.getbid(boardname)
+    def get_rank_num_cond(self, bid, pid, cond):
         return self.db.get('SELECT count(*) as sum'
                            'FROM `%s` '
                            'WHERE bid = %%s AND pid<%%s AND %%s '
@@ -417,30 +393,12 @@ class Post(Model):
 
     #####################
 
-    
-    def getbid(self, boardname):
-        '''
-        Conver boardname to bid.
-        '''
-        return self.board.name2id(boardname)
-
-    def sql_filter_tid(self, tid):
-        return 'tid="%s"' % self.db.escape_string(str(tid))
-
-    def sql_filter_owner(self, owner):
-        return 'owner="%s"' % self.db.escape_string(owner)
-
-    def sql_and(self,buf):
-        return ' AND '.join(buf)
-
-    def get_posts(self, boardname, num, limit):
-        bid = self.getbid(boardname)
-        res = self.db.query("SELECT * FROM `%s` WHERE bid = %%s ORDER BY pid LIMIT %%s,%%s" %\
-                            self._index_table, bid, num, limit)
+    def get_posts(self, bid, num, limit):
+        sql = "SELECT * FROM `%s` WHERE bid = %%s ORDER BY pid LIMIT %%s,%%s"
+        res = self.db.query( sql % self._index_table, bid, num, limit)
         return with_index(res, num)
 
-    def get_posts_loader(self, boardname, cond=''):
-        bid = self.getbid(boardname)
+    def get_posts_loader(self, bid, cond=''):
         if cond :
             sql = "SELECT * FROM `%s` WHERE %s AND bid = %s ORDER BY pid LIMIT %%s,%%s" % \
                 (self._index_table, bid, cond)
@@ -448,11 +406,9 @@ class Post(Model):
             sql = "SELECT * FROM `%s` WHERE bid = %s ORDER BY pid LIMIT %%s,%%s" % \
                 (self._index_table, bid)
         return lambda start, limit: with_index(
-            self.db.query(sql, start, limit), start,
-            )
+            self.db.query(sql, start, limit), start,)
 
-    def get_posts_counter(self, boardname, cond=''):
-        bid = self.getbid(boardname)
+    def get_posts_counter(self, bid , cond=''):
         if cond :
             sql = "SELECT count(*) as sum FROM `%s` WHERE %s AND bid = %s" % \
                 (self._index_table, cond, bid)
@@ -461,84 +417,70 @@ class Post(Model):
             (self._index_table, bid)
         return lambda : self.db.get(sql)['sum']
 
-    def get_posts_total(self, boardname):
-        bid = self.getbid(boardname)
+    def get_posts_total(self, bid):
         return self.db.get("SELECT count(*) as sum FROM %s WHERE bid = %%s" %\
-                self.__(boardname), bid)['sum']
+                self._index_table, bid)['sum']
 
-    def get_posts_g(self,boardname,num,limit):
-        bid = self.getbid(boardname)
+    def get_posts_g(self, bid, num, limit):
         res = self.db.query("SELECT * FROM `%s` WHERE bid = %%s AND mark_g = 1 ORDER BY pid LIMIT %%s,%%s" %\
                                 self._index_table, bid, num, limit)
         return with_index(res, num)
 
-    def get_posts_g_total(self, boardname):
-        bid = self.getbid(boardname)
+    def get_posts_g_total(self, bid):
         return self.db.get("SELECT count(*) as sum FROM `%s` WHERE bid = %%s AND mark_g = 1" %\
                 self._index_table, bid)['sum']
 
-    def get_posts_m(self,boardname,num,limit):
-        bid = self.getbid(boardname)
+    def get_posts_m(self,bid,num,limit):
         res = self.db.query("SELECT * FROM `%s` WHERE bid = %%s AND mark_m = 1 ORDER BY pid LIMIT %%s,%%s" %\
                                        self._index_table, bid, num, limit)
         return with_index(res, num)
 
-    def get_posts_m_total(self, boardname):
-        bid = self.getbid(boardname)
+    def get_posts_m_total(self, bid):
         return self.db.get("SELECT count(*) as sum FROM `%s` WHERE bid = %%s AND mark_m = 1" %\
                 self._index_table, bid)['sum']
 
-    def get_posts_topic(self,boardname,num,limit):
-        bid = self.getbid(boardname)
+    def get_posts_topic(self, bid, num, limit):
         res = self.db.query("SELECT * FROM `%s` WHERE bid = %%s AND replyid=0 ORDER BY pid LIMIT %%s,%%s" %\
                                 self._index_table, bid, num, limit)
         return with_index(res, num)
 
-    def get_posts_topic_total(self, boardname):
-        bid = self.getbid(boardname)
+    def get_posts_topic_total(self, bid):
         return self.db.get("SELECT count(*) as sum FROM %s WHERE bid = %%s AND replyid=0" %\
                 self._index_table, bid)['sum']
 
-    def get_posts_onetopic(self,tid,boardname,num,limit):
-        bid = self.getbid(boardname)
+    def get_posts_onetopic(self,tid,bid,num,limit):
         res = self.db.query("SELECT * FROM `%s` WHERE bid = %%s AND tid=%%s ORDER BY pid LIMIT %%s,%%s" %\
                                 self._index_table, bid, tid, num, limit)
         return with_index(res, num)
 
-    def get_posts_onetopic_total(self, tid, boardname):
-        bid = self.getbid(boardname)
+    def get_posts_onetopic_total(self, tid, bid):
         return self.db.get("SELECT count(*) as sum FROM %s WHERE bid = %%s AND tid=%%s" %
                 self._index_table, bid, tid)['sum']
 
-    def get_posts_owner(self,author,boardname,num,limit):
-        bid = self.getbid(boardname)
+    def get_posts_owner(self,author,bid,num,limit):
         res = self.db.query("SELECT * FROM `%s` WHERE bid = %%s AND owner=%%s ORDER BY pid LIMIT %%s,%%s" %\
                                 self._index_table, bid, author, num, limit)
         return with_index(res, num)
 
-    def get_posts_owner_total(self, author, boardname):
-        bid = self.getbid(boardname)
+    def get_posts_owner_total(self, author, bid):
         return self.db.get("SELECT count(*) as sum FROM %s WHERE bid = %%s AND owner=%%s" %
                 self._index_table, bid, author)['sum']
 
     ####################
 
-    def get_last_pid(self,boardname):
-        return self.ch.hget(self.lastp, boardname)
-        # res = self.db.get("SELECT pid FROM `%s` ORDER BY pid DESC LIMIT 1" % \
-        #                       self.__(boardname))
-        # return res and res['pid']
+    def get_last_pid(self, bid):
+        res = self.db.get("SELECT max(pid) as pid FROM `%s` WHERE bid = %%s" % \
+                               self._index_table, bid)
+        return res and res['pid']
 
-    def get_post_loader(self, boardname):
-        bid = self.getbid(boardname)
+    def get_post_loader(self, bid):
         sql_next = "SELECT * FROM `%s` WHERE bid = %s AND pid > %%s ORDER BY pid LIMIT 1" % (self._index_table, bid)
         sql_prev = "SELECT * FROM `%s` WHERE bid = %s AND pid < %%s ORDER BY pid DESC LIMIT 1" % (self._index_table,bid)
         fun = self.db.get
         return (lambda pid : fun(sql_next, pid),
                 lambda pid : fun(sql_prev, pid))
 
-    def get_cond_post_loader(self, boardname, cond):
-        bid = self.getbid(boardname)
+    def get_cond_post_loader(self, bid, cond):
         sql_next = "SELECT * FROM `%s` WHERE bid = %s AND pid > %%s AND %s ORDER BY pid LIMIT 1" %\
                 (self._index_table, bid, cond)
         sql_prev = "SELECT * FROM `%s` WHERE bid = %s AND pid < %%s AND %s ORDER BY pid DESC LIMIT 1" %\
@@ -547,37 +489,32 @@ class Post(Model):
         return (lambda pid : fun(sql_next, pid),
                 lambda pid : fun(sql_prev, pid))
 
-    def get_topic_post_loader(self, boardname, tid):
+    def get_topic_post_loader(self, bid, tid):
         assert isinstance(tid, long)
-        bid = self.getbid(boardname)
         sql_next = "SELECT * FROM `%s` WHERE bid = %s AND pid > %%s AND tid=%s ORDER BY pid LIMIT 1" % (self._index_table, bid, tid)
         sql_prev = "SELECT * FROM `%s` WHERE bid = %s AND pid < %%s AND tid=%s ORDER BY pid DESC LIMIT 1" % (self._index_table, bid, tid)
         fun = self.db.get
         return (lambda pid : fun(sql_next, pid),
                 lambda pid : fun(sql_prev, pid))
 
-    def get_post(self,boardname,pid):
+    def get_post(self, pid):
         return self.table_get_by_key(self._index_table, 'pid', pid)
 
-    def prev_post(self, boardname, pid):
-        bid = self.getbid(boardname)
+    def prev_post(self, bid, pid):
         return self.db.get("SELECT * FROM `%s` WHERE bid = %%s AND pid < %%s ORDER BY pid DESC LIMIT 1" % self._index_table, bid, pid)
 
-    def next_post(self, boardname, pid):
-        bid = self.getbid(boardname)
+    def next_post(self, bid, pid):
         return self.db.get("SELECT * FROM `%s` WHERE bid = %%s AND pid > %%s ORDER BY pid LIMIT 1" %\
                                self._index_table, bid, pid)
 
-    def prev_post_pid(self,boardname,pid):
-        bid = self.getbid(boardname)
+    def prev_post_pid(self, bid, pid):
         res = self.db.get("SELECT pid FROM `%s` WHERE bid = %%s AND pid < %%s ORDER BY pid DESC LIMIT 1" %\
                               self._index_table, bid, pid)
         return res and res['pid']
 
-    def next_post_pid(self,boardname,pid):
-        bid = self.getbid(boardname)
+    def next_post_pid(self, bid,pid):
         res = self.db.get("SELECT pid FROM `%s` WHERE bid = %%s AND pid > %%s ORDER BY pid LIMIT 1" %\
-                              (self._index_table, bid, pid))
+                              self._index_table, bid, pid)
         return res and res['pid']
 
     def add_post(self,boardname,**kwargs):
@@ -585,36 +522,33 @@ class Post(Model):
         self.ch.hset(self.lastp, boardname, pid)               ###############
         return pid
 
-    def update_post(self,boardname,pid,**kwargs):
+    def update_post(self, pid, **kwargs):
         return self.table_update_by_key(self._index_table, 'pid', pid, kwargs)
 
-    def del_post(self,*args,**kwargs):
+    def del_post(self, pid):
         u'''
-        Never delete a post.
+            Only remove users own posts.
         '''
-        pass
+        return self.table_delete_by_key(self._index_table, 'pid', pid)
 
-    def update_title(self,boardname,pid,new_title):
-        return self.update_post(boardname,pid,title=new_title)
-
-    def pid2tid(self,boardname,pid):
+    def pid2tid(self,pid):
         res = self.table_select_by_key(self._index_table,
                                        'tid','pid',pid)
         return res and res['tid']
 
-    def pid2title(self,boardname,pid):
+    def pid2title(self, pid):
         res = self.table_select_by_key(self._index_table,
                                        'title','pid',pid)
         return res and res['title']
 
-    def index2pid(self, boardname, index):
+    def index2pid(self, bid , index):
         if index <=0 : return 0
-        res = self.db.get("SELECT pid FROM `%s` ORDER BY pid LIMIT %%s,1" % self._index_table,
-                          index)
+        res = self.db.get("SELECT pid FROM `%s` WHERE bid = %%s ORDER BY pid LIMIT %%s,1" %
+                self._index_table, bid, index)
         if res :
             return res['pid']
         else:
-            return self.get_last_pid(boardname) +1
+            return self.get_last_pid(bid)+1
 
 class UserInfo(Model):
 
@@ -872,7 +806,7 @@ class Mail(Model):
                                self._index_table, userid, mid)
 
     def get_new_mail(self, touserid, num, limit):
-        return self.db.get("SELECT * FROM `%s` WHERE touserid = %%s AND readmark = 0" %
+        return self.db.execute("SELECT * FROM `%s` WHERE touserid = %%s AND readmark = 0" %
                          self._index_table, touserid)
 
     
@@ -1035,6 +969,7 @@ class ReadMark(Model):
     def __init__(self, manager):
         super(ReadMark, self).__init__(manager)
         self.post = manager.get_module('post')
+        self.board = manager.get_module('board')
 
     def is_read(self,userid,boardname,pid):
         key = self.keyf % (userid, boardname)
@@ -1050,7 +985,8 @@ class ReadMark(Model):
         return pid < int(first_pid)
 
     def is_new_board(self,userid,boardname):
-        lastpid = self.post.get_last_pid(boardname)
+        bid = self.board.name2id(boardname)
+        lastpid = self.post.get_last_pid(bid)
         return lastpid is not None and not self.is_read(userid, boardname, lastpid)
 
     def set_read(self,userid,boardname,pid):
@@ -1462,7 +1398,7 @@ class Action(Model):
             signature=signature,
             )
         #print ('pid', pid)
-        self.post.update_post(boardname,pid,tid=pid)
+        self.post.update_post(pid,tid=pid)
         # self.board.update_attr_plus1(bid,'total')
         # self.board.update_attr_plus1(bid,'topic_total')
         self.readmark.set_read(userid, boardname, pid)
@@ -1498,17 +1434,16 @@ class Action(Model):
         return pid
 
     def update_post(self,boardname,userid,pid,content):
-        self.post.update_post(boardname,
-                              pid,
+        return self.post.update_post(pid,
                               owner = userid,
                               content=content)
-    
-    def update_title(self, userid, boardname, pid, new_title):
-        return self.post.update_title(boardname, pid, new_title)
 
-    def has_edit_title_perm(self, userid, boardname, pid):
-        post = self.post.get_post(boardname, pid)
-        return post['owner'] == userid
+    def update_title(self, userid, boardname, pid, new_title):
+        return self.post.update_post(pid, title=new_title)
+
+    def has_edit_title_perm(self, userid, pid):
+        post = self.post.get_post(pid)
+        return post['real_owner'] == userid
 
 
     def send_mail(self, fromuserid, touserid, **kwargs):
@@ -1561,7 +1496,7 @@ class Admin(Model):
         self.mail = manager.get_module('mail')
 
     def set_post_replyattr(self,userid, boardname, pid, replyable):
-        self.post.update_post(boardname, pid, replyable=replyable)
+        self.post.update_post(pid, replyable=replyable)
 
     def add_board(self, userid, boardname, sid, description, allowteam, postteam, denyteam, adminteam):
         self.board.add_board(boardname=boardname, description=description, sid=sid)
@@ -1570,8 +1505,6 @@ class Admin(Model):
         self.userperm.set_board_post(boardname, postteam)
         self.userperm.set_board_deny(boardname, denyteam)
         self.userperm.set_board_admin(boardname, adminteam)
-        #self.post._create_table(boardname)
-        #self.post._create_table_junk(boardname)
 
     def update_board(self, userid, bid, boardname, sid, description, is_open, is_openw):
         self.board.update_board(bid, boardname=boardname,
@@ -1597,23 +1530,20 @@ class Admin(Model):
     def set_g_mark(self, userid, board, post):
         if board['perm'][3] :
             post['flag'] = post['flag'] ^ 1
-            self.post.update_post(board['boardname'], post['pid'], flag=post['flag'])
+            self.post.update_post( post['pid'], flag=post['flag'])
         return post
 
     def set_m_mark(self, userid, board, post):
         if board['perm'][3] :
             post['flag'] = post['flag'] ^ 2
-            self.post.update_post(board['boardname'], post['pid'], flag=post['flag'])
+            self.post.update_post( post['pid'], flag=post['flag'])
         return post
 
-    def remove_post_personal(self, userid, boardname, pid):
-        self.post.remove_post_personal(boardname, pid)
-
     def remove_post_junk(self, userid, boardname, pid):
-        self.post.remove_post_junk(boardname, pid)
+        self.post.remove_post_junk(pid)
 
     def remove_post_junk_range(self, userid, boardname, start, end):
-        self.post.remove_post_junk_range(boardname, start, end)
+        self.post.remove_post_junk_range(start, end)
 
     def send_system_mail(self, touserid, **kwargs):
         touid = self.userinfo.name2id(touserid)
