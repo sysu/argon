@@ -152,8 +152,8 @@ class ReadMailFrame(BaseMailListFrame):
         self.setup(dataloader, counter)
 
     def _get_loader(self, mode):
-        return (self.MODE_LOADER[mode](self.uid, self.userid),
-                self.MODE_COUNTER[mode](self.uid, self.userid))
+        return (self.MODE_LOADER[mode](self.userid),
+                self.MODE_COUNTER[mode](self.userid))
 
     def reset_mode(self, mode):
         dataloader, counter = self._get_loader(mode)
@@ -178,13 +178,11 @@ class ReadMailFrame(BaseMailListFrame):
         self.suspend('_reply_mail_o', mail=mail)
 
     def set_m_mark(self, mail):
-        return manager.mail.set_m_mark(self.session.user.uid,
-                                       mail)
+        return manager.mail.set_m_mark(mail)
 
     def remove_mail(self, mail):
-        if self.bottom_do(self.confirm, prompt=u'删除你的文章？[y/n] ') :
-            manager.mail.remove_mail(self.session.user.uid,
-                                     mail['mid'])
+        if self.bottom_do(self.confirm, prompt=u'删除你的邮件？[y/n] ') :
+            manager.mail.remove_mail(mail['mid'])
             self.reload()
 
     def remove_mail_range(self):
@@ -192,9 +190,9 @@ class ReadMailFrame(BaseMailListFrame):
         if start.isdigit():
             end = self.readline(prompt=u'末篇文章编号：')
             if end.isdigit() :
-                start_mid = manager.mail.index2mid(self.session.user.uid,
-                                                   int(start) - 1)
-                end_mid = manager.mail.index2mid(self.session.user.uid,
+                start_mid = manager.mail.rank2mid(self.session.user.uid,
+                                                  int(start) - 1)
+                end_mid = manager.mail.rank2mid(self.session.user.uid,
                                                  int(end) - 1)
                 if start_mid >= end_mid :
                     return
@@ -413,7 +411,6 @@ class ReadMailFrame(BaseTextBoxFrame):
 
     def _set_mode(self, mode):
         self.next_loader, self.prev_loader = self.MODE_LOADER[mode](
-            self.session.user.uid,
             self.userid
             )
         self.bottom_tpl = self.MODE_BOTTOM[mode]

@@ -77,7 +77,7 @@ class BaseBoardListFrame(BaseAuthedFrame):
     def get_default_index(self, boards, default=0):
         userid = self.userid
         for index,b in enumerate(boards):
-            if manager.readmark.is_new_board(userid, b['boardname']):
+            if manager.readmark.is_new_board(userid, b['bid']):
                 return index
         else :
             return default

@@ -56,7 +56,7 @@ class ViewPostFloatFrame(BaseTextBoxFrame):
         perm = manager.query.get_board_ability(self.userid, boardname)
         if not perm[0] :
             self.goto_back()
-        post = manager.post.get_post(boardname, pid)
+        post = manager.post.get_post(pid)
         if post :
             self.setup(self.wrapper_post(post))
         else:

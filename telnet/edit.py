@@ -297,7 +297,7 @@ class ReplyPostFrame(BaseEditFrame):
         perm = manager.query.get_board_ability(self.userid, boardname)
         if not perm[0] :
             self.goto_back()
-        post = manager.post.get_post(boardname, post['pid'])  ## reload to get date in realtime
+        post = manager.post.get_post(post['pid'])  ## reload to get date in realtime
         if not (perm[1] and post['replyable']):
             self.pause(u'你没有发文权力或本文禁止回复！')
         manager.status.set_status(self.seid,
@@ -398,10 +398,7 @@ class EditPostFrame(BaseEditFrame):
         self.restore_screen()
 
     def modify_and_goto_back(self, text):
-        manager.action.update_post(self.boardname,
-                                   self.userid,
-                                   self.pid,
-                                   text)
+        manager.action.update_post(self.userid, self.pid, text)
         self.goto_back()
 
     def publish(self):
