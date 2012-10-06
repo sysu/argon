@@ -25,7 +25,7 @@ class CommAjaxGetPostHandler(BaseHandler):
 
         #todo: if userid has read perm
 
-        post = mgr.post.get_post(boardname, pid)
+        post = mgr.post.get_post(pid)
 
         result['success'] = True
         if post:
@@ -58,14 +58,14 @@ class CommAjaxGetQuoteHandler(BaseHandler):
            return self.write(result)
 
         # todo: if userid has read perm
-        post = mgr.post.get_post(boardname, pid)
+        post = mgr.post.get_post(pid)
 
         if not post:
             result['success'] = False
             result['content'] = u'本帖子不存在或者已被删除'
             return self.write(result)
 
-        quote = fun_gen_quote(post['userid'], post['content'])
+        quote = fun_gen_quote(post['owner'], post['content'])
 
         content = post['content']
         result['success'] = True
@@ -97,7 +97,7 @@ class CommAjaxNewPostHandler(BaseHandler):
                 addr = self.remote_ip,\
                 host = 'TestLand',\
                 replyid = replyid)
-        if res: 
+        if res:
             result['success'],result['conent'] = True, u'发表成功'
         else:
             result['success'],result['conent'] = False, u'发表失败'
@@ -113,7 +113,7 @@ class CommAjaxGetMailHandler(BaseHandler):
         if not self.userid: self.login_page() 
         result = {}
         uid = mgr.userinfo.name2id(self.userid)
-        mail = mgr.mail.one_mail(uid, mid)
+        mail = mgr.mail.one_mail(mid)
 
         if mail: 
             result['success'] = True

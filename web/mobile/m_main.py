@@ -67,23 +67,25 @@ class MobilePostHandler(MobileBaseHandler):
 
     page_size = 25
 
-    def get(self, boardname, startpid = 0):
-        board = None if not boardname.isalpha() else mgr.board.get_board(boardname)
-        if not board:
+    def get(self, boardname, start = 0):
+
+        if not boardname.isalpha():
             return m_error(self, u'版面不存在')
-
-        startpid = int(startpid) if startpid else 0
         
-        # todo: if has_read_perm
-        self.page_size = self.__class__.page_size
-        if startpid == 0: # 0 means the last pid
-            startpid = mgr.board.get_posts_total(boardname)
-            self.page_size = -self.page_size
-        elif startpid < 0:
-            startpid = -startpid
-            self.page_size = -self.page_size
+        board = mgr.board.get_board(boardname)
+        bid = mgr.board.name2id(boardname)
+        total = mgr.post.get_posts_total(bid)
 
-        plist = mgr.post.get_posts(boardname, startpid, self.page_size)
+        start = int(start) if start else 0
+
+        # todo: if has_read_perm
+
+        self.page_size = self.__class__.page_size
+        if start == 0: # 0 means the last pid
+            start = total - self.page_size
+            if start < 0: start = 0
+
+        plist = mgr.post.get_posts(bid, start, self.page_size)
 
         for p in plist:
             p.unread = 1 if mgr.readmark.is_read(self.userid, \
@@ -91,14 +93,12 @@ class MobilePostHandler(MobileBaseHandler):
 
         self._tpl['plist'] = plist
         self._tpl['board'] = board
-        empty = not len(plist) > 0
 
-        prev = None if empty \
-                else (mgr.post.prev_post_pid(boardname, plist[0].pid))
-        if prev is not None: prev = -prev
+        prev = start - self.page_size
+        if prev < 0: prev = None
 
-        next = None if empty \
-                else mgr.post.next_post_pid(boardname, plist[-1].pid)
+        next = start + self.page_size
+        if next > total: next = None
 
         self._tpl['prev'] = prev
         self._tpl['next'] = next
@@ -149,11 +149,13 @@ class MobileThreadHandler(MobileBaseHandler):
             m_error(self, u'错误的讨论区')
 
         # todo: if has read perm
-        post = mgr.post.get_post(boardname, pid)
+        post = mgr.post.get_post(pid)
         if not post:
             m_error(self, u'本帖子不存在或已被删除')
         tid = post.tid
-        plist = mgr.post.get_posts_onetopic(tid, boardname, None, None)
+        bid = mgr.board.name2id(boardname)
+        total = mgr.post.get_posts_topic_total(bid)
+        plist = mgr.post.get_posts_onetopic(tid, bid, 0, total)
 
         self._tpl['board'] = board
         self._tpl['plist'] = plist
@@ -170,7 +172,8 @@ class MobileFavHandler(MobileBaseHandler):
                 for boardname in all_fav]
         for b in boards:
             pid = mgr.post.get_last_pid(b.boardname)
-            b.unread = not mgr.readmark.is_read(self.userid, b.boardname, pid) 
+            if pid is None: pid = -1
+            b.unread = not mgr.readmark.is_read(self.userid, b.boardname, pid)
         self._tpl['boards'] = boards
         self.mrender('m_fav.html')
 
@@ -178,30 +181,26 @@ class MobileFavHandler(MobileBaseHandler):
 class MobileMailHandler(MobileBaseHandler):
 
     page_size = 5
-    def get(self, startmid = 0):
+    def get(self, start = 0):
 
         if not self.userid: self.login_page()
 
-        startmid = int(startmid) if startmid else 0
+        start = int(start) if start else 0
+        total = mgr.mail.get_mail_total(self.userid)
 
-        if startmid == 0: # 0 means the last pid
-            startmid = 0
-            self.page_size = -self.page_size
-        elif startmid < 0:
-            startmid = -startmid
-            self.page_size = -self.page_size
+        if start == 0: # 0 means the last pid
+            start = total - self.page_size
+            if start < 0: start = 0
 
-        mlist = mgr.mail.get_mail(self.userid, startmid, self.page_size)
+        mlist = mgr.mail.get_mail(self.userid, start, self.page_size)
 
         self._tpl['mlist'] = mlist
-        empty = not len(mlist) > 0
 
-        prev = None if empty \
-                else (mgr.mail.prev_mail_mid(mlist[0].mid))
-        if prev is not None: prev = -prev
+        prev = start - self.page_size
+        if prev < 0: prev = None
 
-        next = None if empty \
-                else mgr.mail.next_mail_mid(mlist[-1].mid)
+        next = start + self.page_size
+        if next > total: next = None
 
         self._tpl['prev'] = prev
         self._tpl['next'] = next
@@ -228,8 +227,7 @@ class MobileMailHandler(MobileBaseHandler):
                     content = content,\
                     fromaddr = self.remote_ip)
         else:
-            uid = mgr.userinfo.name2id(self.userid)
-            old_mail = mgr.mail.one_mail(uid, replyid) 
+            old_mail = mgr.mail.one_mail(replyid)
             res = mgr.action.reply_mail(self.userid,\
                     old_mail,\
                     title = title,\
@@ -246,12 +244,12 @@ class MobileSendMailHandler(MobileBaseHandler):
 
         if not self.userid: self.login_page()
         replyid = int(replyid) if replyid else 0
-        uid = mgr.userinfo.name2id(self.userid) 
+        uid = mgr.userinfo.name2id(self.userid)
 
         mail = {}
         if replyid != 0:
-            old_mail = mgr.mail.one_mail(uid, replyid) 
-            if old_mail.title[:3] != 'Re:': 
+            old_mail = mgr.mail.one_mail(replyid)
+            if old_mail.title[:3] != 'Re:':
                 old_mail.title ='Re:'  + old_mail.title
             mail['title'] = old_mail.title
             mail['touserid'] = old_mail.fromuserid
