@@ -117,11 +117,11 @@ class ViewPostFrame(BaseTextBoxFrame):
         if cond :
             self.next_loader, self.prev_loader = \
                 manager.post.get_cond_post_loader(
-                self.session['lastboardname'],
+                manager.board.name2id(self.session['lastboardname']),
                 cond)
         else:
             self.next_loader, self.prev_loader = manager.post.get_post_loader(
-                self.session['lastboardname'])
+                manager.board.name2id(self.session['lastboardname']))
         manager.readmark.set_read(self.userid,
                                   self.session['lastboardname'],
                                   post['pid'])
@@ -173,7 +173,7 @@ class ViewPostSameTopic(BaseTextBoxFrame):
         # board = self.session['last_board_attr']
         # assert post['bid'] == board['bid']
         self.next_loader, self.prev_loader = manager.post.get_topic_post_loader(
-            self.session['lastboardname'], post['tid'])
+            self.name2id(self.session['lastboardname']), post['tid'])
         manager.readmark.set_read(self.userid,
                                   self.session['lastboardname'],
                                   post['pid'])
@@ -226,7 +226,7 @@ class TutorialFrame(BaseTextBoxFrame):
 class QueryBoardFrame(BaseTextBoxFrame):
 
     def initialize(self, board):
-        total = manager.post.get_posts_total(board['boardname'])
+        total = manager.post.get_posts_total(board['bid'])
         text = self.render_str('board-t', total=total, **board)
         self.setup(text=text)
 

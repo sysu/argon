@@ -108,6 +108,7 @@ class BaseBoardFrame(BasePostListFrame):
         self.board = board
         self.perm = board.perm
         self.boardname = board['boardname']
+        self.bid = board['bid']
         super(BaseBoardFrame, self).setup(
             thead=thead, dataloader=dataloader, 
             counter=counter, 
@@ -170,8 +171,9 @@ class BaseBoardFrame(BasePostListFrame):
     def set_replyable(self, post):
         if post.owner == self.userid :
             post['replyable'] = not post['replyable']
-            manager.admin.set_post_replyattr(self.userid, self.boardname,
-                                             post['pid'], post['replyable'])
+            manager.admin.set_post_replyattr(self.userid, 
+                                             post['pid'],
+                                             post['replyable'])
             return post
 
     def edit_post(self, post):
@@ -185,21 +187,22 @@ class BaseBoardFrame(BasePostListFrame):
                 self.message(u'放弃操作')
                 return
             post['title'] = title
-            manager.action.update_title(self.userid,self.boardname,
-                                        post['pid'], title)
+            manager.action.update_title(self.userid, post['pid'], title)
             return post
         else:
             self.message(u'你没有该权限！')
 
     def del_post(self, post):
         if post['owner'] == self.userid :
-            if self.readline(buf_size=1,prompt=u"删除你的文章?[y/n] ") in ac.ks_yes : 
-                manager.admin.remove_post_personal(self.userid, self.boardname, post['pid'])
+            if self.readline(buf_size=1,prompt=u"删除你的文章?[y/n] ") in \
+                    ac.ks_yes : 
+                manager.post.remove_post_personal(post['pid'])
                 self.reload()
                 self.message(u'自删成功')
         elif self.perm[3] :
-            if self.readline(buf_size=1,prompt=u'将文章放入废纸篓？[y/n] ') in ac.ks_yes :
-                manager.admin.remove_post_junk(self.userid, self.boardname, post['pid'])
+            if self.readline(buf_size=1,prompt=u'将文章放入废纸篓？[y/n] ') in\
+                    ac.ks_yes :
+                manager.admin.remove_post_junk(self.userid, post['pid'])
                 self.reload()
                 self.message(u'删贴成功')
 
@@ -305,8 +308,8 @@ class BoardFrame(BaseBoardFrame):
             manager.status.exit_board(self.session['lastboardname'])
         self.session['lastboardname'] = board['boardname']
         manager.status.enter_board(self.session['lastboardname'])
-        dataloader = manager.post.get_posts_loader(board['boardname'])
-        counter = manager.post.get_posts_counter(board['boardname'])
+        dataloader = manager.post.get_posts_loader(board['bid'])
+        counter = manager.post.get_posts_counter(board['bid'])
         self.setup(board, self.THEAD, dataloader, counter)
 
     def set_board_info(self):
@@ -317,7 +320,7 @@ class BoardFrame(BaseBoardFrame):
                          boardname=self.board['boardname'])
 
     def get_pid_rank(self, pid):
-        return manager.post.get_rank_num(self.board['boardname'], pid)
+        return manager.post.get_rank_num(self.board['bid'], pid)
     
     def catch_nodata(self):
         self.cls()
@@ -350,12 +353,13 @@ class BoardFrame(BaseBoardFrame):
             if start.isdigit() :
                 end = self.readline(prompt=u'末篇文章编号：')
                 if end.isdigit() :
-                    start_num = manager.query.post_index2pid(self.boardname, int(start)-1)
-                    end_num = manager.query.post_index2pid(self.boardname, int(end))
+                    start_num = manager.post.rank2pid(self.bid, int(start)-1)
+                    end_num = manager.post.rank2pid(self.bid, int(end))
                     if start_num >= end_num :
                         self.message(u'错误的区间')
                         return
-                    manager.admin.remove_post_junk_range(self.userid, self.boardname, start_num, end_num)
+                    manager.post.remove_post_junk_range(self.bid,
+                                                        start_num, end_num)
                     self.reload()
                 else:
                     self.message(u'错误的输入')
@@ -363,7 +367,7 @@ class BoardFrame(BaseBoardFrame):
                 self.message(u'错误的输入')
 
     def clear_readmark(self):
-        last = manager.post.get_last_pid(self.boardname)
+        last = manager.post.get_last_pid(self.bid)
         manager.readmark.clear_unread(self.userid, self.boardname, last)
         self.reload()
 
@@ -388,13 +392,13 @@ class BoardFilterPostFrame(BaseBoardFrame):
         }
 
     def get_default_index(self):
-        return self.get_pid_rank(self.session['lastpid'])
+        return self.get_rank_num(self.bid, self.session['lastpid'])
 
     def leave(self):
         pass
 
     def get_pid_rank(self, pid):
-        return manager.post.get_rank_num_cond(self.boardname,
+        return manager.post.get_rank_num_cond(self.bid,
                                               pid,
                                               self.cond)
 
@@ -402,9 +406,9 @@ class BoardFilterPostFrame(BaseBoardFrame):
         if not board.perm[0]:
             self.goto_back()
         self.cond = self.ALL_MODE[mode](**kwargs)
-        dataloader = manager.post.get_posts_loader(board['boardname'],
+        dataloader = manager.post.get_posts_loader(board['bid'],
                                                    self.cond)
-        counter = manager.post.get_posts_counter(board['boardname'],
+        counter = manager.post.get_posts_counter(board['bid'],
                                                  self.cond)
         thead = config.str['BOARD_%s_MODE_THEAD' % mode]
         self.setup(board, thead, dataloader, counter)
@@ -425,5 +429,5 @@ class BoardFrame(BaseAuthedFrame):
             self.session['lastpid'] = pid
             manager.telnet['default_board_index']['%s:%s' % (\
                     boardname, self.userid)] = \
-                manager.post.get_rank_num(boardname, pid)
+                manager.post.get_rank_num(board['bid'], pid)
             self.goto('_board_o', board=board)
