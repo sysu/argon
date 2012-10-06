@@ -96,6 +96,11 @@ class TestSuit(object):
     def register(self, userid, passwd):
         print mgr.auth.register(userid, passwd)
 
+    ######  Favorite ############
+
+    def add_fav(self, userid, boardname):
+        print mgr.favourite.add(userid, boardname)
+
 def main():
     t = TestSuit()
     if len(sys.argv) < 2: t.usage()

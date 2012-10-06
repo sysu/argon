@@ -332,7 +332,6 @@ class Post(Model):
 
     '''
 
-    #_prefix = 'argo_filehead_%s'
     _index_table = 'argo_filehead'
     _junk_table= 'argo_filehead_junk'
 
@@ -743,18 +742,11 @@ class Mail(Model):
         return lambda : func(sql)['sum']
 
     def get_mail(self, userid, start, limit):
-        try:
-            return self.db.query("SELECT * FROM `%s` "
+        return self.db.query("SELECT * FROM `%s` "
                                  "WHERE touserid=%%s "
                                  "ORDER BY mid "
                                  "LIMIT %%s,%%s" % (self._index_table), userid,
                                  start, limit)
-        except ProgrammingError as e:
-            if e.args[0] == 1146 : # Table NOT EXIST
-                self._create_table(self._tableid(touid))
-                return []
-            else:
-                raise e
 
     def get_mid_rank(self, touserid, mid):
         return self.db.get('SELECT count(*) as sum'
@@ -961,7 +953,6 @@ class ReadMark(Model):
     keyf = "argo:readmark:%s:%s"
 
     limit_max = 200
-    limit_clear = -50
 
     def __(self,userid,boardname):
         return self.keyf%(userid,boardname)
@@ -1405,8 +1396,8 @@ class Action(Model):
         return pid
 
     def reply_post(self,boardname,userid,title,content,addr,
-                   host,replyid,replyable,signature):
-        post = self.post.get_post(boardname, replyid)
+                   host,replyid,replyable = 1,signature = ''):
+        post = self.post.get_post(replyid)
         tid = post['tid']
         bid = self.board.name2id(boardname)
         pid = self.post.add_post(
