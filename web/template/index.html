@@ -2,8 +2,10 @@
 
 {% block pagehead %}
 <div class="row">
-  <div class="cell">
-    {% module Carousel("index-carousel", billboard) %}
+  <div class="container cell">
+    <div class="span10">
+      {% module Carousel("index-carousel", billboard) %}
+    </div>
   </div>
 </div>
 {% end %}
@@ -22,7 +24,7 @@
     <h5 class="board-nav-label">{{ title }}</h5>
     <ol class="board-nav-item">
       {% for b in g %}
-      <li><a href="{{ b }}">{{ b }}</a></li>
+      <li><a href="/board/{{ b }}/">{{ b }}</a></li>
       {% end %}
     </ol>
   </div>
@@ -32,23 +34,24 @@
 
 {% block rightsidebar %}
 <div class="cell">
-  <h4>通知公告</h3>
-<div class="cell-put">
-  <ol class="unstyled">
-    <li>News1</li>
-    <li>News2</li>
-  </ol>
-</div>
+  <h4>通知公告</h4>
+  <div class="cell-put">
+    <ol class="unstyled">
+      {% for li in news %}
+      <li><a href="{{ li['href'] }}">{{ li['title'] }}</a>[{{ li['time'] }}]</li>
+      {% end %}
+    </ol>
+  </div>
 </div>
 <div class="cell">
   <h4>新的发言者</h4>
   <ul class="cell-put padding-l10 userset userset-small unstyled">
     <li>
       <img src="/static/img/guest1.jpeg"/>
-      <span>
+      <div>
         <a href="#">LTaoist</a>
         回复了<a href="#">今天你吃饭了吗</a>
-      </span>
+      </div>
     </li>
   </ul>
 </div>

@@ -1,0 +1,78 @@
+{% extends "base.html" %}
+
+{% block main %}
+<div class="cell-group">
+  <div class="pull-left">
+    <div class="pull-left btn-toolbar">
+	  <button class="btn btn-small btn-success">发表主题</button>
+	  <button class="btn btn-small">同主题</button>
+      <div class="btn-group">
+        <a class="btn btn-small dropdown-toggle" data-toggle="dropdown" href="#">
+          过滤器
+          <span class="caret"></span>
+        </a>
+        <ul class="dropdown-menu">
+          <li><a>只读精华</a></li>
+          <li><a>只读美文</a></li>
+        </ul>
+      </div>
+    </div>
+  </div>
+  {% module PostTable(posts) %}
+  <div class="pagination pagination-centered">
+    <ul>
+      <li><a href="/board/{{ board['boardname'] }}/{{ (rank-30) if rank > 30 else 0 }}">上一页</a></li>
+      <li class="active"><a>第 {{ rank//30 }} 页</a></li>
+      <li><a href="/board/{{ board['boardname'] }}/{{ (rank+30) if (rank+30 <=maxrank) else maxrank }}">下一页</a></li>
+    </ul>
+  </div>
+</div>
+{% end %}
+
+{% block pagehead %}
+<div id="board-head" class="cell">
+  <div id="board-head-intro" class="intro">
+    <h1>{{ board['boardname'] }}</h1>
+    <p>{{ board['about'] }}</p>
+  </div>
+  <img src="{{ board['httpbg'] }}"/>
+  <a id="board-head-bookbtn" class="btn btn-mini pull-right btn-info">收藏该版</a>
+</div>
+{% end %}
+
+{% block rightsidebar %}
+{% if board['bm'] %}
+<div class="cell">
+  <h4>版主</h4>
+  <ul class="userset userset-small unstyled">
+    {% for p in board.bm %}
+    <li>
+      <img src="{{ func.url_for_avatar(p) }}"/>
+      <div>
+        <a href="/user/{{ p }}">{{ p }}</a>
+      </div>
+    </li>
+    {% end %}
+  </ul>
+</div>
+{% else %}
+<div class="alert">
+  <strong>诚征版主中!</strong><br/>
+  如果你有爱，愿意参与本版的建设，符合参选版主的规定，请考虑申请版主！
+</div>
+{% end %}
+
+<div class="cell">
+  <h4>最近访客</h4>
+  <ul class="userset userset-small unstyled">
+    {% for p, t in vistors %}
+    <li>
+      <img src="{{ func.url_for_avatar(p) }}"/>
+      <div>
+        <a href="/user/{{ p }}">{{ p }}</a>
+      </div>
+    </li>
+    {% end %}
+  </ul>
+</div>
+{% end %}

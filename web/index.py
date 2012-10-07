@@ -9,8 +9,10 @@ class IndexHandler(BaseHandler):
         billboard = manager.web.get_billboard()
         topten = manager.web.get_topten()
         boardnav = manager.web.get_board_nav()
+        news = manager.web.get_news()
         self.srender("index.html", billboard=billboard,
-                     topten=topten, boardnav=boardnav)
+                     topten=topten, boardnav=boardnav,
+                     news=news)
 
 class LoginHandler(BaseHandler):
 
@@ -33,3 +35,4 @@ class LogoutHandler(BaseHandler):
 
     def get(self):
         self.clear_cookie('userid')
+        self.redirect('/')

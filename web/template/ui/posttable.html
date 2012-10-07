@@ -11,8 +11,8 @@
     <tr{% if 'read' in p %} class="read"{% end %}>
       <td>
         <a href="/post/{{ p['pid'] }}">{{ p['title'] }}</a>
-        {% if p['gmark'] %}<i class="gmark"></i>{% end %}
-        {% if p['mmark'] %}<i class="mmark"></i>{% end %}
+        {% if p['mark_g'] %}<i class="gmark"></i>{% end %}
+        {% if p['mark_m'] %}<i class="mmark"></i>{% end %}
       </td>
       <td><a href="/user/{{ p['owner'] }}">{{ p['owner'] }}</td>
       <td>{{ timeformat(p['posttime']) }}</td>

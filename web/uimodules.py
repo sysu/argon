@@ -13,7 +13,7 @@ class UserBox(tornado.web.UIModule):
             userfav = map(bid_wrapper(userid),
                           manager.favourite.get_all(userid))
             return self.render_string(
-                "userbox.html", userid=userid,
+                "ui/userbox.html", userid=userid,
                 url_for_avatar=url_for_avatar(userid),
                 userfav=userfav)
         else:
@@ -30,7 +30,8 @@ class Carousel(tornado.web.UIModule):
 class PostTable(tornado.web.UIModule):
 
     def render(self, postlist):
-        return self.render_string("ui/posttable.html", postlist=postlist)
+        return self.render_string("ui/posttable.html", postlist=postlist,
+                                  timeformat=timeformat)
 
 class TopicTable(tornado.web.UIModule):
 
