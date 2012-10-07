@@ -5,18 +5,15 @@ sys.path.append('..')
 
 import tornado.web
 from model import manager as mgr
-from comm.urls import mark,BaseHandler
+from lib import *
 from m_base import *
-from comm.funcs import *
 
-@mark('MobileIndexHandler')
 class MobileIndexHandler(MobileBaseHandler):
 
     def get(self):
         self._tpl['top'] = []
         self.mrender('m_index.html')
 
-@mark('MobileLoginHandler')
 class MobileLoginHandler(MobileBaseHandler):
 
     def get(self):
@@ -38,7 +35,6 @@ class MobileLoginHandler(MobileBaseHandler):
         self._tpl['ref'] = origref
         self.mrender('m_login.html')
 
-@mark('MobileLogoutHandler')
 class MobileLogoutHandler(MobileBaseHandler):
 
     def get(self):
@@ -50,7 +46,6 @@ class MobileLogoutHandler(MobileBaseHandler):
         self.clear_all_cookies()
         self.redirect('/m/') 
 
-@mark('MobileBoardHandler')
 class MobileBoardHandler(MobileBaseHandler):
 
     def get(self):
@@ -62,7 +57,6 @@ class MobileBoardHandler(MobileBaseHandler):
         self._tpl['sections'] = sections
         self.mrender('m_board.html')
 
-@mark('MobilePostHandler')
 class MobilePostHandler(MobileBaseHandler):
 
     page_size = 25
@@ -105,7 +99,6 @@ class MobilePostHandler(MobileBaseHandler):
 
         self.mrender('m_listpost.html')
 
-@mark('MobileNewPostHandler')
 class MobileNewPostHandler(MobileBaseHandler):
 
     def get(self, boardname):
@@ -138,7 +131,6 @@ class MobileNewPostHandler(MobileBaseHandler):
         self.set_secure_cookie('msg', msg)
         self.redirect('/m/%s' % boardname)
 
-@mark('MobileThreadHandler')
 class MobileThreadHandler(MobileBaseHandler):
 
     def get(self, boardname, pid):
@@ -161,15 +153,13 @@ class MobileThreadHandler(MobileBaseHandler):
         self._tpl['plist'] = plist
         self.mrender('m_read.html')
 
-@mark('MobileFavHandler')
 class MobileFavHandler(MobileBaseHandler):
 
     def get(self):
         if not self.userid: self.login_page()
         all_fav = mgr.favourite.get_all(self.userid)
-
-        boards = [mgr.board.get_board(boardname) \
-                for boardname in all_fav]
+        boards = [mgr.board.get_board_by_id(bid) \
+                for bid in all_fav]
         for b in boards:
             pid = mgr.post.get_last_pid(b.boardname)
             if pid is None: pid = -1
@@ -177,7 +167,6 @@ class MobileFavHandler(MobileBaseHandler):
         self._tpl['boards'] = boards
         self.mrender('m_fav.html')
 
-@mark('MobileMailHandler')
 class MobileMailHandler(MobileBaseHandler):
 
     page_size = 5
@@ -237,7 +226,6 @@ class MobileMailHandler(MobileBaseHandler):
         self.set_secure_cookie('msg', msg)
         self.redirect('/m/mail/')
 
-@mark('MobileSendMailHandler')
 class MobileSendMailHandler(MobileBaseHandler):
 
     def get(self, replyid = 0):
@@ -262,15 +250,11 @@ class MobileSendMailHandler(MobileBaseHandler):
         self._tpl['mail'] = mail
         self.mrender('m_sendmail.html')
 
-
-@mark('MobileDataHandler')
 class MobileDataHandler(MobileBaseHandler):
 
     def get(self):
         self.mrender('m_data.html')
 
-
-@mark('MobileAboutHandler')
 class MobileAboutHandler(MobileBaseHandler):
 
     def get(self):

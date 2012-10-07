@@ -1,12 +1,15 @@
 
 目录：
 ------
-* comm:     公共目录，负责mobile和pybbs的公共handler，包括ajax和api的handler在此。其中comm/urls.py下有所有handler的总路由表
+* server.py 服务器程序,默认端口8080。包括了总路由表
 * mobile：  移动版（简化版）的主handler目录
-* pybbs：   网页版的主handler目录
 * static：  js/css/img 
 * template：模版
-* server.py 服务器程序, python server.py即可，默认端口8080
+* index.py : 首页，登入登出
+* lib.py : 公共函数和类
+* comm_ajax.py : 公用的ajax接口
+* board.py : 版块
+* uimodules.py : 封装的tornado的ui组件，userbox（左侧栏）在此
 
 安装：
 ------

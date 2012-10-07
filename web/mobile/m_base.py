@@ -5,7 +5,7 @@ sys.path.append('..')
 
 import tornado.web
 from model import manager as mgr
-from comm.urls import mark,BaseHandler
+from lib import BaseHandler
 
 def m_error(handler, errmsg):
     handler._tpl['error'] = errmsg
@@ -25,6 +25,10 @@ class MobileBaseHandler(BaseHandler):
         self.clear_cookie('msg') 
         self._tpl['msg'] = msg 
         self._tpl['userid'] = self.current_user
+
+    @property
+    def userid(self):
+        return self.current_user
     
     def fail_and_redirect(self, name, errmsg, redirect_path, expire):
         self.set_secure_cookie(name, errmsg, expire)
