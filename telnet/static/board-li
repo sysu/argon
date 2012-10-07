@@ -1,1 +1,1 @@
- {{ (index+1)|string|width(4) }} {{ flag|post_mark }} {{ ' ' if readmark else 'N' }}  {{ owner|width(-15) }}{{ posttime.strftime("%b %d") }}    {{ ' ' if replyable else '[1;4;33mx[m' }}{{ '● ' if replyid == 0 }}{{ title }}
+ {{ (index+1)|string|width(4) }} {{ 'g' if mark_g else ' ' }}{{ 'm' if mark_m else ' ' }} {{ ' ' if readmark else 'N' }}  {{ owner|width(-15) }}{{ posttime.strftime("%b %d") }}    {{ ' ' if replyable else '[1;4;33mx[m' }}{{ '● ' if replyid == 0 }}{{ title }}

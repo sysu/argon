@@ -20,7 +20,7 @@ CREATE TABLE IF NOT EXISTS `argo_boardhead` (
     -- `r_prem` int(11) unsigned DEFAULT 1, /* read permissions */
     -- `p_prem` int(11) unsigned DEFAULT 2, /* post permissions */
     -- `s_perm` int(11) unsigned DEFAULT 2, /* visible permissions */
-    about text ,
+    about varchar(80) ,
     welcome text ,
 
     PRIMARY KEY (`bid`),

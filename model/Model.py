@@ -420,6 +420,11 @@ class Post(Model):
                           bid, rank)
         return res and res['pid']
 
+    def get_post_total(self, bid):
+        res = self.db.get("SELECT count(pid) as total "
+                          "FROM %s WHERE bid=%%s" % self._index_table, bid)
+        return res and res['total']
+
     #####################
 
     def get_posts(self, bid, num, limit):
@@ -739,9 +744,9 @@ class Mail(Model):
         return self.table_insert(self._index_table, kwargs)
 
     def set_m_mark(self, mail):
-        mail['flag'] = mail['flag'] ^ self.FLAG_M_MARK
-        self.db.execute("UPDATE `%s` SET flag=%%s WHERE mid=%%s" % self._index_table,
-                        mail['flag'], mail['mid'])
+        mail['mark_m'] = not mail['mark_m']
+        self.db.execute("UPDATE `%s` SET mark_m=%s WHERE mid=%%s" % self._index_table,
+                        mail['mark_m'], mail['mid'])
         return mail
 
     def remove_mail(self, mid):
@@ -1571,14 +1576,14 @@ class Admin(Model):
 
     def set_g_mark(self, userid, board, post):
         if board['perm'][3] :
-            post['flag'] = post['flag'] ^ 1
-            self.post.update_post( post['pid'], flag=post['flag'])
+            post['mark_g'] = not post['mark_g']
+            self.post.update_post( post['pid'], mark_g=post['mark_g'])
         return post
 
     def set_m_mark(self, userid, board, post):
         if board['perm'][3] :
-            post['flag'] = post['flag'] ^ 2
-            self.post.update_post( post['pid'], flag=post['flag'])
+            post['mark_m'] = not post['mark_m']
+            self.post.update_post( post['pid'], mark_m=post['mark_m'])
         return post
 
     def remove_post_junk(self, userid, pid):
@@ -1732,6 +1737,20 @@ class WebConfigure(Model):
                       "Love", "Mobile", "Sale", "Job", "Joke",
                       "News", "Hardware", "Stock", "EastCampus",
                       "Say", "Search")),
+            )
+
+    def get_news(self):
+        return (
+            {
+                "title":"快参加2012年linux班聚吧！",
+                "href":"l-ts.me",
+                "time":"2012-07-12",
+                },
+            {
+                "title":"站衫开始受订了咯！",
+                "href":"weibo.com",
+                "time":"2012-02-33",
+                }
             )
 
 class FreqControl(Model):

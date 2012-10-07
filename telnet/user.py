@@ -275,7 +275,7 @@ class PostBugFrame(BaseAuthedFrame):
                                       self.session.ip,
                                       config.BBS_HOST_FULLNAME,
                                       replyable=True)
-        manager.post.update_post('BugReport', pid, flag=2)
+        manager.post.update_post(pid, mark_g=True)
 
 @mark('test_keyboard')
 class TestKeyBoardFrame(BaseAuthedFrame):
