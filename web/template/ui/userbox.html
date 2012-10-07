@@ -1,0 +1,28 @@
+{% if userid %}
+<div class="userbox cell-put">
+  <img src="{{ url_for_avatar }}" title="{{ userid }}的头像"/>
+  <div class="userbox-profile">
+    <p class="userbox-userid">{{ userid }}</p>
+  </div>
+</div>
+<div class="cell-put">
+  <h4>收藏夹</h4>
+  <ul>
+    {% for li in userfav %}
+    <li><a href="/board/{{ li.boardname }}">{{ li.boardname }}</a></li>
+    {% end %}
+  </ul>
+</div>
+{% else %}
+<div id="login-box" class="cell-put">
+  <form method="post" action="/account/login" >
+    <legend>登录</legend>
+    <input type="text" name="userid" placeholder="用户名" />
+    <input type="password" name="passwd" placeholder="密码" />
+    <div>
+      <button type="submit" class="btn btn-success">登录</button> | 
+      <a class="underline" href="/account/login">加入我们</a>
+    </div>
+  </form>
+</div>
+{% end %}

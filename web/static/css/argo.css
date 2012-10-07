@@ -1,25 +1,144 @@
-/* global property */
-
-.argo-img {
-  border-raius: 4px;
+body{
 }
 
-/* post-list */
-
-.post-list-title {
-  padding: 15px 0 8px 5px;
-  border-bottom: 1px solid #EEE;
+#container{
+    padding-top:30px;
+    padding-bottom:30px;
 }
 
-.post-list-img {
-  width: 45px;
-  border-radius: 4px;
+.cell{
+    position:relative;
+    margin-top:1em;
+    margin-bottom:2em;
 }
 
-.post-title-info {
-  line-height: 20px;
-  color: #888;
-  font-size: 75%;
+.cell>h4{
+    font-size:1em;
+    line-height:1.44em;
+    color:black;
+    margin-left:-1em;
 }
 
+.cell-put{
+    border-bottom:1px dashed #e6e6e6;
+}
 
+.cell-inside{
+    border-bottom:1px dashed #e6e6e6;
+    border-top:1px dashed #e6e6e6;
+}
+
+.cell-inset{
+    background:#eee;
+    border:1px solid #e0e0e0;
+    border-radius:5px;
+}
+
+.cell-outset{
+    background:#f0f0f0;
+    box-shadow:0 0 3px 1px #eee;
+    border:1px solid #e0e0e0;
+    border-radius:5px;
+}
+
+.cell-content{
+    margin:1em;
+}
+
+.underline{
+    text-decoration:underline;
+}
+
+div.center{
+    text-align:center;
+}
+
+#login-box input{
+    width:81%;
+}
+
+.boardset{
+    list-style-type:none;
+    margin-left:1em;
+}
+
+.is_new{
+    font-weight:bold;
+}
+
+.userbox{
+    margin-top:10px;
+    border-top:1px solid #e0e0e0;
+    border-bottom:1px solid #eee;
+    background:#fcfcfc;
+}
+
+.userbox-nav{
+}
+
+.userbox-profile{
+    position:relative;
+    border-bottom:1px dashed #eee;
+}
+
+.userbox-profile>img{
+    box-shadow:0 0 3px #aaa;
+    position:absolute;
+    left:1em;
+    top:1.382em;
+}
+
+.userbox-userid{
+    min-height:72px;
+    margin-left:72px;
+    line-height:72px;
+}
+
+#index-carousel{
+    position:relative;
+    margin-left:2em;
+}
+
+#index-carousel img{
+    width:100%;
+    height:auto;
+    border-radius:5px;
+}
+
+.board-nav-group{
+    position:relative;
+    border-bottom:1px dashed #eee;
+    margin-top:1em;
+}
+
+.board-nav-label{
+    width:72px;
+    position:absolute;
+    text-align:center;
+}
+
+.board-nav-item{
+    position:relative;
+    display:block;
+    margin-left:72px;
+    list-style-type:none;
+    clear:both;
+}
+
+.board-nav-item li{
+    display:inline-block;
+    margin-left:1em;
+}
+
+.board-nav-item li a{
+}
+
+#footer{
+    background:#2b2b2b;
+    width:100%;
+    color:white;
+}
+
+#footer-content{
+    padding:3em;
+}

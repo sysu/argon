@@ -1,0 +1,56 @@
+{% extends "base.html" %}
+
+{% block pagehead %}
+<div class="row">
+  <div class="cell">
+    {% module Carousel("index-carousel", billboard) %}
+  </div>
+</div>
+{% end %}
+
+{% block main %}
+<div class="cell">
+  <h4>十大</h4>
+  <div class="cell-put">
+    {% module TopicTable(topten) %}
+  </div>
+</div>
+<div class="cell board-nav">
+  <h4>讨论区导航</h4>
+  {% for title, g in boardnav %}
+  <div class="board-nav-group">
+    <h5 class="board-nav-label">{{ title }}</h5>
+    <ol class="board-nav-item">
+      {% for b in g %}
+      <li><a href="{{ b }}">{{ b }}</a></li>
+      {% end %}
+    </ol>
+  </div>
+  {% end %}
+</div>
+{% end %}
+
+{% block rightsidebar %}
+<div class="cell">
+  <h4>通知公告</h3>
+<div class="cell-put">
+  <ol class="unstyled">
+    <li>News1</li>
+    <li>News2</li>
+  </ol>
+</div>
+</div>
+<div class="cell">
+  <h4>新的发言者</h4>
+  <ul class="cell-put padding-l10 userset userset-small unstyled">
+    <li>
+      <img src="/static/img/guest1.jpeg"/>
+      <span>
+        <a href="#">LTaoist</a>
+        回复了<a href="#">今天你吃饭了吗</a>
+      </span>
+    </li>
+  </ul>
+</div>
+{% end %}
+

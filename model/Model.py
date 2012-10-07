@@ -498,9 +498,9 @@ class Post(Model):
     ####################
 
     def get_last_pid(self, bid):
-        res = self.db.get("SELECT max(pid) as pid FROM `%s` WHERE bid = %%s" % \
+        res = self.db.get("SELECT max(pid) as maxpid FROM `%s` WHERE bid = %%s" % \
                                self._index_table, bid)
-        return res and res['pid']
+        return res and res['maxpid']
 
     def get_post_loader(self, bid):
         sql_next = "SELECT * FROM `%s` WHERE bid = %s AND pid > %%s ORDER BY pid LIMIT 1" % (self._index_table, bid)
@@ -1010,9 +1010,8 @@ class ReadMark(Model):
         first_pid = self.ch.zrange(key, 0, 0)[0]
         return pid < int(first_pid)
 
-    def is_new_board(self, userid, bid):
+    def is_new_board(self, userid, bid, boardname):
         lastpid = self.post.get_last_pid(bid)
-        boardname = self.board.id2name(bid)
         return lastpid is not None and not self.is_read(userid, boardname,
                                                         lastpid)
 
@@ -1284,6 +1283,22 @@ class UserAuth(Model):
         
     def get_guest(self):
         return self.GUEST
+
+    def login_http(self, userid, passwd, host):
+
+        code = self.userinfo.select_attr(userid, "userid, passwd")
+        if code is None:
+            raise LoginError(u'没有该用户!')
+        code = code['passwd']
+
+        if not self.check_passwd_match(passwd, code):
+            raise LoginError(u'账号和密码不匹配！')
+
+        self.userinfo.update_user(userid,
+                                  lasthost=host,
+                                  lastlogin=datetime.now())
+        res = self.userinfo.get_user(userid)
+        return res['userid']
 
     def login(self, userid, passwd, host, session=True):
 
@@ -1683,6 +1698,41 @@ class Query(Model):
         if base :
             base['teams'] = self.team.user_teams(userid)
         return base
+
+class WebConfigure(Model):
+
+    def get_billboard(self):
+        return [
+            {
+                "src":"http://ww3.sinaimg.cn/large/6b888227jw1dwesulldlyj.jpg",
+                "title":"LTaoist",
+                "href":"http://l-ts.me",
+                "desc":"LTaoist is a boy.",
+                },
+            {
+                "src":"http://ww1.sinaimg.cn/crop.0.80.980.245/60941145gw1dwkzd5jcksj.jpg",
+                "title":"Maple",
+                "href":"http://this.ismaple.com",
+                "desc":"Maple is the boardmanager of linux."
+                },
+            ]
+
+    def get_topten(self):
+        return self.db.query("SELECT * FROM `argo_filehead` "
+                             "WHERE replyid=0 "
+                             "ORDER BY pid DESC "
+                             "LIMIT 10 ")
+
+    def get_board_nav(self):
+        return (
+            ("推荐", ("Say", "London2012", "CS", "Linux", "Search",
+                      "Parttime", "BBS_Help", "Hardware", "Offical",
+                      "Lecture")),
+            ("热门", ("Employee", "ArgoBridge", "Diary", "water",
+                      "Love", "Mobile", "Sale", "Job", "Joke",
+                      "News", "Hardware", "Stock", "EastCampus",
+                      "Say", "Search")),
+            )
 
 class FreqControl(Model):
 

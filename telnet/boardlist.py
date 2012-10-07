@@ -77,7 +77,7 @@ class BaseBoardListFrame(BaseAuthedFrame):
     def get_default_index(self, boards, default=0):
         userid = self.userid
         for index,b in enumerate(boards):
-            if manager.readmark.is_new_board(userid, b['bid']):
+            if manager.readmark.is_new_board(userid, b['bid'], b['boardname']):
                 return index
         else :
             return default
@@ -143,6 +143,10 @@ class BaseBoardListFrame(BaseAuthedFrame):
 
     def _wrapper_li(self, board):
         board = self.wrapper_board(board)
+        board['is_new'] = manager.readmark.is_new_board(
+            self.userid,
+            board['bid'],
+            board['boardname'])
         return self.render_str('boardlist-li', **board)
 
     def _goto_last(self):

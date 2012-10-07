@@ -1,0 +1,19 @@
+<div id="{{ htmlid }}" class="carousel slide">
+  <div class="carousel-inner">
+    {% for index,li in enumerate(content) %}
+    <div class="item{% if index==0 %} active{% end %}">
+      <a href="{{ li['href'] }}">
+        <img src="{{ li['src'] }}" alt="{{ li['title'] }}"/>
+        <div class="carousel-caption">
+          <h4>{{ li['title'] }}</h4>
+          <p>{{ li.get('desc', ' ') }}</p>
+        </div>
+      </a>
+    </div>
+    {% end %}
+  </div>
+  {% if len(content) > 1 %}
+  <a class="left carousel-control" href="#{{ htmlid }}" data-slide="prev">‹</a>
+  <a class="right carousel-control" href="#{{ htmlid }}" data-slide="next">›</a>
+  {% end %}
+</div>

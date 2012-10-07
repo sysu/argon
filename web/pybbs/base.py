@@ -22,4 +22,3 @@ class PBaseHandler(BaseHandler):
         tpl_name = 'standard/' + tpl_name
         self.render(tpl_name, **self._tpl)
 
-

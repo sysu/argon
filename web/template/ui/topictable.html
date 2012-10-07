@@ -1,0 +1,21 @@
+<table class="table table-hover table-condensed" width="100%">
+  <thead>
+    <tr>
+      <th width="auto">主题</th>
+      <th width="20%">最后回复</th>
+      <th width="20%">更新</th>
+    </tr>
+  </thead>
+  <tbody>
+    {% for p in topiclist %}
+    <tr{% if 'read' in p %} class="read"{% end %}>
+      <td>
+        <a href="/post/{{ p['pid'] }}">{{ p['title'] }}</a>
+      </td>
+      <td><a href="/user/{{ p['owner'] }}">{{ p['owner'] }}</td>
+      <td>{{ timeformat(p['posttime']) }}</td>
+    </tr>
+    {% end %}
+  </tbody>
+</table>
+        

@@ -22,6 +22,7 @@ MODULE_NAME = {
     "FreqControl" : "freq",
     "ArgoTeam" : "userperm",
     "UserAuth" : "auth",
+    "WebConfigure" : "web",
     }
 
 def get_telnet_manager():
@@ -29,13 +30,13 @@ def get_telnet_manager():
     from Model import Section, Status, UserInfo, UserSign, Board,\
         Post, Mail, ReadMark, Permissions, Favourite, Clipboard,\
         Disgest, FreqControl, Notify, Notice, Team, \
-        UserAuth, Deny, Admin, Query, Manager, Action
+        UserAuth, Deny, Admin, Query, Manager, Action, WebConfigure
     from perm import ArgoTeam
     return Manager(global_conn, global_cache, [
             Section, Status, UserInfo, UserSign, Board, Post, Mail,
             ReadMark, Permissions, Favourite, Clipboard, Disgest,
             FreqControl, Notify, Notice, Team, ArgoTeam, UserAuth,
-            Deny, Admin, Query, Action
+            Deny, Admin, Query, Action, WebConfigure,
             ], MODULE_NAME)
 
 manager = get_telnet_manager()
