@@ -1,9 +1,10 @@
 {% if userid %}
-<div class="userbox">
+<div class="cell userbox">
   <div class="userbox-profile">
     <img class="img-rounded" src="{{ url_for_avatar }}" title="{{ userid }}的头像"/>
     <p class="userbox-userid">{{ userid }}</p>
   </div>
+  <hr/>
   <div class="userbox-nav">
     <ul class="nav nav-pills nav-stacked">
       <li><a href="/"><i class="icon-home"></i> 首页</a></li>
@@ -12,25 +13,28 @@
       <li><a href="/profile"><i class="icon-user"></i> 设置</a></li>
     </ul>
   </div>
-</div>
-<div class="cell-put">
-  <h4>收藏夹</h4>
-  <ul class="boardset">
-    {% for li in userfav %}
-    <li><a{% if li.is_new %} class="is_new"{% end %} href="/board/{{ li.boardname }}/">{{ li.boardname }}</a></li>
-    {% end %}
-  </ul>
+  <hr/>
+  <div style="padding-left:1em">
+    <h5>收藏夹</h5>
+    <ul class="boardset">
+      {% for li in userfav %}
+      <li><a{% if li.is_new %} class="is_new"{% end %} href="/board/{{ li.boardname }}/">{{ li.boardname }}</a></li>
+      {% end %}
+    </ul>
+  </div>
 </div>
 {% else %}
-<div id="login-box" class="cell-put">
-  <form method="post" action="/account/login" >
-    <legend>登录</legend>
-    <input type="text" name="userid" placeholder="用户名" />
-    <input type="password" name="passwd" placeholder="密码" />
-    <div>
-      <button type="submit" class="btn btn-success">登录</button> | 
-      <a class="underline" href="/account/login">加入我们</a>
-    </div>
-  </form>
+<div class="cell">
+  <div id="login-box">
+    <form method="post" action="/account/login" >
+      <legend>登录</legend>
+      <input type="text" name="userid" placeholder="用户名" />
+      <input type="password" name="passwd" placeholder="密码" />
+      <div>
+        <button type="submit" class="btn btn-success">登录</button> | 
+        <a class="underline" href="/account/login">加入我们</a>
+      </div>
+    </form>
+  </div>
 </div>
 {% end %}

@@ -22,10 +22,12 @@
         <div class="span10">
           {% block pagehead %}{% end %}            
           <div class="row">
-            <div class="span7">
-              {% block main %}{% end %}
+            <div class="span8">
+              <div id="main">
+                {% block main %}{% end %}
+              </div>
             </div>
-            <div class="span3">
+            <div class="span2">
               {% block rightsidebar %}{% end %}
             </div>
           </div>

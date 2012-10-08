@@ -3,7 +3,7 @@
     {% for index,li in enumerate(content) %}
     <div class="item{% if index==0 %} active{% end %}">
       <a href="{{ li['href'] }}">
-        <img src="{{ li['src'] }}" alt="{{ li['title'] }}"/>
+        <img class="img-rounded" src="{{ li['src'] }}" alt="{{ li['title'] }}"/>
         <div class="carousel-caption">
           <h4>{{ li['title'] }}</h4>
           <p>{{ li.get('desc', ' ') }}</p>

@@ -1,6 +1,9 @@
 body{
 }
 
+#navbar{
+}
+
 #container{
     padding-top:30px;
     padding-bottom:30px;
@@ -9,7 +12,7 @@ body{
 .cell{
     position:relative;
     margin-top:1em;
-    margin-bottom:2em;
+    margin-bottom:2.5em;
 }
 
 .cell>h4{
@@ -17,7 +20,6 @@ body{
     font-size:1em;
     line-height:2.44em;
     color:black;
-    margin-left:-1em;
 }
 
 .cell-put{
@@ -71,7 +73,14 @@ div.center{
     margin-top:10px;
     border-top:1px solid #e0e0e0;
     border-bottom:1px solid #eee;
-    background:#fcfcfc;
+    border:2px solid #f4f4f4;
+    border-radius:5px;
+    /* width:100%; */
+    /* background:#ececec; */
+}
+
+.fixed{
+    position:fixed;
 }
 
 .userbox-nav{
@@ -79,7 +88,6 @@ div.center{
 
 .userbox-profile{
     position:relative;
-    border-bottom:1px dashed #eee;
 }
 
 .userbox-profile>img{
@@ -194,4 +202,11 @@ div.center{
 .read .gmark:after,
 .read .mmark:after{
     background:#ccc;
+}
+
+#main{
+    padding:0 1em;
+    border:2px solid #eee;
+    box-shadow:0 0 5px #eee;;
+    border-radius:5px;
 }
