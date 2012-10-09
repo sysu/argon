@@ -534,12 +534,25 @@ class Post(Model):
     def get_post(self, pid):
         return self.table_get_by_key(self._index_table, 'pid', pid)
 
+    def get_post_by_replyid(self, replyid):
+        return self.db.query("SELECT pid,title FROM %s "
+                             "WHERE replyid=%%s "
+                             "ORDER BY pid DESC LIMIT 5" % self._index_table,
+                             replyid)
+
     def prev_post(self, bid, pid):
         return self.db.get("SELECT * FROM `%s` WHERE bid = %%s AND pid < %%s ORDER BY pid DESC LIMIT 1" % self._index_table, bid, pid)
 
     def next_post(self, bid, pid):
         return self.db.get("SELECT * FROM `%s` WHERE bid = %%s AND pid > %%s ORDER BY pid LIMIT 1" %\
                                self._index_table, bid, pid)
+
+    def get_last_pid(self, tid):
+        res = self.db.get("SELECT pid FROM `%s` "
+                          "WHERE tid=%%s "
+                          "ORDER BY pid DESC LIMIT 1" % self._index_table,
+                          tid)
+        return res and res['pid']        
 
     def prev_post_pid(self, bid, pid):
         res = self.db.get("SELECT pid FROM `%s` WHERE bid = %%s AND pid < %%s ORDER BY pid DESC LIMIT 1" %\

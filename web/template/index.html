@@ -9,24 +9,26 @@
 {% end %}
 
 {% block main %}
-<div class="cell">
-  <h4>十大</h4>
-  <div class="cell-put">
-    {% module TopicTable(topten) %}
+<div id="main">
+  <div class="cell">
+    <h4>十大</h4>
+    <div class="cell-put">
+      {% module TopicTable(topten) %}
+    </div>
   </div>
-</div>
-<div class="cell board-nav">
-  <h4>讨论区导航</h4>
-  {% for title, g in boardnav %}
-  <div class="board-nav-group">
-    <h5 class="board-nav-label">{{ title }}</h5>
-    <ol class="board-nav-item">
-      {% for b in g %}
-      <li><a href="/board/{{ b }}/">{{ b }}</a></li>
-      {% end %}
-    </ol>
+  <div class="cell board-nav">
+    <h4>讨论区导航</h4>
+    {% for title, g in boardnav %}
+    <div class="board-nav-group">
+      <h5 class="board-nav-label">{{ title }}</h5>
+      <ol class="board-nav-item">
+        {% for b in g %}
+        <li><a href="/board/{{ b }}/">{{ b }}</a></li>
+        {% end %}
+      </ol>
+    </div>
+    {% end %}
   </div>
-  {% end %}
 </div>
 {% end %}
 

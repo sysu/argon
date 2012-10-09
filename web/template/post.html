@@ -1,0 +1,60 @@
+{% extends "base.html" %}
+
+{% block main %}
+<div class="cell-group">
+  {% module PostNav(firstpid, prevpid, nextpid, lastpid, post.pid) %}
+  <div class="post-wrapper">
+    <div class="post-head">
+      <img src="{{ func.url_for_avatar(post.owner) }}"/>
+      <div class="post-info">
+        <h2>{{ post.title }}</h2>
+        <div>
+          <span> 发信人：<a href="/user/{{ post.owner }}">{{ post.owner }}</a> </span> | 
+          <span> {{ post.fromhost }} <em>{{ board.boardname }}</em> 版 </span> | 
+          <span> <i class="icon-time"></i>{{ post.posttime }}</span> </div>
+      </div>
+    </div>
+    <div class="post-content">
+      {% raw post.content.replace("\n", "<br/>\n") %}
+    </div>
+    <div class="post-sign">
+      {{ post.signature }}
+    </div>
+    <div class="post-meta">
+      <a href="#">转寄</a>
+      <a href="#">转贴</a>
+      <a href="#">删除</a>
+      <a href="#">修改</a>
+      <a href="#">回复</a>
+      <a href="#">同主题阅读</a>
+    </div>
+  </div>
+  {% module PostNav(firstpid, prevpid, nextpid, lastpid, post.pid) %}
+</div>
+{% end %}
+
+{% block rightsidebar %}
+<div class="cell">
+  {% if parent %}
+  <h4>主题第一贴</h4>
+  <p><a href="/post/{{ root.pid }}">{{ root.title }}</a></p>
+  <h4>回复的原文</h4>
+  <p><a href="/post/{{ parent.pid }}">{{ parent.title }}</a></p>
+  {% else %}
+  <h4>本文是主题第一贴！</h4>
+  <a href="#"> >> 同主题阅读</a>
+  {% end %}
+</div>
+<div class="cell">
+  <h4>本文的回复</h4>
+  {% if children %}
+  <ul>
+    {% for li in children %}
+    <li><a href="/post/{{ li.pid }}">{{ li.title }}</a></li>
+    {% end %}
+  </ul>
+  {% else %}
+  <p>没有回复，<br/>要<a href="#">发表回复</a>吗？ </p>
+  {% end %}
+</div>
+{% end %}

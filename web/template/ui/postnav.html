@@ -1,0 +1,18 @@
+<div class="post-nav">
+  {% if (pid==firstpid) and (pid==lastpid) %}
+  <span>这是唯一一篇</span>
+  {% else %}
+  {% if pid==firstpid %}
+  <span>前面没有文章了</span>
+  {% else %}
+  <a href="/post/{{ firstpid }}">第一篇</a>
+  <a href="/post/{{ prevpid }}">上一篇</a>
+  {% end %}
+  {% if pid==lastpid %}
+  <span>后面没有文章了</span>
+  {% else %}
+  <a href="/post/{{ nextpid }}">下一篇</a>
+  <a href="/post/{{ lastpid }}">最后一篇</a>
+  {% end %}
+  {% end %}
+</div>

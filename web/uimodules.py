@@ -39,3 +39,17 @@ class TopicTable(tornado.web.UIModule):
         return self.render_string("ui/topictable.html", topiclist=topiclist,
                                   timeformat=timeformat)
 
+class SafeHref(tornado.web.UIModule):
+
+    def render(self, ishref, href, content):
+        if ishref :
+            return '<a href="%s">%s</a>' % (href, content)
+        else:
+            return '<a class="badhref">%s</a>' % content
+
+class PostNav(tornado.web.UIModule):
+
+    def render(self, firstpid, prevpid, nextpid, lastpid, pid):
+        return self.render_string('ui/postnav.html', firstpid=firstpid,
+                                  prevpid=prevpid, nextpid=nextpid,
+                                  lastpid=lastpid, pid=pid)

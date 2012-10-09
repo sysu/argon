@@ -16,7 +16,7 @@ CREATE TABLE IF NOT EXISTS `argo_filehead_junk` (
         
        `attachidx` varchar(32) NOT NULL default '',
        `fromaddr` varchar(20) NOT NULL default '',
-       `fromhost` varchar(32) NOT NULL default "Yat-sen Channel",
+       `fromhost` varchar(32) NOT NULL default "逸仙时空",
        `content` text,
        `signature` text,
 

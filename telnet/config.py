@@ -17,7 +17,7 @@ import os, sys
 BASEPATH_TELNET = os.path.dirname(os.path.realpath(__file__))
 BASEPATH = os.path.dirname(BASEPATH_TELNET)
 
-BBS_HOST_FULLNAME = u"逸仙时空 Yat-Sen Channel"
+BBS_HOST_FULLNAME = u"逸仙时空"
 BBS_HOST_DOMAIN = u"argo.sysu.edu.cn"
 
 with open("filelist.yaml") as f:

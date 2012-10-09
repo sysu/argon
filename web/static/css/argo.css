@@ -210,3 +210,62 @@ div.center{
     box-shadow:0 0 5px #eee;;
     border-radius:5px;
 }
+
+.post-wrapper{
+    /* border-radius:5px; */
+    padding:0;
+    margin:auto 0 2em 0;
+    border-bottom:2px dashed #e0e0e0;
+}
+
+.post-head{
+    position:relative;
+    padding:.527em 2em;
+    border:1px dashed #ccc;
+    border-radius:4px;
+    margin:0;
+}
+
+.post-head>img{
+    position:absolute;
+    width:40px;
+    height:40px;
+    right:1em;
+    top:1em;
+}
+
+.post-info>div>span{
+    margin-right:0.618em;
+}
+
+.post-info h2{
+    font-size:1em;
+    line-height:2em;
+    padding:0;
+    margin:0;
+}
+
+.post-content{
+    padding:2em;
+    min-height:81px;
+}
+
+.time{
+    color:#bbb;
+    margin-left:.618em;
+}
+
+.post-nav{
+    font-size:.78em;
+    margin:1em;
+    text-align:right;
+}
+
+.post-nav>a{
+    margin-right:.5em;
+}
+
+.post-meta{
+    text-align:right;
+    padding:.345em 1em;
+}

@@ -26,6 +26,7 @@ urls = [
     (r"/account/login", import_handler("index", "LoginHandler")),
     (r'/account/logout', import_handler('index', 'LogoutHandler')),
     (r'/board/(\w{1,40})/(\d{1,10})?', import_handler('board', 'BoardHandler')),
+    (r'/post/(\d{1,20})', import_handler('post', 'PostHandler')),
 
     (r"/a/checkmail/?", import_handler("comm_ajax","CommAjaxCheckMailHandler")),
     (r"/a/mail/(\d{1,10})/?", import_handler("comm_ajax","CommAjaxGetMailHandler")),

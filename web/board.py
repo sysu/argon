@@ -1,3 +1,4 @@
+import tornado.web
 from lib import BaseHandler, manager
 
 class BoardHandler(BaseHandler):
@@ -7,7 +8,7 @@ class BoardHandler(BaseHandler):
         if not board:
             raise tornado.web.HTTPError(404)
         boardname = board['boardname']
-        maxrank = max(1, manager.post.get_post_total(board['bid']) - 30)
+        maxrank = max(0, manager.post.get_post_total(board['bid']) - 30)
         if (rank is None) or (rank > maxrank):
             rank = maxrank
         posts = manager.post.get_posts(board['bid'], rank, 30)
