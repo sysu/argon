@@ -3,20 +3,18 @@
 {% block main %}
 <div id="main">
   <div class="cell-group">
-    <div class="pull-left">
-      <div class="pull-left btn-toolbar">
-	    <button class="btn btn-small btn-success">发表主题</button>
-	    <button class="btn btn-small">同主题</button>
-        <div class="btn-group">
-          <a class="btn btn-small dropdown-toggle" data-toggle="dropdown" href="#">
-            过滤器
-            <span class="caret"></span>
-          </a>
-          <ul class="dropdown-menu">
-            <li><a>只读精华</a></li>
-            <li><a>只读美文</a></li>
-          </ul>
-        </div>
+    <div class="btn-toolbar">
+	  <button class="btn btn-small btn-success">发表主题</button>
+	  <button class="btn btn-small">同主题</button>
+      <div class="btn-group">
+        <a class="btn btn-small dropdown-toggle" data-toggle="dropdown" href="#">
+          过滤器
+          <span class="caret"></span>
+        </a>
+        <ul class="dropdown-menu">
+          <li><a>只读精华</a></li>
+          <li><a>只读美文</a></li>
+        </ul>
       </div>
     </div>
     {% module PostTable(posts) %}
