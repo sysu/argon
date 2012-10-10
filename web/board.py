@@ -7,11 +7,24 @@ class BoardHandler(BaseHandler):
         board = manager.board.get_board(boardname)
         if not board:
             raise tornado.web.HTTPError(404)
-        boardname = board['boardname']
-        maxrank = max(0, manager.post.get_post_total(board['bid']) - 30)
-        if (rank is None) or (rank > maxrank):
+        boardname = board.boardname
+        maxrank = max(0, manager.post.get_post_total(board['bid']) - 3)
+        if rank is not None:
+            rank = int(rank)
+            posts = manager.post.get_posts(board['bid'], rank, 30)
+        elif self.get_current_user() :
+            userid = self.get_current_user()
+            lastread = manager.readmark.get_first_read(userid, boardname)
+            lastread = manager.post.prev_three_post(board.bid, lastread)
+            posts = manager.post.get_posts_after_pid(
+                board.bid, lastread, 30)
+            rank = manager.post.get_rank_num(board.bid, lastread)
+        else:
             rank = maxrank
-        posts = manager.post.get_posts(board['bid'], rank, 30)
+            posts = manager.post.get_posts(board['bid'], rank, 30)
+        if self.get_current_user() :
+            userid = self.get_current_user()
+            manager.readmark.wrapper_post_with_readmark(posts, boardname, userid)
         vistors = (
             ("LTaoist", "2012-03-04"),
             ("gcc", "2012-01-09"),

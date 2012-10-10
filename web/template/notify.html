@@ -1,0 +1,23 @@
+{% extends "base.html" %}
+
+{% block main %}
+<div class="cell">
+  <h4>{{ current_user }}的消息盒子</h4>
+  {% if notices %}
+  <ol class="notifies">
+    {% for index,li in enumerate(notices) %}
+    <li{% if index <= total %} class="new-notify"{% end %}>
+          {% if li[0] == '@' %}
+          在<a href="/post/{{ li[3] }}">{{ li[2] }}</a> 版，
+          <a href="/user/{{ li[1] }}">{{ li[1] }}</a> @ 了你一下
+          {% end %}
+   </li>
+   {% end %}
+ </ol>
+</div>
+{% else %}
+<h3>你还没有受到任何通知喔亲～</h3>
+<p>通知盒子保存一些简单的消息通知。</p>
+{% end %}
+{% end %}
+

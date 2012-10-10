@@ -8,7 +8,7 @@
   </thead>
   <tbody>
     {% for p in postlist %}
-    <tr{% if 'read' in p %} class="read"{% end %}>
+    <tr{% if p.get('read', False) %} class="read"{% end %}>
       <td>
         <a href="/post/{{ p['pid'] }}">{{ p['title'] }}</a>
         {% if p['mark_g'] %}<i class="gmark"></i>{% end %}

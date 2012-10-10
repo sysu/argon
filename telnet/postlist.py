@@ -368,6 +368,7 @@ class BoardFrame(BaseBoardFrame):
 
     def clear_readmark(self):
         last = manager.post.get_last_pid(self.bid)
+        print ('lastpid', last)
         manager.readmark.clear_unread(self.userid, self.boardname, last)
         self.reload()
 

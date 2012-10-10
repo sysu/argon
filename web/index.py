@@ -1,6 +1,9 @@
 #!/usr/bin/python2
 # -*- coding: utf-8 -*-
 
+import tornado
+import tornado.web
+
 from lib import BaseHandler, manager
 
 class IndexHandler(BaseHandler):
@@ -36,3 +39,16 @@ class LogoutHandler(BaseHandler):
     def get(self):
         self.clear_cookie('userid')
         self.redirect('/')
+
+class ErrorHandler(BaseHandler):
+    
+    """Generates an error response with status_code for all requests."""
+    def __init__(self, application, request, status_code):
+        tornado.web.RequestHandler.__init__(self, application, request)
+        self.set_status(status_code)
+    
+    def prepare(self):
+        raise tornado.web.HTTPError(self._status_code)
+
+## override the tornado.web.ErrorHandler with our default ErrorHandler
+tornado.web.ErrorHandler = ErrorHandler

@@ -269,3 +269,16 @@ div.center{
     text-align:right;
     padding:.345em 1em;
 }
+
+.notifies{
+    list-style-type:circle;
+}
+
+.new-notify{
+    list-style-type:disc;
+}
+
+.read,
+.read a{
+    color:grey;
+}

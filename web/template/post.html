@@ -10,7 +10,7 @@
         <h2>{{ post.title }}</h2>
         <div>
           <span> 发信人：<a href="/user/{{ post.owner }}">{{ post.owner }}</a> </span> | 
-          <span> {{ post.fromhost }} <em>{{ board.boardname }}</em> 版 </span> | 
+          <span> {{ post.fromhost }} <a href="/board/{{ board.boardname }}/"><em>{{ board.boardname }}</em></a> 版 </span> | 
           <span> <i class="icon-time"></i>{{ post.posttime }}</span> </div>
       </div>
     </div>
@@ -25,7 +25,7 @@
       <a href="#">转贴</a>
       <a href="#">删除</a>
       <a href="#">修改</a>
-      <a href="#">回复</a>
+      <a href="/post/add/{{ post.pid }}">回复</a>
       <a href="#">同主题阅读</a>
     </div>
   </div>

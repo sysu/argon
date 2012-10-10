@@ -1,0 +1,23 @@
+<form method="post" class="form-horizontal">
+  <legend>{{ title }}</legend>
+  <div class="control-group">
+    <label class="control-label" for="inputTitle">标题</label>
+    <div class="controls">
+      <input name="title" type="text" id="inputTitle" class="span5"/>
+    </div>
+  </div>
+  <div class="control-group">
+    <label class="control-label" for="inputContent">内容</label>
+    <div class="controls">
+      <textarea rows="20" name="content" class="span5" id="inputContent">{{ default }}</textarea>
+    </div>
+  </div>
+  <div class="control-group">
+    <div class="controls">
+      <label class="checkbox">
+        <input name="replyable" type="checkbox" checked>可以回复
+      </label>
+    </div>
+    <button type="submit" class="btn btn-primary pull-right">发表回复</button>
+  </div>
+</form>

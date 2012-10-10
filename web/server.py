@@ -27,6 +27,9 @@ urls = [
     (r'/account/logout', import_handler('index', 'LogoutHandler')),
     (r'/board/(\w{1,40})/(\d{1,10})?', import_handler('board', 'BoardHandler')),
     (r'/post/(\d{1,20})', import_handler('post', 'PostHandler')),
+    (r'/post/add/(\d{1,20})', import_handler('post', 'ReplyPostHandler')),
+    (r'/post/add/(\w{1,40})', import_handler('post', 'NewPostHandler')),
+    (r'/notify', import_handler('user', 'NoticeHandler')),
 
     (r"/a/checkmail/?", import_handler("comm_ajax","CommAjaxCheckMailHandler")),
     (r"/a/mail/(\d{1,10})/?", import_handler("comm_ajax","CommAjaxGetMailHandler")),
@@ -50,7 +53,8 @@ urls = [
     (r"/m/(\w{2,16})/post/?", import_handler("mobile.m_main","MobileNewPostHandler")),
     (r"/m/(\w{2,16})/thread/(\d{1,10})/?", import_handler("mobile.m_main","MobileThreadHandler")),
 
-    
+
+    # (r"/404", import_handler('index', 'NotPageHandler'))
     # (r"/post/(\d{1,10})", import_handler("post", "PostHandler")),
     # (r"(
     ]

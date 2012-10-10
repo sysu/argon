@@ -547,7 +547,19 @@ class Post(Model):
         return self.db.get("SELECT * FROM `%s` WHERE bid = %%s AND pid > %%s ORDER BY pid LIMIT 1" %\
                                self._index_table, bid, pid)
 
-    def get_last_pid(self, tid):
+    def prev_three_post(self, bid, pid):
+        res = self.db.get("SELECT pid FROM `%s` "
+                          "WHERE bid=%%s AND pid<=%%s "
+                          "ORDER BY pid DESC LIMIT 3, 1" % self._index_table,
+                          bid, pid)
+        return res and res['pid']
+
+    def get_posts_after_pid(self, bid, pid, limit):
+        return self.db.query("SELECT * FROM `%s` "
+                             "WHERE bid = %%s AND pid >= %%s LIMIT %%s" % self._index_table,
+                             bid, pid, limit)
+
+    def get_topice_last_pid(self, tid):
         res = self.db.get("SELECT pid FROM `%s` "
                           "WHERE tid=%%s "
                           "ORDER BY pid DESC LIMIT 1" % self._index_table,
@@ -564,7 +576,7 @@ class Post(Model):
                               self._index_table, bid, pid)
         return res and res['pid']
 
-    def add_post(self,boardname,**kwargs):
+    def add_post(self,**kwargs):
         pid = self.table_insert(self._index_table, kwargs)
         return pid
 
@@ -1015,8 +1027,7 @@ class ReadMark(Model):
         self.post = manager.get_module('post')
         self.board = manager.get_module('board')
 
-    def is_read(self,userid,boardname,pid):
-        key = self.keyf % (userid, boardname)
+    def _is_read(self, key, pid):
         # Empty record, not read
         # And play a trick here, add -1 into read mark
         if self.ch.zcard(key) == 0:
@@ -1027,6 +1038,15 @@ class ReadMark(Model):
         # If pid is smaller the oldest one in read record, mark as read
         first_pid = self.ch.zrange(key, 0, 0)[0]
         return pid < int(first_pid)
+
+    def is_read(self,userid,boardname,pid):
+        key = self.keyf % (userid, boardname)
+        return self._is_read(key, pid)
+
+    def wrapper_post_with_readmark(self, posts, boardname, userid):
+        key = self.keyf%(userid, boardname)
+        for p in posts :
+            p['read'] = self._is_read(key, p['pid'])
 
     def is_new_board(self, userid, bid, boardname):
         lastpid = self.post.get_last_pid(bid)
@@ -1047,9 +1067,14 @@ class ReadMark(Model):
         key = self.keyf%(userid,boardname)
         self.ch.delete(key)
         self.ch.zadd(key, last, last)
+        print ('clear', last)
+
+    def get_first_read(self, userid, boardname):
+        d = self.ch.zrange(self.__(userid, boardname), 0, 0)
+        return d and d[0]
 
     def get_user_read(self, userid, boardname, num):
-        return self.ch.zrange(self.__(userid, boardname),-num,-1)
+        return self.ch.zrange(self.__(userid, boardname),-num,-1) 
 
 class UserSign(Model):
 
@@ -1446,7 +1471,6 @@ class Action(Model):
                  addr,host,replyable,signature=''):
         bid = self.board.name2id(boardname)
         pid = self.post.add_post(
-            boardname,
             bid=bid,
             owner=userid,
             title=title,
@@ -1463,14 +1487,13 @@ class Action(Model):
         # self.board.update_attr_plus1(bid,'topic_total')
         self.readmark.set_read(userid, boardname, pid)
         return pid
-
+    
     def reply_post(self,boardname,userid,title,content,addr,
                    host,replyid,replyable = 1,signature = ''):
         post = self.post.get_post(replyid)
         tid = post['tid']
         bid = self.board.name2id(boardname)
         pid = self.post.add_post(
-            boardname,
             owner=userid,
             title=title,
             bid=bid,
