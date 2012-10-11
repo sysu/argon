@@ -2,6 +2,7 @@
 
 {% block main %}
 <div class="cell-group">
+  <a class="pull-left"  href="/board/{{ board.boardname }}/">« 回到 {{ board.boardname }} 版</a>
   {% module PostNav(firstpid, prevpid, nextpid, lastpid, post.pid) %}
   <div class="post-wrapper">
     <div class="post-head">

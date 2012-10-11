@@ -1,0 +1,27 @@
+{% extends "base.html" %}
+
+{% block main %}
+<div class="cell">
+    <div class="btn-toolbar">
+      <a href="/mail/add" class="btn btn-small btn-success">写信</a>
+    </div>
+    <table class="mailtable table table-hover table-condensed" width="100%">
+      <thead>
+        <tr>
+          <th width="auto">标题</th>
+          <th width="20%">发信人</th>
+          <th width="20%">最后更新</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for li in mails %}
+        <tr{% if li.readmark %} class="read"{% end %}>
+          <td><a href="/mail/{{ li.tid }}">{{ li.title }}</a></td>
+          <td><a href="/user/{{ li.fromuserid }}">{{ li.fromuserid }}</td>
+          <td>{{ li.lastupdate }}</td>
+        </tr>
+        {% end %}
+      </tbody>
+    </table>
+</div>
+{% end %}

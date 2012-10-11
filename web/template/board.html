@@ -36,7 +36,7 @@
     <p>{{ board['about'] }}</p>
   </div>
   <img class="img-rounded" src="{{ board['httpbg'] }}"/>
-  <a id="board-head-bookbtn" class="btn btn-mini pull-right btn-info">收藏该版</a>
+  <a id="board-head-bookbtn" href="/board/{{ board.boardname }}/book" class="btn btn-mini pull-right btn-info">收藏该版</a>
 </div>
 {% end %}
 

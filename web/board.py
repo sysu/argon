@@ -1,3 +1,6 @@
+#!/usr/bin/env python
+# -*- coding: utf-8 -*-
+
 import tornado.web
 from lib import BaseHandler, manager
 
@@ -34,3 +37,27 @@ class BoardHandler(BaseHandler):
         board['httpbg'] = "http://ww3.sinaimg.cn/large/6b888227jw1dwesulldlyj.jpg"
         self.srender('board.html', board=board, rank=rank, maxrank=maxrank,
                      posts=posts, vistors=vistors)
+
+class AjaxBookBoardHandler(BaseHandler):
+
+    def get(self, boardname):
+        userid = self.get_current_user()
+        if userid is None:
+            self.write({
+                    "success": False,
+                    "content": u"未登录用户.",
+                    })
+            return
+        board = manager.board.get_board(boardname)
+        if not board :
+            self.write({
+                    "success": False,
+                    "content": u"没有该版块."
+                    })
+            return
+        boardname = board.boardname
+        manager.favourite.add(userid, boardname)
+        return self.write({
+                "success": True,
+                "msg": u"预定成功！",
+                })

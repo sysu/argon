@@ -644,8 +644,11 @@ class UserInfo(Model):
         return self.db.get("SELECT %s FROM `%s` WHERE userid = %%s" % (sql_what, self.__),
                            userid)
 
-    def user_exist(self, userid):
-        return True
+    def safe_userid(self, userid):
+        res = self.db.get("SELECT userid FROM `%s` "
+                          "WHERE userid=%%s" % self.__,
+                          userid)
+        return res and res['userid']
 
 class Status(Model):
 
@@ -807,6 +810,13 @@ class Mail(Model):
 
     def get_mail(self, userid, start, limit):
         return self.db.query("SELECT * FROM `%s` "
+                                 "WHERE touserid=%%s "
+                                 "ORDER BY mid "
+                                 "LIMIT %%s,%%s" % (self._index_table), userid,
+                                 start, limit)
+    
+    def get_mail_simple(self, userid, start, limit):
+        return self.db.query("SELECT title,mid FROM `%s` "
                                  "WHERE touserid=%%s "
                                  "ORDER BY mid "
                                  "LIMIT %%s,%%s" % (self._index_table), userid,

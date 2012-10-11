@@ -51,6 +51,12 @@ Dependencies
 
 其中jinja2目前被telnet端使用，可能会被web端使用。
 
+!!! redis版本应该在2.4以上！
+
+```bash
+redis -v
+```
+
 Install
 -------
 
@@ -134,3 +140,6 @@ python server.py
 `mrg.userperm.init_user_team`, `init_boardteam` 。`model.Model.foreach`可以
 对SQL进行一些简单的迭代，不过仅是测试或许直接重新建造更方便。
 
+!!! redis
+ubuntu 2.4的ppa
+https://launchpad.net/~chris-lea/+archive/redis-server/+index#

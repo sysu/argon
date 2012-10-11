@@ -38,7 +38,7 @@ class ReplyPostHandler(BaseHandler):
             raise tornado.web.HTTPError(404)
         if not self.get_current_user():
             raise tornado.web.HTTPError(404)
-        default = fun_gen_quote(self.get_current_user(), post.content)
+        default = fun_gen_quote(post.owner, post.content)
         title = post.title if post.title.startswith('Re:') \
             else 'Re: %s' % post.title
         self.srender("replypost.html", post=post, title=title,
