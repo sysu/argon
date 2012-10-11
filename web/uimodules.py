@@ -56,8 +56,9 @@ class PostNav(tornado.web.UIModule):
         return self.render_string('ui/postnav.html', firstpid=firstpid,
                                   prevpid=prevpid, nextpid=nextpid,
                                   lastpid=lastpid, pid=pid)
+
 class Editor(tornado.web.UIModule):
 
-    def render(self, title='发表文章', default=''):
-        return self.render_string('ui/editor.html', title=title,
-                                  default=default)
+    def render(self, header='发表文章', title='', default=''):
+        return self.render_string('ui/editor.html', header=header,
+                                  title=title, default=default)

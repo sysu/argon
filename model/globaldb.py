@@ -278,7 +278,7 @@ if MySQLdb is not None:
     OperationalError = MySQLdb.OperationalError
 
 def connect_db():
-    from config import DB_HOST, DB_PORT, DB_USER, DB_PASSWD, DB_NAME
+    from argo_conf import DB_HOST, DB_PORT, DB_USER, DB_PASSWD, DB_NAME
     try:
         from config import USE_EVENTLET_DB_POOL
     except ImportError:
@@ -297,7 +297,7 @@ def connect_db():
                                   database=DB_NAME)
     
 def connect_ch():
-    from config import REDIS_HOST, REDIS_PORT
+    from argo_conf import REDIS_HOST, REDIS_PORT
     return redis.Redis(host=REDIS_HOST, port=REDIS_PORT)
 
 global_conn = connect_db()

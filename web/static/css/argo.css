@@ -248,6 +248,7 @@ div.center{
 .post-content{
     padding:2em;
     min-height:81px;
+    font-family:monospace;
 }
 
 .time{

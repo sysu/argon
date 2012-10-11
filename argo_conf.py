@@ -8,20 +8,20 @@
 import os
 
 BASE_DIR = os.path.dirname(os.path.abspath(__file__))
-DATA_DIR = os.path.join(BASE_DIR, 'database/')
+SQL_DIR = os.path.join(BASE_DIR, 'database/')
 
 #######################
 # Database Configure ##
 #######################
-
-SQL_TPL_DIR = BASE_DIR
 
 DB_HOST = 'localhost'
 DB_PORT = 3306
 DB_USER = 'bbs'
 DB_PASSWD = 'forargo'
 DB_NAME = 'argo'
-BASE_TABLE = [ 'attachead','boardhead','sectionhead','user','userattr']
+BASE_TABLE = [ 'attachead','boardhead','sectionhead','user','userattr',
+               'annhead', 'filehead_junk', 'undenylist', 'denylist',
+               'mailhead', 'filehead']
 
 ###################
 # Redis Configure #

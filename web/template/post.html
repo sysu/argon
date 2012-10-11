@@ -15,7 +15,7 @@
       </div>
     </div>
     <div class="post-content">
-      {% raw post.content.replace("\n", "<br/>\n") %}
+      {% raw escape(post.content).replace("\n", "<br/>\n") %}
     </div>
     <div class="post-sign">
       {{ post.signature }}

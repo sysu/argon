@@ -1,14 +1,14 @@
-#import config
 import status
+import argo_conf
 from error import *
 
 def init_database():
-    for table_name in config.BASE_TABLE :
+    for table_name in argo_conf.BASE_TABLE :
         init_table(table_name)
 
 def init_table(table_name):
     from globaldb import global_conn as db
-    with open(config.SQL_TPL_DIR+'argo_'+table_name+'.sql') as f:
+    with open(argo_conf.SQL_DIR+'argo_'+table_name+'.sql') as f:
         sql = f.read()
         print sql
         try:

@@ -13,7 +13,7 @@ sysinfo :
         - ['',              (A)bout         查看系统属性,   [help, {pagename: about }], a, [13,25]]
         - ['',              (T)est          测试键盘按键,   test_keyboard, t]
         - ['$AUTHED_USER',  (B)ugReport         错误报告,   post_bug,      b]
-        - ['',              (P)layFilm        电影放映室,   movie,         p]
+        ## - ['',              (P)layFilm        电影放映室,   movie,         p]
         - ['',              (E)xit            回到主选单,   main,      e]
 
 mail:

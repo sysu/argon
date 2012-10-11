@@ -1,3 +1,6 @@
+#!/usr/bin/env python
+# -*- coding: utf-8 -*-
+
 import tornado.web
 from lib import BaseHandler, manager, fun_gen_quote
 
@@ -36,7 +39,10 @@ class ReplyPostHandler(BaseHandler):
         if not self.get_current_user():
             raise tornado.web.HTTPError(404)
         default = fun_gen_quote(self.get_current_user(), post.content)
-        self.srender("replypost.html", post=post, default=default)
+        title = post.title if post.title.startswith('Re:') \
+            else 'Re: %s' % post.title
+        self.srender("replypost.html", post=post, title=title,
+                     default=default)
 
     def post(self, replyid):
         userid = self.get_current_user()

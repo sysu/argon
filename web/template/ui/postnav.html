@@ -1,18 +1,27 @@
 <div class="post-nav">
+  {% if prevpid %}
+  <a href="/post/{{ prevpid }}">上一篇</a>
+  {% else %}
+  前面没有了
+  {% end %}
+  {% if nextpid %}
+  <a href="/post/{{ nextpid }}">下一篇</a>
+  {% else %}
+  后面没有了
+  {% end %}
+  |
   {% if (pid==firstpid) and (pid==lastpid) %}
   <span>这是唯一一篇</span>
   {% else %}
-  {% if pid==firstpid %}
-  <span>前面没有文章了</span>
+  {% if pid == firstpid %}
+  <span>这是主题第一贴</span>
   {% else %}
-  <a href="/post/{{ firstpid }}">第一篇</a>
-  <a href="/post/{{ prevpid }}">上一篇</a>
+  <a href="/post/{{ firstpid }}">主题第一贴</a>
   {% end %}
   {% if pid==lastpid %}
-  <span>后面没有文章了</span>
+  <span>这是主题最新贴</span>
   {% else %}
-  <a href="/post/{{ nextpid }}">下一篇</a>
-  <a href="/post/{{ lastpid }}">最后一篇</a>
+  <a href="/post/{{ lastpid }}">主题最新贴</a>
   {% end %}
   {% end %}
 </div>

@@ -6,22 +6,11 @@ argon是全新的[argo](http://bbs.sysu.edu.cn)实现。使用python实现。
   * database: sql表，数据库层
   * model: 数据表达层,提供Board, User等模型及其相关操作，封装底层数据库操作
   * web: argo 的web端逻辑, 使用tornado
-  * lib: 公用函数库
   * test: 各类测试工具
   * telnet: argo 的telnet端逻辑. base on [chaofeng](https://github.com/LTaoist/chaofeng)
+  * tools: 配套工具
 
 我们不喜欢重造轮子，如果你有好的建议，务必告诉我们！
-
-一些我们的讨论可以在[这里](http://bbs.sysu.edu.cn/bbstcon?board=Programming&file=M.1338262485.A)找到。
-
-Todo
-----
-
-  * telnet完善
-  * web的原型
-  * frgg搜索
-  * 更多人的参与
-  * ...
 
 About Argo
 ----------
@@ -62,8 +51,6 @@ Dependencies
 
 其中jinja2目前被telnet端使用，可能会被web端使用。
 
-web端准备使用tornado 。
-
 Install
 -------
 
@@ -78,54 +65,32 @@ git clone https://github.com/argolab/argon.git
 测试一下需要的依赖是否被满足:
 
 ```bash
-python -c 'import MySQLdb,eventlet,jinja2,redis,bcrypt,yaml'
+python -c 'import jinja2,MySQLdb,redis,eventlet,bcrypt,chaofeng,tornado,yaml'
 ```
 
-应该没有任何异常输出。
+如果不使用telnet，chaofeng,eventlet和jinja2可以省去。
+
+应该没有任何异常输出，继续下一步。
 
 ### 安装数据库Mysql和Redis
 
-```bash
-sudo pacman -S mysql redis
-```
-
 目前很多一部分代码都在硬编码。配置还没有整合到一起。而数据库的
-封装层在model文件夹，他的配置文件在 argon/argo_config.py
+封装层在model文件夹，他的配置文件在 argon/argo_config.py。
 
-```python
+新建一个用户名为`bbs`，密码为`forargo`，并授权给`argo`数据库。
 
-class ConfigDB:
-    '''
-        Database config
-    '''
-    host = "localhost"
-    port= 3306
-    user= "bbs"
-    passwd= "forargo"
-    dbname = "argo"
+redis使用默认的6379端口。
 
-class ConfigCache:
-    '''
-        Cache config
-    '''
-    host = "localhost"
-    port = 6379
-
-```
-
-### 初始化数据库
-
-首选需要根据上面ConfigDB的配置创建数据库和用户，然后使用我们目前提供的一个简单的python脚本创建数据库表:
+初始化mysql和redis ：
 
 ```bash
-./admin.sh
->>> init_database()
+./tools/init_database.sh
+```
 
 另外，需要初始化权限设置
 
 ```bash
-./admin.sh
->>> mrg.userperm.init_system()
+./tools/init_redis.sh
 ```
 
 如果数据库正常启动，配置无错误，telnet即可启动了：
@@ -145,12 +110,22 @@ $ telnet localhost 5000
 版块等等，也没有讨论区分区。
 
 ```bash
+cd ../ ## 回到 argon/
 ./admin.sh
-mrg.team.joint_team('你注册的帐号', 'SYS_SUPER')
+>>> mrg.team.joint_team('你注册的帐号', 'SYS_SUPER')
 ```
 
 这将会将你注册的帐号设置为超级帐号，然后登录（可能需要登出再登入）。
 即可简单管理入口。
+
+### 测试web
+
+```bash
+cd web
+python server.py
+```
+
+使用8080端口。
 
 ### 补充
 

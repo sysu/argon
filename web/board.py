@@ -14,8 +14,8 @@ class BoardHandler(BaseHandler):
             posts = manager.post.get_posts(board['bid'], rank, 30)
         elif self.get_current_user() :
             userid = self.get_current_user()
-            lastread = manager.readmark.get_first_read(userid, boardname)
-            lastread = manager.post.prev_three_post(board.bid, lastread)
+            lastread = manager.readmark.get_first_read(userid, boardname) or 0
+            lastread = manager.post.prev_three_post(board.bid, lastread) or 0
             posts = manager.post.get_posts_after_pid(
                 board.bid, lastread, 30)
             rank = manager.post.get_rank_num(board.bid, lastread)
