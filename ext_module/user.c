@@ -75,7 +75,44 @@ static PyMemberDef UserRecMember[] = {
     {NULL},
 };
 
+static PyObject * UserRec_GetAddress(UserRec *self) 
+{
+    return PyString_FromStringAndSize(self->address, strlen(self->address));
+}
 
+static PyObject * UserRec_GetPasswd( UserRec *self )
+{
+    // Need to transfer binary stream to hex representation
+    static const char ttb[] = "0123456789abcdef";
+
+    char buf[64];
+    int i;
+    for ( i = 0; i < sizeof(self->passwd); i++ )
+    {
+        buf[i*2] = ttb[self->passwd[i] >> 4];
+        buf[i*2+1] = ttb[self->passwd[i] & 15];
+    }
+    buf[ sizeof(self->passwd) * 2] = '\0';
+    return PyString_FromStringAndSize( buf, 2 * sizeof(self->passwd));
+}
+
+static PyObject * UserRec_GetUsername( UserRec *self )
+{
+    return PyString_FromStringAndSize(self->username, strlen(self->username));
+}
+
+static PyObject * UserRec_GetRealname( UserRec *self )
+{
+    return PyString_FromStringAndSize(self->realname, strlen(self->realname));
+}
+
+static PyMethodDef UserRecMethods[] = {
+    { "GetPasswd", (PyCFunction)UserRec_GetPasswd, METH_NOARGS},
+    { "GetAddress", (PyCFunction)UserRec_GetAddress, METH_NOARGS},
+    { "GetUsername", (PyCFunction)UserRec_GetUsername, METH_NOARGS},
+    { "GetRealname", (PyCFunction)UserRec_GetRealname, METH_NOARGS},
+    {NULL}
+};
 
 
 static PyTypeObject UserRecType= {
@@ -107,7 +144,7 @@ static PyTypeObject UserRecType= {
     0, /* tp_weaklistoffset */ 
     0, /* tp_iter */
     0, /* tp_iternext */ 
-    0, /* tp_methods */
+    UserRecMethods, /* tp_methods */
     UserRecMember, /* tp_members */
     0, /* tp_getset */
     0, /* tp_base */
@@ -125,15 +162,8 @@ static PyObject* Convert2Object(struct userec *ptUrec)
     UserRec * ptObj;
     ptObj = (UserRec *)PyObject_New(UserRec, &UserRecType);
     
-    //printf( "sizeof(long) %ld\n" , sizeof(long));
-
     memcpy(ptObj->userid, ptUrec->userid, sizeof( ptUrec->userid )); 
-    ptObj->userid[4] = '\0';
     ptObj->firstlogin = ptUrec->firstlogin;
-
-    //printf( "userid: %s\n", ptObj->userid );
-    //printf( "firstlogin: %ld\n", ptObj->firstlogin);
-
     memcpy(ptObj->lasthost, ptUrec->lasthost, sizeof( ptUrec->lasthost )); 
     ptObj->numlogins = ptUrec->numlogins;
     ptObj->numposts= ptUrec->numposts;
@@ -149,6 +179,11 @@ static PyObject* Convert2Object(struct userec *ptUrec)
     ptObj->stay= ptUrec->stay;
     memcpy(ptObj->realname, ptUrec->realname, sizeof( ptUrec->realname )); 
     memcpy(ptObj->address, ptUrec->address, sizeof( ptUrec->address )); 
+
+    FILE *fp = fopen("address.txt", "w");
+    fprintf( fp, "%s\n", ptObj->address );
+    fclose(fp);
+
     memcpy(ptObj->email, ptUrec->email, sizeof( ptUrec->email )); 
     ptObj->nummails= ptUrec->nummails;
     ptObj->gender= ptUrec->gender;
@@ -198,7 +233,8 @@ static PyObject * user_GetUserRec(PyObject *self, PyObject *args)
 }
 
 static PyMethodDef module_methods[] = {
-    { "GetUserRec", (PyCFunction)user_GetUserRec, METH_VARARGS },
+    { "GetUserRec", (PyCFunction)user_GetUserRec, METH_VARARGS, 
+        "The first argument is the .PASSWDS file. Second argument represent the num(order) of the record." },
     {NULL}
 };
 
