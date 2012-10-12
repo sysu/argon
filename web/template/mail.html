@@ -1,27 +1,184 @@
 {% extends "base.html" %}
 
-{% block main %}
-<div class="cell">
-    <div class="btn-toolbar">
-      <a href="/mail/add" class="btn btn-small btn-success">写信</a>
+{% block content %}
+
+<div class="row">
+  <div class="span7">
+    <div id="mail-wrapper">
     </div>
-    <table class="mailtable table table-hover table-condensed" width="100%">
-      <thead>
-        <tr>
-          <th width="auto">标题</th>
-          <th width="20%">发信人</th>
-          <th width="20%">最后更新</th>
-        </tr>
-      </thead>
-      <tbody>
-        {% for li in mails %}
-        <tr{% if li.readmark %} class="read"{% end %}>
-          <td><a href="/mail/{{ li.tid }}">{{ li.title }}</a></td>
-          <td><a href="/user/{{ li.fromuserid }}">{{ li.fromuserid }}</td>
-          <td>{{ li.lastupdate }}</td>
-        </tr>
-        {% end %}
-      </tbody>
-    </table>
+  </div>
+  <div class="span3">
+    <div class="cell">
+      <div class="btn-toolbar">
+        <a href="#add-mail" data-toggle="modal" id="send-new-mail" class="btn btn-small btn-success">写信</a>
+        <button class="btn btn-mini prev-list">上一页</button>
+        <button class="btn btn-mini next-list">下一页</button>
+        <input type="text" class="pull-right input-mini" id="input-start"/>
+      </div>
+      <ul class="unstyled" id="maillist-holder">
+      </ul>
+    </div>
+  </div>
 </div>
+
+<div class="modal" style="display: none" id="add-mail" aria-hidden="true">
+</div>
+
 {% end %}
+
+{% block scripthead %}
+<script src="/static/js/jquery-tmpl.js"></script>
+{% end %}
+
+{% block script %}
+<script id="mail-template" type="text/x-jquery-tmpl">
+  <div class="post-wrapper">
+    <div class="post-head">
+      <img src="${UserAvatar}"/>
+      <div class="post-info">
+        <h2 id="post-title">${Title}</h2>
+        <div>
+          <span>发信人：
+            <a href="/user/${Userid}">${Userid}</a>
+          </span> | 
+          <span> <i class="icon-time"></i>${Sendtime}</span> </div>
+      </div>
+    </div>
+    <div id="post-content" class="post-content">
+      ${Content}
+    </div>
+    <div class="post-sign">
+      ${Signature}
+    </div>
+    <div class="post-meta">
+      <a class="reply-mail" data-mid="${Mid}" href="#">回复</a>
+    </div>
+  </div>
+</script>
+
+<script id="maillist-template" type="text/x-jquery-tmpl">
+  <li class="read${readmark}" data-mid="${mid}">
+    <div>${index}. ${title} <span>${sendtime}</span></div>
+  </li>
+</script>
+
+<script>
+var load_post;
+var load_maillist;
+var set_maillist;
+var update_maillist;
+
+$(document).ready(function(){
+
+    function render_post(data){
+        $("#mail-wrapper").empty();
+        $("#mail-template").tmpl(data).appendTo("#mail-wrapper");
+        $('.post-content').html($('.post-content').html().replace(/\n/g, '<br/>'));
+        $('.reply-mail').click(function(){
+            var mid = $(".reply-mail").attr("data-mid");
+            $(".modal").empty()
+            $(".modal").load("/a/reply_mail/" + mid);
+            $(".modal").modal('show');
+        })        
+    }
+
+    function render_maillist(data, start){
+        $("#maillist-holder").empty()
+        for(var i=0; i<data.length; ++i){
+            data[i].index = start+i;
+        }
+        $("#maillist-template").tmpl(data).appendTo("#maillist-holder");
+        $('#maillist-holder>li').click(function(e){
+            var $target = $(this)
+            $.ajax({
+                type: "GET",
+                dataType: "json",
+                url: "/a/get_mail/" + $target.attr('data-mid'),
+                success : function( data ){
+                    if( data.success ){
+                        if($(".selected")){
+                            $(".selected").removeClass("selected");
+                        }
+                        $target.addClass("selected").removeClass("read0");
+                        $("#mail-wrapper").fadeOut(200, function(){
+                            render_post(data);
+                            $("#mail-wrapper").fadeIn(500);
+                        })
+                    }
+                    else{
+                        show_alert(data.content);
+                    }
+                }
+            });
+        });
+    }
+
+    set_maillist = function( start ){
+        $.ajax({
+            type: "GET",
+            dataType: "json",
+            url: "/a/get_maillist/" + start,
+            success : function( data ){
+                if( data.success ){
+                    $('#input-start').val(data.start);
+                    $("#maillist-holder").fadeOut(200, function(){
+                        render_maillist(data.content, data.start+1)
+                        $("#maillist-holder").fadeIn(500);
+                    });
+                }
+                else{
+                    show_alert(data.content);
+                }
+            },
+        })
+    }
+
+    update_maillist = function (){
+        $.ajax({
+            type: "GET",
+            dataType: "json",
+            url: "/a/get_maillist/",
+            success : function( data ){
+                $('#input-start').val(data.start);
+                if( data.success ){
+                    render_maillist(data.content, data.start+1)
+                    $('#maillist-holder>li:first-child').click();
+                }
+                else{
+                    show_alert(data.content);
+                }
+            },
+        });
+    }
+
+    $('.prev-list').click(function(){
+        set_maillist(Math.max($('#input-start').val() - 20, 0));
+    });
+    
+    $('.next-list').click(function(){
+        set_maillist(Number($('#input-start').val()) + 20);
+    });
+
+    $('#send-new-mail').click(function(){
+        $(".modal").empty()
+        $(".modal").load("/a/add_mail");
+    });
+
+    update_maillist();
+
+    function show_alert(message){
+        $(".modal").empty();
+        if(typeof message == "string"){
+            message = '<div class="modal-body">' + message + '</div>';
+        }
+        $(".modal").html(message);
+        $(".modal").modal("show");
+        setTimeout(function(){
+            $(".modal").modal("hide");
+        }, 2000);
+    }
+    
+})
+</script>
+{% end %}
+

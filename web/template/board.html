@@ -20,9 +20,17 @@
     {% module PostTable(posts) %}
     <div class="pagination pagination-centered">
       <ul>
-        <li><a href="/board/{{ board['boardname'] }}/{{ (rank-30) if rank > 30 else 0 }}">上一页</a></li>
-        <li class="active"><a>第 {{ rank//30 }} 页</a></li>
-        <li><a href="/board/{{ board['boardname'] }}/{{ (rank+30) if (rank+30 <=maxrank) else maxrank }}">下一页</a></li>
+        {% if rank != 0 %}        
+        <li><a href="/board/{{ board.boardname }}/{{ rank - page_size }}">上一页</a></li>
+        {% else %}
+        <li class="disabled"><a>上一页</a></li>
+        {% end %}
+        <li class="active"><a>第 {{ rank//page_size + 1 }} 页</a></li>
+        {% if (rank + page_size) <= maxrank %}        
+        <li><a href="/board/{{ board.boardname }}/{{ rank + page_size }}">下一页</a></li>
+        {% else %}
+        <li class="disabled"><a>下一页</a></li>
+        {% end %}
       </ul>
     </div>
   </div>
@@ -36,7 +44,9 @@
     <p>{{ board['about'] }}</p>
   </div>
   <img class="img-rounded" src="{{ board['httpbg'] }}"/>
-  <a id="board-head-bookbtn" href="/board/{{ board.boardname }}/book" class="btn btn-mini pull-right btn-info">收藏该版</a>
+  {% if isfav is False %}
+  <a id="board-head-bookbtn" data-boardname="{{ board['boardname'] }}" class="btn btn-mini pull-right btn-info">收藏该版</a>
+  {% end %}
 </div>
 {% end %}
 

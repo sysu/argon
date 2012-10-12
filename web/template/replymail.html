@@ -1,0 +1,44 @@
+<div class="modal-header">
+  <button type="button" class="close" data-dismiss="modal" aria-hidden="true">×</button>
+  <h3 id="myModalLabel">回复站内信</h3>
+</div>
+<div class="modal-body">
+  <form class="form-horizontal form-crow">
+    <div class="control-group">
+      <label class="control-label" for="input-title">标题</label>
+      <div class="controls">
+        <input type="text" placeholder="标题" id="input-title" value="{{ title }}"/>
+      </div>
+    </div>
+    <div class="control-group">
+      <label class="control-label" for="inputContent">正文</label>
+      <div class="controls">
+        <textarea class="input-xlarge" rows="6" name="content" id="inputContent">{{ content }}</textarea>
+      </div>
+    </div>
+  </form>
+</div>
+<div class="modal-footer">
+  <button id="sender" data-mid={{ mid }} class="btn btn-primary">发送</button>
+</div>
+<script>
+  $('#sender').click(function(){
+      $.ajax({
+          type: "POST",
+          dataType: "json",
+          url:"/a/reply_mail/{{ mid }}",
+          data: {
+              title: $("#input-title").val(),
+              content: $("#inputContent").val(),
+          },
+          success: function(data){
+              if(data.success){
+                  $("#add-mail").modal("hide");
+              }
+              else{
+                  show_alert(data.content);
+              }
+          },
+      });
+  })
+</script>

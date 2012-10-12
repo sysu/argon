@@ -6,28 +6,25 @@ from lib import BaseHandler, manager
 
 class BoardHandler(BaseHandler):
 
+    page_size = 30
+
     def get(self, boardname, rank=None):
         board = manager.board.get_board(boardname)
         if not board:
             raise tornado.web.HTTPError(404)
         boardname = board.boardname
-        maxrank = max(0, manager.post.get_post_total(board['bid']) - 3)
-        if rank is not None:
+        maxrank = max(0, manager.post.get_post_total(board['bid']))
+        if rank is None:
+            rank = maxrank // self.page_size * self.page_size
+        else :
             rank = int(rank)
-            posts = manager.post.get_posts(board['bid'], rank, 30)
-        elif self.get_current_user() :
-            userid = self.get_current_user()
-            lastread = manager.readmark.get_first_read(userid, boardname) or 0
-            lastread = manager.post.prev_three_post(board.bid, lastread) or 0
-            posts = manager.post.get_posts_after_pid(
-                board.bid, lastread, 30)
-            rank = manager.post.get_rank_num(board.bid, lastread)
-        else:
-            rank = maxrank
-            posts = manager.post.get_posts(board['bid'], rank, 30)
+        posts = manager.post.get_posts(board['bid'], rank, self.page_size)
         if self.get_current_user() :
             userid = self.get_current_user()
             manager.readmark.wrapper_post_with_readmark(posts, boardname, userid)
+            isfav = manager.favourite.is_fav(userid, board.bid)
+        else:
+            isfav = None            
         vistors = (
             ("LTaoist", "2012-03-04"),
             ("gcc", "2012-01-09"),
@@ -36,7 +33,8 @@ class BoardHandler(BaseHandler):
         board['bm'] = board['bm'] and board['bm'].split(':')
         board['httpbg'] = "http://ww3.sinaimg.cn/large/6b888227jw1dwesulldlyj.jpg"
         self.srender('board.html', board=board, rank=rank, maxrank=maxrank,
-                     posts=posts, vistors=vistors)
+                     posts=posts, vistors=vistors, isfav=isfav,
+                     page_size=self.page_size)
 
 class AjaxBookBoardHandler(BaseHandler):
 
@@ -55,9 +53,8 @@ class AjaxBookBoardHandler(BaseHandler):
                     "content": u"没有该版块."
                     })
             return
-        boardname = board.boardname
-        manager.favourite.add(userid, boardname)
+        manager.favourite.add(userid, board.bid)
         return self.write({
                 "success": True,
-                "msg": u"预定成功！",
+                "content": u"预定成功！",
                 })

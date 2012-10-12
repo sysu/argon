@@ -9,6 +9,7 @@
 	<script src="/static/js/lib/jquery.js"></script>
 	<script src="/static/js/lib/bootstrap.js"></script>
 	<script src="/static/js/argo.js"></script>
+    {% block scripthead %}{% end %}
   </head>
   <body>
     {% include "nav.html" %}
@@ -20,7 +21,8 @@
           {% end %}
         </div>
         <div class="span10">
-          {% block pagehead %}{% end %}            
+          {% block pagehead %}{% end %}
+          {% block content %}
           <div class="row">
             <div class="span8">
               {% block main %}{% end %}
@@ -29,6 +31,7 @@
               {% block rightsidebar %}{% end %}
             </div>
           </div>
+          {% end %}
         </div>
       </div>
     </div>
@@ -37,5 +40,6 @@
         <p>&copy Life is originally a tragedy.</p>
       </div>
     </footer>
+    {% block script %}{% end %}
   </body>
 </html>

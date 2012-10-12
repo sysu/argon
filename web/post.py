@@ -62,7 +62,7 @@ class ReplyPostHandler(BaseHandler):
             tid=post.tid, replyable=(self.get_argument('replyable')=='on'),
             signature=signature)
         manager.readmark.set_read(userid, boardname, pid)
-        self.redirect('/post/%s' % pid)
+        self.redirect('/board/%s/' % boardname)
         #################### HERE
 
 class NewPostHandler(BaseHandler):
@@ -75,7 +75,7 @@ class NewPostHandler(BaseHandler):
         if not userid:
             raise tornado.web.HTTPError(404)
         bid = manager.board.name2id(boardname)
-        boardname = manager.board.name2id(bid)
+        boardname = manager.board.id2name(bid)
         signnum = self.get_argument('signnum', None)
         if signnum is None or signnum < manager.usersign.get_sign_num(userid):
             signature = ''
@@ -89,4 +89,4 @@ class NewPostHandler(BaseHandler):
             signature=signature)
         manager.post.update_post(pid, tid=pid)
         manager.readmark.set_read(userid, boardname, pid)
-        self.redirect('/post/%s' % pid)
+        self.redirect('/board/%s/' % boardname)

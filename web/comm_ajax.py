@@ -105,9 +105,9 @@ class CommAjaxGetMailHandler(BaseHandler):
         uid = mgr.userinfo.name2id(self.userid)
         mail = mgr.mail.one_mail(mid)
 
-        if mail: 
+        if mail and (mail.touserid == self.userid): 
             result['success'] = True
-            mgr.mail.set_read(uid, mid)
+            mgr.mail.set_mail_read(mid)
             for k,v in mail.items():
                 try:
                     v = str(v)

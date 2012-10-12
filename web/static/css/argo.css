@@ -283,3 +283,54 @@ div.center{
 .read a{
     color:grey;
 }
+
+#maillist-holder{
+    border:1px solid #eee;
+    background:#eee;
+}
+
+#maillist-holder li{
+    padding:.33em 1em;
+    border:1px solid transparent;
+    border-bottom:1px solid #ccc;
+    cursor: pointer;
+}
+
+#maillist-holder>li span{
+    color:grey;
+    margin:0;
+    float:right;
+}
+
+#maillist-holder li:hover{
+    border:1px solid #5a7;
+    border-bottom:1px solid #5a7;
+}
+
+.selected{
+    border-left:3px solid #395 !important;
+}
+
+.read0{
+    font-weight:bold;
+}
+
+.userbox img{
+    width: 48px;
+    height: 48px;
+}
+
+.form-crow .control-label{
+    width: 4em !important;
+}
+
+.form-crow .controls{
+    margin-left: 5em !important;
+}
+    
+.global-alert{
+    position:fixed;
+    top: 20%;
+    left:20%;
+    min-width: 300px;
+}

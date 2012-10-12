@@ -302,25 +302,29 @@ class Favourite(Model):
         self.ch.delete(key)
         self.ch.sunionstore(key, self.keyf % self.default_userid)
 
-    def add(self, userid, boardname):
+    def add(self, userid, bid):
         u''' Add an board into user's favourtie.'''
         key = self.keyf % userid
-        self.ch.sadd(key, boardname)
+        self.ch.sadd(key, bid)
                       
-    def remove(self, userid, boardname):
+    def remove(self, userid, bid):
         key = self.keyf % userid
-        self.ch.srem(key, boardname)
+        self.ch.srem(key, bid)
 
     def get_all(self, userid):
         u'''Return a set holds all board's name in user's favourite.'''
         key = self.keyf % userid
         return self.ch.smembers(key)
 
-    def add_default(self, boardname):
-        self.add(self.default_userid, boardname)
+    def is_fav(self, userid, bid):
+        key = self.keyf % userid
+        return self.ch.sismember(key, bid)
 
-    def remove_default(self, boardname):
-        self.remove(self.default_userid, boardname)
+    def add_default(self, bid):
+        self.add(self.default_userid, bid)
+
+    def remove_default(self, bid):
+        self.remove(self.default_userid, bid)
 
 class Post(Model):
 
@@ -620,6 +624,12 @@ class UserInfo(Model):
     def get_user(self,name):
         return self.table_get_by_key(self.__, 'userid', name)
 
+    def get_avatar(self, userid):
+        res = self.db.get("SELECT iconidx FROM %s "
+                          "WHERE userid=%%s" % self.__,
+                          userid)
+        return res and res['iconidx']
+
     def add_user(self,**kwargs):
         return self.table_insert(self.__, kwargs)
 
@@ -816,7 +826,7 @@ class Mail(Model):
                                  start, limit)
     
     def get_mail_simple(self, userid, start, limit):
-        return self.db.query("SELECT title,mid FROM `%s` "
+        return self.db.query("SELECT title,mid,sendtime,readmark FROM `%s` "
                                  "WHERE touserid=%%s "
                                  "ORDER BY mid "
                                  "LIMIT %%s,%%s" % (self._index_table), userid,
@@ -828,6 +838,14 @@ class Mail(Model):
                            'WHERE mid<%%s AND touserid=%%s '
                            'ORDER BY mid' % self._index_table,
                            mid, touserid)['sum']
+
+    def get_first_unread(self, touserid):
+        return self.db.get('SELECT count(*) '
+                           'FROM `%s` '
+                           'WHERE mid < ( '
+                           '    SELECT mid FROM `%s` WHERE touserid=%%s '
+                           '    AND readmark=0 ORDER BY mid LIMIT 1 )' % (\
+                self._index_table, self._index_table), touserid)['count(*)']
 
     def rank2mid(self, touserid, rank):
         res = self.db.get("SELECT mid "
@@ -894,6 +912,12 @@ class Mail(Model):
         return self.table_update_by_key(self._index_table, 'mid', mid, kwargs)
 
     def set_read(self, uid, mid):
+        # old version that need to be clean
+        sql = "UPDATE `%s` SET readmark = readmark | 1 WHERE mid = %%s" %\
+            self._index_table
+        self.db.execute(sql, mid)
+
+    def set_mail_read(self, mid):
         sql = "UPDATE `%s` SET readmark = readmark | 1 WHERE mid = %%s" %\
             self._index_table
         self.db.execute(sql, mid)
@@ -1077,7 +1101,6 @@ class ReadMark(Model):
         key = self.keyf%(userid,boardname)
         self.ch.delete(key)
         self.ch.zadd(key, last, last)
-        print ('clear', last)
 
     def get_first_read(self, userid, boardname):
         d = self.ch.zrange(self.__(userid, boardname), 0, 0)

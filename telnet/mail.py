@@ -141,9 +141,7 @@ class ReadMailFrame(BaseMailListFrame):
         ]
 
     def get_mid_rank(self, mid):
-        return self.MODE_RANKER[self.mode](self.session.user['uid'],
-                                           self.userid,
-                                           mid)
+        return self.MODE_RANKER[self.mode](self.userid, mid)
 
     def initialize(self, mode=0):
         manager.status.set_status(self.seid,
@@ -278,10 +276,12 @@ class SendMailFrame(BaseAuthedFrame):
             self.writeln(u'取消写信！')
             self.pause()
             self.goto_back()
-        if not manager.userinfo.get_user(touserid):
+        touser = manager.userinfo.get_user(touserid)
+        if not touser :
             self.writeln(u'无法找到该收信人！')
             self.pause()
             self.goto_back()
+        touserid = touser.userid
         self.touserid = touserid
         sign_num = manager.usersign.get_sign_num(self.userid)
         self.attrs = self.read_attrs(touserid, sign_num)

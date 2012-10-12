@@ -35,7 +35,7 @@ def url_for_avatar(userid):
     Return the avatar url for userid.
     NOT IMPLEMENTED YET.
     '''
-    return "/static/img/avatar/%s" % userid
+    return manager.userinfo.get_avatar(userid) or "/static/img/avatar_default.jpg"
 
 func = SDict([
     ("url_for_avatar", url_for_avatar),
@@ -106,6 +106,11 @@ def timeformat(time):
     '''
     return time.strftime("%d-%m")
 
+def shorttime(time):
+    '''
+    Better and short outlook for time.
+    '''
+    return time.strftime('%d-%m')
 
 def fun_gen_quote(userid, content):
     '''

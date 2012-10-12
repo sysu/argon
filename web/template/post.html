@@ -22,12 +22,7 @@
       {{ post.signature }}
     </div>
     <div class="post-meta">
-      <a href="#">转寄</a>
-      <a href="#">转贴</a>
-      <a href="#">删除</a>
-      <a href="#">修改</a>
       <a href="/post/add/{{ post.pid }}">回复</a>
-      <a href="#">同主题阅读</a>
     </div>
   </div>
   {% module PostNav(firstpid, prevpid, nextpid, lastpid, post.pid) %}
@@ -55,7 +50,7 @@
     {% end %}
   </ul>
   {% else %}
-  <p>没有回复，<br/>要<a href="#">发表回复</a>吗？ </p>
+  <p>没有回复，<br/>要<a href="/post/add/{{ post.pid }}">发表回复</a>吗？ </p>
   {% end %}
 </div>
 {% end %}
