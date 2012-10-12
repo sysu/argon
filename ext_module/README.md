@@ -8,7 +8,6 @@ How to build ext_user.so
 ```bash
 
 ./python-32bit setup.py build
-
 ```
 
 * Make a soft link of ext_user.so to the current directory.
@@ -16,7 +15,6 @@ How to build ext_user.so
 ```bash 
 
 ln -s ./build/lib-xxxxx/ext_user.so ext_user.so
-
 ```
 
 * Start the interpreter:
@@ -24,7 +22,6 @@ ln -s ./build/lib-xxxxx/ext_user.so ext_user.so
 ```bash
 
 ./python-32bit
-
 ```
 
 ```python
