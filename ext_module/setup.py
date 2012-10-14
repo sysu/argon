@@ -5,9 +5,9 @@ setup(name = "ext_user",
         maintainer_email = "",
         description = "Argo ext_user module",
         ext_modules = [Extension('ext_user',
-            sources=['user.c'],
-            extra_compile_args=['-m32'],
-            extra_link_args=['-m32'])
-            ]
+            sources=['crypt.c', 'user.c', 'pass.c']
+            #extra_compile_args=['-m32'],
+            #extra_link_args=['-m32']
+            )]
         )
 

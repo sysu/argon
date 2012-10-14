@@ -1,25 +1,57 @@
 #!/usr/bin/env python
-
-
+# encoding: utf-8
+from hashlib import md5
+import ext_user, time
 def main_test():
-    import ext_user
-    a = ext_user.GetUserRec('PASSWDS', 0)
-#    print dir(a)
-#    for i in dir(a):
-#        if not i.startswith('__'):
-#            print i, str(getattr(a, i))
-#
-    address = a.GetAddress().decode('gb2312')
-    realname = a.GetRealname().decode('gb2312')
-    username = a.GetRealname().decode('gb2312')
-    passwd = a.GetPasswd()
+    num = -1
+    while True:
+        num += 1
+        #if num % 100 == 0: print num
+        try:
+            user = ext_user.GetUserRec('PASSWDS', num)
+            if user.userid == 'Cypress':
+                print user.GetAddress().decode('gbk')
+                print user.GetRealname().decode('gbk')
+                print  user.GetUsername().decode('gbk')
+                print  user.GetPasswd()
 
-    print 'address %s' % address
-    print 'realname %s' % realname
-    print 'username %s' % username
-    print 'passwd %s' % passwd
-    print len(passwd)
+                for i in dir(user):
+                    if not i.startswith('__'):
+                        print i, getattr(user, i)
+                break
+            if user.passwd and user.passwd[0] != '\0':
+                print user.userid, user.GetPasswd(), user.passwd, user.GetRealname().decode('gbk'), user.lastlogin, user.email
+        except AttributeError, e:
+            print e
+            break
 
 if __name__ == '__main__':
+    """
+    旧式加密方式：
+    1. 如果urec.passwd[0] == 0:
+        使用DES加密方式
+    2. 否则用md5:
+        其中使用magic ＝ " #r3:`>/ch'm&p%<xcj?bqd=/?l7o:n.s;j}ouo!--phx j^icu3ax{]?7`<(jot"
+        加密步骤如下：
+        a = md5(magic)
+        a.update(passwd)
+        a.update(magic)
+        a.update(userid)
+        print a.hexdigest()
+        注意：
+            这里的userid的大小写要严格按照urec.userid来进行，否则会导致md5结果不正确。
+    """
     main_test()
+    #userid = ''
+    #passwd = ''
+    #magic = " #r3:`>/CH'M&p%<xCj?bqd=/?L7o:N.s;j}Ouo!--PhX j^icU3aX{]?7`<(jOt"
+
+
+    #a = md5(magic)
+    #a.update(passwd)
+    #a.update(magic)
+    #a.update(userid)
+    #print a.hexdigest()
+    #des = ext_user.GenPasswdDes('cling', 'clRBnz3IwFo.g')
+    #print des
 

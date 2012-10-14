@@ -30,7 +30,7 @@ CREATE TABLE IF NOT EXISTS `argo_filehead` (
        KEY bid_tid (bid, tid),
        KEY bid_mark_g (bid, mark_g),
        KEY bid_mark_m (bid, mark_m),
-       KEY owner (owner)
+       KEY owner_pid (owner, pid)
 
 )ENGINE=InnoDB DEFAULT CHARSET=UTF8 PARTITION BY KEY (bid) PARTITIONS 13;
 
