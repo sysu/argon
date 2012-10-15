@@ -28,7 +28,7 @@ CREATE TABLE IF NOT EXISTS `argo_user` (
     `lastupdate` timestamp NOT NULL default CURRENT_TIMESTAMP on update CURRENT_TIMESTAMP,
 
     `birthday` date NOT NULL default '1990-01-01',
-    `address` varchar(50), 
+    `address` varchar(128), 
     `usertitle` varchar(20) NOT NULL default 'user',
     `gender`  int(11) unsigned default 1,
     `realname` varchar(20),

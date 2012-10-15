@@ -50,7 +50,7 @@ static PyMemberDef UserRecMember[] = {
     {"flags", T_STRING_INPLACE, offsetof( UserRec, flags), 0, ""}, 
     {"passwd", T_STRING_INPLACE, offsetof( UserRec,  passwd), 0, ""}, 
     {"username", T_STRING_INPLACE, offsetof( UserRec, username ), 0, ""}, 
-    "ident", T_STRING_INPLACE, offsetof( UserRec, ident ), 0, ""}, 
+    {"ident", T_STRING_INPLACE, offsetof( UserRec, ident ), 0, ""}, 
 //  {"termtype", T_STRING_INPLACE , offsetof( UserRec, termtype ), 0, ""}, 
     {"reginfo", T_STRING_INPLACE, offsetof( UserRec, reginfo ), 0, ""}, 
     {"userlevel", T_UINT, offsetof( UserRec, userlevel ), 0, ""}, 
@@ -58,7 +58,7 @@ static PyMemberDef UserRecMember[] = {
 //  {"reserved", T_STRING_INPLACE, offsetof( UserRec, reserved ), 0, ""}, 
     {"lastlogin", T_UINT, offsetof( UserRec, lastlogin ), 0, ""}, 
     {"lastlogout", T_UINT, offsetof( UserRec, lastlogout ), 0, ""}, 
-    {"stay", T_INT, offsetof( UserRec, stay ), 0, ""}, 
+    {"stay", T_UINT, offsetof( UserRec, stay ), 0, ""}, 
     {"realname", T_STRING_INPLACE, offsetof( UserRec, realname ), 0, ""}, 
     {"address", T_STRING_INPLACE, offsetof( UserRec, address ), 0, ""}, 
     {"email", T_STRING_INPLACE, offsetof( UserRec, email ), 0, ""}, 
@@ -97,6 +97,11 @@ static void _HexDigest(const char *passwd, int passwdlen, char *digest)
 static PyObject * UserRec_GetPasswd( UserRec *self )
 {
     // Need to transfer binary stream to hex representation
+    if (self->passwd[0]) {
+        // For old encryption crypt_des
+        return PyString_FromString( self->passwd);
+    }
+    // For md5
     char buf[64];
     memset(buf, 0, sizeof(buf));
     _HexDigest(self->passwd, sizeof(self->passwd), buf);

@@ -15,6 +15,12 @@ def ts2dt(ts):
     timeStr = time.strftime("%Y-%m-%d %H:%M:%S", ltime)
     return timeStr
 
+def ignore_except(fun):
+    try:
+        return fun()
+    except Exception, e:
+        return None
+
 def main_process():
     recfile = 'PASSWDS'
     num = -1
@@ -26,42 +32,47 @@ def main_process():
             urec = ext_user.GetUserRec(recfile, num)
             if not urec.userid: continue
 
-            print num, urec.userid
             # Use new passwd encryption  
-            if len(urec.passwd) > 13: # md5
-                new_passwd = bcrypt.hashpw(urec.GetPasswd(), bcrypt.gensalt(10))
+            user = {}
+            if len(urec.GetPasswd()) > 13: # md5
+                user['passwd'] = bcrypt.hashpw(urec.GetPasswd(), bcrypt.gensalt(10))
             else:
-                new_passwd = urec.passwd
+                user['passwd'] = urec.GetPasswd()
+
             try:
-                mgr.userinfo.add_user(
-                        userid = urec.userid,
-                        passwd = new_passwd,
-                        username = urec.GetUsername().decode(dec_code),
-                        email = str(urec.email).decode(dec_code),
-                        remail = urec.reginfo, #认证email
-                        netid = urec.reginfo,
+                user['firstlogin'] = ts2dt(urec.firstlogin)
+                user['lastlogin'] = ts2dt(urec.lastlogin)
+                user['lasthost'] = urec.lasthost
+                user['lastlogout'] = ts2dt(urec.lastlogout)
+                user['numlogins'] = urec.numlogins
+                user['numposts'] = urec.numposts
+                user['stay'] = int(urec.stay)
+                user['usertitle'] = urec.usertitle
+                user['gender'] = 1 if urec.gender == 'M' else 0
 
-                        firstlogin = ts2dt(urec.firstlogin),
-                        firsthost = urec.ident,
-                        lastlogin = ts2dt(urec.lastlogin),
-                        lasthost = urec.lasthost,
-                        lastlogout = ts2dt(urec.lastlogout),
+                user['userid'] = ignore_except(lambda : str(urec.userid).decode(dec_code))
+                user['firsthost'] = ignore_except(lambda : str(urec.ident).decode(dec_code))
+                user['remail'] = ignore_except(lambda : str(urec.reginfo).decode(dec_code)) #认证email
+                user['username'] = ignore_except(lambda :  urec.GetUsername().decode(dec_code))
+                user['email'] =ignore_except(lambda :  str(urec.email).decode(dec_code))
+                user['netid'] = ignore_except(lambda :str(urec.reginfo).decode(dec_code))
+                user['address'] = ignore_except(lambda :  urec.GetAddress().decode(dec_code))
+                user['realname'] = ignore_except(lambda :  urec.GetRealname().decode(dec_code))
+                user['birthday'] = ignore_except(lambda : time.strptime('19%d-%d-%d ' % (urec.birthyear, urec.birthmonth, urec.birthday), '%Y-%m-%d'))
 
-                        numlogins = urec.numlogins,
-                        numposts = urec.numposts,
-                        stay = urec.stay,
+                # Ignore all the None attributes
+                del_att = []
+                for att in user:
+                    if user[att] == None:
+                        del_att.append(att)
 
-                        birthday = '%d-%d-%d ' % (urec.birthyear, urec.birthmonth,
-                            urec.birthday),
+                for i in del_att: del user[i]
 
-                        address = urec.GetAddress().decode(dec_code),
-                        usertitle = urec.usertitle,
-                        gender = 1 if urec.gender == 'M' else 0,
-                        realname = urec.GetRealname().decode(dec_code)
-                        )
+                mgr.userinfo.add_user( **user)
+
                 print num, urec.userid
-            except:
-                fp.write('%s\n' % urec.userid)
+            except Exception, e:
+                fp.write('%s %s %s %s %d\n' % (urec.userid, e, urec.ident, urec.address, urec.stay))
                 fail_cnt += 1
 
         except AttributeError, e:

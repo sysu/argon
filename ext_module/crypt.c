@@ -5,7 +5,7 @@
  * by Eric Young (eay@cryptsoft.com).
  * The implementation was written so as to conform with Netscapes SSL.
  *
- * This library is free for commercial and non-commercial use as long as
+ * This library is free for commercial and non-commercial use as int as
  * the following conditions are aheared to.  The following conditions
  * apply to all code found in this distribution, be it the RC4, RSA,
  * lhash, DES, etc., code; not just the SSL code.  The SSL documentation
@@ -59,14 +59,14 @@
 
 typedef unsigned char *POINTER;
 
-typedef unsigned short int UINT2;
+typedef unsigned short UINT2;
 
-typedef unsigned long int UINT4;
+typedef unsigned int UINT4;
 
 typedef struct {
-	unsigned long A, B, C, D;
-	unsigned long Nl, Nh;
-	unsigned long data[16];
+	unsigned int A, B, C, D;
+	unsigned int Nl, Nh;
+	unsigned int data[16];
 	int num;
 } MD5_CTX;
 
@@ -74,15 +74,15 @@ void MD5Init(MD5_CTX *);
 void MD5Update(MD5_CTX *, const unsigned char *, unsigned int);
 void MD5Final(MD5_CTX *, unsigned char[16]);
 
-static void md5_block(MD5_CTX * c, unsigned long *p);
+static void md5_block(MD5_CTX * c, unsigned int *p);
 
 void
 MD5Init(MD5_CTX * c)
 {
-	c->A = (unsigned long) 0x67452301L;
-	c->B = (unsigned long) 0xefcdab89L;
-	c->C = (unsigned long) 0x98badcfeL;
-	c->D = (unsigned long) 0x10325476L;
+	c->A = (unsigned int) 0x67452301L;
+	c->B = (unsigned int) 0xefcdab89L;
+	c->C = (unsigned int) 0x98badcfeL;
+	c->D = (unsigned int) 0x10325476L;
 	c->Nl = 0;
 	c->Nh = 0;
 	c->num = 0;
@@ -91,9 +91,9 @@ MD5Init(MD5_CTX * c)
 void
 MD5Update(MD5_CTX * c, const unsigned char *data, unsigned int len)
 {
-	register unsigned long *p;
+	register unsigned int *p;
 	int sw, sc;
-	unsigned long l;
+	unsigned int l;
 
 	if (len == 0)
 		return;
@@ -115,23 +115,23 @@ MD5Update(MD5_CTX * c, const unsigned char *data, unsigned int len)
 			{
 				switch (sc) {
 				case 0:
-					l = ((unsigned long) (*((data)++)));
+					l = ((unsigned int) (*((data)++)));
 				case 1:
-					l |= ((unsigned long) (*((data)++))) <<
+					l |= ((unsigned int) (*((data)++))) <<
 					    8;
 				case 2:
-					l |= ((unsigned long) (*((data)++))) <<
+					l |= ((unsigned int) (*((data)++))) <<
 					    16;
 				case 3:
-					l |= ((unsigned long) (*((data)++))) <<
+					l |= ((unsigned int) (*((data)++))) <<
 					    24;
 			}};
 			p[sw++] = l;
 			for (; sw < 16; sw++) {
-				(l = ((unsigned long) (*((data)++))), l |=
-				 (((unsigned long) (*((data)++))) << 8), l |=
-				 (((unsigned long) (*((data)++))) << 16), l |=
-				 (((unsigned long) (*((data)++))) << 24));
+				(l = ((unsigned int) (*((data)++))), l |=
+				 (((unsigned int) (*((data)++))) << 8), l |=
+				 (((unsigned int) (*((data)++))) << 16), l |=
+				 (((unsigned int) (*((data)++))) << 24));
 				p[sw] = l;
 			}
 			len -= (64 - c->num);
@@ -149,18 +149,18 @@ MD5Update(MD5_CTX * c, const unsigned char *data, unsigned int len)
 					switch (sc) {
 					case 0:
 						l = ((unsigned
-						      long) (*((data)++)));
+						      int) (*((data)++)));
 						if (--len == 0)
 							break;
 					case 1:
 						l |= ((unsigned
-						       long) (*((data)++))) <<
+						       int) (*((data)++))) <<
 						    8;
 						if (--len == 0)
 							break;
 					case 2:
 						l |= ((unsigned
-						       long) (*((data)++))) <<
+						       int) (*((data)++))) <<
 						    16;
 				}};
 				p[sw] = l;
@@ -172,29 +172,29 @@ MD5Update(MD5_CTX * c, const unsigned char *data, unsigned int len)
 					switch (sc) {
 					case 0:
 						l = ((unsigned
-						      long) (*((data)++)));
+						      int) (*((data)++)));
 					case 1:
 						l |= ((unsigned
-						       long) (*((data)++))) <<
+						       int) (*((data)++))) <<
 						    8;
 					case 2:
 						l |= ((unsigned
-						       long) (*((data)++))) <<
+						       int) (*((data)++))) <<
 						    16;
 					case 3:
 						l |= ((unsigned
-						       long) (*((data)++))) <<
+						       int) (*((data)++))) <<
 						    24;
 				}};
 				p[sw++] = l;
 				for (; sw < ew; sw++) {
 					(l =
-					 ((unsigned long) (*((data)++))), l |=
-					 (((unsigned long) (*((data)++))) << 8),
+					 ((unsigned int) (*((data)++))), l |=
+					 (((unsigned int) (*((data)++))) << 8),
 					 l |=
-					 (((unsigned long) (*((data)++))) <<
+					 (((unsigned int) (*((data)++))) <<
 					  16), l |=
-					 (((unsigned long) (*((data)++))) <<
+					 (((unsigned int) (*((data)++))) <<
 					  24));
 					p[sw] = l;
 				}
@@ -205,17 +205,17 @@ MD5Update(MD5_CTX * c, const unsigned char *data, unsigned int len)
 						switch (ec) {
 						case 3:
 							l = ((unsigned
-							      long) (*(--
+							      int) (*(--
 								       (data))))
 							    << 16;
 						case 2:
 							l |= ((unsigned
-							       long) (*(--
+							       int) (*(--
 									(data))))
 							    << 8;
 						case 1:
 							l |= ((unsigned
-							       long) (*(--
+							       int) (*(--
 									(data))));
 					}};
 					p[sw] = l;
@@ -228,25 +228,25 @@ MD5Update(MD5_CTX * c, const unsigned char *data, unsigned int len)
 	p = c->data;
 	while (len >= 64) {
 		for (sw = (16 / 4); sw; sw--) {
-			(l = ((unsigned long) (*((data)++))), l |=
-			 (((unsigned long) (*((data)++))) << 8), l |=
-			 (((unsigned long) (*((data)++))) << 16), l |=
-			 (((unsigned long) (*((data)++))) << 24));
+			(l = ((unsigned int) (*((data)++))), l |=
+			 (((unsigned int) (*((data)++))) << 8), l |=
+			 (((unsigned int) (*((data)++))) << 16), l |=
+			 (((unsigned int) (*((data)++))) << 24));
 			*(p++) = l;
-			(l = ((unsigned long) (*((data)++))), l |=
-			 (((unsigned long) (*((data)++))) << 8), l |=
-			 (((unsigned long) (*((data)++))) << 16), l |=
-			 (((unsigned long) (*((data)++))) << 24));
+			(l = ((unsigned int) (*((data)++))), l |=
+			 (((unsigned int) (*((data)++))) << 8), l |=
+			 (((unsigned int) (*((data)++))) << 16), l |=
+			 (((unsigned int) (*((data)++))) << 24));
 			*(p++) = l;
-			(l = ((unsigned long) (*((data)++))), l |=
-			 (((unsigned long) (*((data)++))) << 8), l |=
-			 (((unsigned long) (*((data)++))) << 16), l |=
-			 (((unsigned long) (*((data)++))) << 24));
+			(l = ((unsigned int) (*((data)++))), l |=
+			 (((unsigned int) (*((data)++))) << 8), l |=
+			 (((unsigned int) (*((data)++))) << 16), l |=
+			 (((unsigned int) (*((data)++))) << 24));
 			*(p++) = l;
-			(l = ((unsigned long) (*((data)++))), l |=
-			 (((unsigned long) (*((data)++))) << 8), l |=
-			 (((unsigned long) (*((data)++))) << 16), l |=
-			 (((unsigned long) (*((data)++))) << 24));
+			(l = ((unsigned int) (*((data)++))), l |=
+			 (((unsigned int) (*((data)++))) << 8), l |=
+			 (((unsigned int) (*((data)++))) << 16), l |=
+			 (((unsigned int) (*((data)++))) << 24));
 			*(p++) = l;
 		}
 
@@ -261,10 +261,10 @@ MD5Update(MD5_CTX * c, const unsigned char *data, unsigned int len)
 
 		sc &= 0x03;
 		for (; sw; sw--) {
-			(l = ((unsigned long) (*((data)++))), l |=
-			 (((unsigned long) (*((data)++))) << 8), l |=
-			 (((unsigned long) (*((data)++))) << 16), l |=
-			 (((unsigned long) (*((data)++))) << 24));
+			(l = ((unsigned int) (*((data)++))), l |=
+			 (((unsigned int) (*((data)++))) << 8), l |=
+			 (((unsigned int) (*((data)++))) << 16), l |=
+			 (((unsigned int) (*((data)++))) << 24));
 			*(p++) = l;
 		}
 		{
@@ -272,11 +272,11 @@ MD5Update(MD5_CTX * c, const unsigned char *data, unsigned int len)
 			(data) += sc;
 			switch (sc) {
 			case 3:
-				l = ((unsigned long) (*(--(data)))) << 16;
+				l = ((unsigned int) (*(--(data)))) << 16;
 			case 2:
-				l |= ((unsigned long) (*(--(data)))) << 8;
+				l |= ((unsigned int) (*(--(data)))) << 8;
 			case 1:
-				l |= ((unsigned long) (*(--(data))));
+				l |= ((unsigned int) (*(--(data))));
 		}};
 		*p = l;
 
@@ -284,9 +284,9 @@ MD5Update(MD5_CTX * c, const unsigned char *data, unsigned int len)
 }
 
 static void
-md5_block(MD5_CTX * c, register unsigned long *X)
+md5_block(MD5_CTX * c, register unsigned int *X)
 {
-	register unsigned long A, B, C, D;
+	register unsigned int A, B, C, D;
 
 	A = c->A;
 	B = c->B;
@@ -659,8 +659,8 @@ void
 MD5Final(MD5_CTX * c, unsigned char *md)
 {
 	register int i, j;
-	register unsigned long l;
-	register unsigned long *p;
+	register unsigned int l;
+	register unsigned int *p;
 	static unsigned char end[4] = { 0x80, 0x00, 0x00, 0x00 };
 	unsigned char *cp = end;
 
@@ -673,13 +673,13 @@ MD5Final(MD5_CTX * c, unsigned char *md)
 	{
 		switch (j & 0x03) {
 		case 0:
-			l = ((unsigned long) (*((cp)++)));
+			l = ((unsigned int) (*((cp)++)));
 		case 1:
-			l |= ((unsigned long) (*((cp)++))) << 8;
+			l |= ((unsigned int) (*((cp)++))) << 8;
 		case 2:
-			l |= ((unsigned long) (*((cp)++))) << 16;
+			l |= ((unsigned int) (*((cp)++))) << 16;
 		case 3:
-			l |= ((unsigned long) (*((cp)++))) << 24;
+			l |= ((unsigned int) (*((cp)++))) << 24;
 	}};
 	p[i] = l;
 	i++;
@@ -725,12 +725,12 @@ typedef unsigned char des_cblock[8];
 typedef struct des_ks_struct {
 	union {
 		des_cblock _;
-		unsigned long pad[2];
+		unsigned int pad[2];
 	} ks;
 
 } des_key_schedule[16];
 
-static const unsigned long SPtrans[8][64] = {
+static const unsigned int SPtrans[8][64] = {
        {0x00820200, 0x00020000, 0x80800000, 0x80820200,
 	0x00800000, 0x80020200, 0x80020000, 0x80800000,
 	0x80020200, 0x00820200, 0x00820000, 0x80000200,
@@ -868,7 +868,7 @@ static const unsigned long SPtrans[8][64] = {
 	0x08000000, 0x08200020, 0x00008000, 0x00208020}
 };
 
-static const unsigned long skb[8][64] = {
+static const unsigned int skb[8][64] = {
        {0x00000000, 0x00000010, 0x20000000, 0x20000010,
 	0x00010000, 0x00010010, 0x20010000, 0x20010010,
 	0x00000800, 0x00000810, 0x20000800, 0x20000810,
@@ -1011,21 +1011,21 @@ static const char shifts2[16] =
 static int
 des_set_key(des_cblock * key, struct des_ks_struct *schedule)
 {
-	register unsigned long c, d, t, s;
+	register unsigned int c, d, t, s;
 	register unsigned char *in;
-	register unsigned long *k;
+	register unsigned int *k;
 	register int i;
 
-	k = (unsigned long *) schedule;
+	k = (unsigned int *) schedule;
 	in = (unsigned char *) key;
-	(c = ((unsigned long) (*((in)++))), c |=
-	 ((unsigned long) (*((in)++))) << 8, c |=
-	 ((unsigned long) (*((in)++))) << 16, c |=
-	 ((unsigned long) (*((in)++))) << 24);
-	(d = ((unsigned long) (*((in)++))), d |=
-	 ((unsigned long) (*((in)++))) << 8, d |=
-	 ((unsigned long) (*((in)++))) << 16, d |=
-	 ((unsigned long) (*((in)++))) << 24);
+	(c = ((unsigned int) (*((in)++))), c |=
+	 ((unsigned int) (*((in)++))) << 8, c |=
+	 ((unsigned int) (*((in)++))) << 16, c |=
+	 ((unsigned int) (*((in)++))) << 24);
+	(d = ((unsigned int) (*((in)++))), d |=
+	 ((unsigned int) (*((in)++))) << 8, d |=
+	 ((unsigned int) (*((in)++))) << 16, d |=
+	 ((unsigned int) (*((in)++))) << 24);
 	((t) = ((((d) >> (4)) ^ (c)) & (0x0f0f0f0f)), (c) ^= (t), (d) ^=
 	 ((t) << (4)));
 	((t) = ((((c) << (16 - (-2))) ^ (c)) & (0xcccc0000)), (c) =
@@ -1101,17 +1101,17 @@ static unsigned const char cov_2char[64] = {
 };
 
 static int
-body(unsigned long *out0, unsigned long *out1, des_key_schedule ks,
-     unsigned long Eswap0, unsigned long Eswap1)
+body(unsigned int *out0, unsigned int *out1, des_key_schedule ks,
+     unsigned int Eswap0, unsigned int Eswap1)
 {
-	register unsigned long l, r, t, u;
-	register unsigned long *s;
+	register unsigned int l, r, t, u;
+	register unsigned int *s;
 	register int i, j;
-	register unsigned long E0, E1;
+	register unsigned int E0, E1;
 
 	l = 0;
 	r = 0;
-	s = (unsigned long *) ks;
+	s = (unsigned int *) ks;
 	E0 = Eswap0;
 	E1 = Eswap1;
 	for (j = 0; j < 25; j++) {
@@ -1171,8 +1171,8 @@ char *
 crypt_des(char *buf, char *salt)
 {
 	unsigned int i, j, x, y;
-	unsigned long Eswap0 = 0, Eswap1 = 0;
-	unsigned long out[2], ll;
+	unsigned int Eswap0 = 0, Eswap1 = 0;
+	unsigned int out[2], ll;
 	des_cblock key;
 	des_key_schedule ks;
 	static unsigned char buff[20];

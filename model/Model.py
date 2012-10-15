@@ -1309,7 +1309,7 @@ class UserAuth(Model):
 
     using mod:  userinfo, status, userperm
     '''
-    
+
     ban_userid = ['guest','new']
     GUEST = AuthUser(userid='guest',is_first_login=None)
 
@@ -1320,7 +1320,7 @@ class UserAuth(Model):
         self.userperm = manager.get_module('userperm')
         self.favourite = manager.get_module('favourite')
         self.team = manager.get_module('team')
-        
+
     def gen_passwd(self, userid, passwd):
         '''
         This algorithm derived from the pass.c in the old argo source code.

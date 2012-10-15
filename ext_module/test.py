@@ -2,6 +2,7 @@
 # encoding: utf-8
 from hashlib import md5
 import ext_user, time
+import crypt
 def main_test():
     num = -1
     while True:
@@ -54,4 +55,7 @@ if __name__ == '__main__':
     #print a.hexdigest()
     #des = ext_user.GenPasswdDes('cling', 'clRBnz3IwFo.g')
     #print des
+    passwd = 'lfDw4/BUOkEbI'
+    word = 'asd'
+    print ext_user.GenPasswdDes(passwd, word)
 
