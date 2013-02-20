@@ -1,6 +1,8 @@
 argon
 =====
 
+**由于缺少人手，本项目已基本停滞。本项目已基本完成了database,model,telnet部分，telnet部分已经基本可以使用。有兴趣接手者请联系我们。**
+
 argon是全新的[argo](http://bbs.sysu.edu.cn)实现。使用python实现。
 
   * database: sql表，数据库层
